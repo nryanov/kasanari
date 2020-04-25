@@ -1,0 +1,50 @@
+{
+  "name": "postgres-storage-viewer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "electron dist/main.js",
+    "dev": "npm run dev-renderer & npm run dev-main &",
+    "dev-main": "cross-env NODE_ENV=development webpack --config webpack.main.config.js --watch",
+    "dev-renderer": "cross-env NODE_ENV=development webpack --config webpack.renderer.config.js --watch",
+    "build": "npm run build-main && npm run build-renderer",
+    "build-main": "cross-env NODE_ENV=production webpack --config webpack.main.config.js",
+    "build-renderer": "cross-env NODE_ENV=production webpack --config webpack.renderer.config.js",
+    "test": "npx jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "react": "16.13.1",
+    "react-dom": "16.13.1",
+    "react-redux": "7.2.0",
+    "redux": "4.0.5",
+    "redux-thunk": "2.3.0",
+    "pg": "8.0.2",
+    "lodash": "4.17.15"
+  },
+  "devDependencies": {
+    "@types/node": "13.13.0",
+    "@types/react": "16.9.34",
+    "@types/react-dom": "16.9.6",
+    "@types/react-redux": "7.1.7",
+    "@types/redux": "3.6.0",
+    "@types/pg": "7.14.3",
+    "@types/lodash": "4.14.150",
+    "@types/jest": "25.2.1",
+    "typescript": "3.8.3",
+    "ts-loader": "7.0.0",
+    "css-loader": "3.5.2",
+    "style-loader": "1.1.4",
+    "node-loader": "0.6.0",
+    "webpack": "4.42.1",
+    "webpack-cli": "3.3.11",
+    "cross-env": "7.0.2",
+    "jest": "25.4.0",
+    "ts-jest": "25.4.0",
+    "electron": "8.2.3",
+    "electron-builder": "22.5.1"
+  }
+}
