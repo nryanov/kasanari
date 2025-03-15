@@ -1,1 +1,1 @@
-# postgres-storage-viewer
+# rest-catalogs

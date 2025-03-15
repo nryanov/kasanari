@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+    id 'io.quarkus'
+    id 'org.kordamp.gradle.jandex'
+}
+
+allprojects {
+    group 'local'
+    version '0.1.0'
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    // for `api` modifier
+    apply plugin: 'java-library'
+    apply plugin: "io.quarkus"
+
+    if (name != "application") {
+        apply plugin: 'org.kordamp.gradle.jandex'
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    dependencies {
+        implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    }
+
+    test {
+        useJUnitPlatform()
+        systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
+    }
+
+    compileJava {
+        options.encoding = 'UTF-8'
+        options.compilerArgs << '-parameters'
+    }
+
+    compileTestJava {
+        options.encoding = 'UTF-8'
+    }
+}

@@ -1,0 +1,20 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        mavenLocal()
+    }
+    plugins {
+        id "${quarkusPluginId}" version "${quarkusPluginVersion}"
+        id 'org.kordamp.gradle.jandex' version '1.0.0'
+    }
+}
+
+// change it
+rootProject.name='rest-catalogs'
+
+include(
+        'modules:core'
+)
+
+findProject(':modules:core')?.name = 'core'
