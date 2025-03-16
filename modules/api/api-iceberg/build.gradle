@@ -1,0 +1,30 @@
+plugins {
+    alias(libs.plugins.openapi.generator)
+}
+
+openApiValidate {
+    inputSpec.set("$projectDir/src/main/resources/openapi/openapi.yaml")
+}
+
+openApiGenerate {
+    var properties = new HashMap<String, String>()
+    properties.put("supportAsync", "true")
+    properties.put("useMutiny", "true")
+    properties.put("useMicroProfileOpenAPIAnnotations", "true")
+    properties.put("hideGenerationTimestamp", "true")
+    properties.put("library", "quarkus")
+    properties.put("dateLibrary", "java8")
+    properties.put("interfaceOnly", "true")
+    properties.put("enumUnknownDefaultCase", "true")
+    properties.put("returnResponse", "false")
+    properties.put("useOneOfInterfaces", "true")
+    properties.put("generateBuilders", "true")
+    properties.put("generatePom", "false")
+//    properties.put("apiPackage", "true")
+//    properties.put("modelPackage", "true")
+
+    generatorName.set("jaxrs-spec")
+    additionalProperties.putAll(properties)
+    inputSpec.set("$projectDir/src/main/resources/openapi/openapi.yaml")
+    outputDir.set("$buildDir/generated")
+}

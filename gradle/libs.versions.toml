@@ -2,3 +2,5 @@
 
 [libraries]
 
+[plugins]
+openapi-generator = { id = "org.openapi.generator", version = "7.12.0" }
