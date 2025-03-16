@@ -1,7 +1,7 @@
 plugins {
     id 'java'
-    id 'io.quarkus'
-    id 'org.kordamp.gradle.jandex'
+//    id 'io.quarkus'
+//    id 'org.kordamp.gradle.jandex'
 }
 
 allprojects {
@@ -18,10 +18,10 @@ subprojects {
     apply plugin: 'java'
     // for `api` modifier
     apply plugin: 'java-library'
-    apply plugin: "io.quarkus"
+//    apply plugin: "io.quarkus"
 
     if (name != "application") {
-        apply plugin: 'org.kordamp.gradle.jandex'
+//        apply plugin: 'org.kordamp.gradle.jandex'
     }
 
     java {
