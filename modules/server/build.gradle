@@ -14,6 +14,7 @@ dependencies {
     testImplementation 'io.rest-assured:rest-assured'
 
     implementation(project(":modules:api:api-iceberg"))
+    implementation(project(":modules:api:api-paimon"))
 
     implementation 'org.ow2.asm:asm:9.7.1'
 }
