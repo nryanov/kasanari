@@ -1,6 +1,14 @@
 [versions]
+openapi-generator = "7.12.0"
+quarkus = "3.15.1"
+jandex = "1.0.0"
 
 [libraries]
+quarkus-bom = { group = "io.quarkus.platform", name = "quarkus-bom", version.ref = "quarkus" }
+quarkus-jackson = { group = "io.quarkus", name = "quarkus-rest-jackson" }
+quarkus-openapi = { group = "io.quarkus", name = "quarkus-smallrye-openapi" }
 
 [plugins]
-openapi-generator = { id = "org.openapi.generator", version = "7.12.0" }
+openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }
+quarkus = { id = "io.quarkus", version.ref = "quarkus" }
+jandex = { id = "org.kordamp.gradle.jandex", version.ref = "jandex" }

@@ -951,6 +951,7 @@ paths:
           schema:
             type: string
             enum: [ all, refs ]
+            x-enum-varnames: ["all", "refs"]
       responses:
         200:
           $ref: '#/components/responses/LoadTableResponse'
@@ -1863,6 +1864,7 @@ components:
         enum:
           - vended-credentials
           - remote-signing
+        x-enum-varnames: ["vended_credentials", "remote_signing"]
       style: simple
       explode: false
       example: "vended-credentials,remote-signing"
@@ -2211,6 +2213,7 @@ components:
         type:
           $ref: '#/components/schemas/ExpressionType'
           enum: ["and", "or"]
+          x-enum-varnames: ["and", "or"]
         left:
           $ref: '#/components/schemas/Expression'
         right:
@@ -2238,6 +2241,7 @@ components:
         type:
           $ref: '#/components/schemas/ExpressionType'
           enum: ["is-null", "not-null", "is-nan", "not-nan"]
+          x-enum-varnames: ["is_null", "not_null", "is_nan", "not_nan"]
         term:
           $ref: '#/components/schemas/Term'
         value:
@@ -2253,6 +2257,7 @@ components:
         type:
           $ref: '#/components/schemas/ExpressionType'
           enum: ["lt", "lt-eq", "gt", "gt-eq", "eq", "not-eq", "starts-with", "not-starts-with"]
+          x-enum-varnames: ["lt", "lt_eq", "gt", "gt_eq", "eq", "not_eq", "starts_with", "not_starts_with"]
         term:
           $ref: '#/components/schemas/Term'
         value:
@@ -2268,6 +2273,7 @@ components:
         type:
           $ref: '#/components/schemas/ExpressionType'
           enum: ["in", "not-in"]
+          x-enum-varnames: ["in", "not_in"]
         term:
           $ref: '#/components/schemas/Term'
         values:
@@ -2343,10 +2349,12 @@ components:
     SortDirection:
       type: string
       enum: ["asc", "desc"]
+      x-enum-varnames: ["asc", "desc"]
 
     NullOrder:
       type: string
       enum: ["nulls-first", "nulls-last"]
+      x-enum-varnames: ["nulls_first", "nulls_last"]
 
     SortField:
       type: object
@@ -2410,6 +2418,7 @@ components:
             operation:
               type: string
               enum: ["append", "replace", "overwrite", "delete"]
+              x-enum-varnames: ["append", "replace", "overwrite", "delete"]
           additionalProperties:
             type: string
         schema-id:
@@ -2424,6 +2433,7 @@ components:
         type:
           type: string
           enum: ["tag", "branch"]
+          x-enum-varnames: ["tag", "branch"]
         snapshot-id:
           type: integer
           format: int64
@@ -3337,11 +3347,13 @@ components:
         status:
           $ref: '#/components/schemas/PlanStatus'
           enum: ["submitted", "cancelled"]
+          x-enum-varnames: ["submitted", "cancelled"]
 
     PlanStatus:
       description: Status of a server-side planning operation
       type: string
       enum: ["completed", "submitted", "cancelled", "failed"]
+      x-enum-varnames: ["completed", "submitted", "cancelled", "failed"]
 
     FetchPlanningResult:
       type: object
@@ -3547,6 +3559,7 @@ components:
           type: string
           enum:
             - client_credentials
+          x-enum-varnames: ["client_credentials"]
         scope:
           type: string
         client_id:
@@ -3779,6 +3792,7 @@ components:
             - unauthorized_client
             - unsupported_grant_type
             - invalid_scope
+          x-enum-varnames: ["invalid_request", "invalid_client", "invalid_grant", "unauthorized_client", "unsupported_grant_type", "invalid_scope"]
         error_description:
           type: string
         error_uri:
@@ -3804,6 +3818,7 @@ components:
             - bearer
             - mac
             - N_A
+          x-enum-varnames: ["bearer", "mac", "n_a"]
           description:
             Access token type for client credentials or token exchange
 
@@ -4164,6 +4179,7 @@ components:
         - orc
         - parquet
         - puffin
+      x-enum-varnames: ["avro", "orc", "parquet", "puffin"]
 
     ContentFile:
       discriminator:
@@ -4832,16 +4848,7 @@ components:
     OAuth2:
       type: oauth2
       description:
-        This scheme is used for OAuth2 authorization.
-
-
-        For unauthorized requests, services should return an appropriate 401 or
-        403 response. Implementations must not return altered success (200)
-        responses when a request is unauthenticated or unauthorized.
-
-        If a separate authorization server is used, substitute the tokenUrl with
-        the full token path of the external authorization server, and use the
-        resulting token to access the resources defined in the spec.
+        This scheme is used for OAuth2 authorization. For unauthorized requests, services should return an appropriate 401 or 403 response. Implementations must not return altered success (200) responses when a request is unauthenticated or unauthorized. If a separate authorization server is used, substitute the tokenUrl with the full token path of the external authorization server, and use the resulting token to access the resources defined in the spec.
       flows:
         clientCredentials:
           tokenUrl: /v1/oauth/tokens

@@ -1,30 +1,64 @@
 plugins {
+    // https://github.com/OpenAPITools/openapi-generator/blob/master/modules/openapi-generator-gradle-plugin/README.adoc
     alias(libs.plugins.openapi.generator)
+    alias(libs.plugins.jandex)
+}
+
+dependencies {
+    implementation enforcedPlatform(libs.quarkus.bom)
+
+    implementation libs.quarkus.jackson
+    implementation libs.quarkus.openapi
 }
 
 openApiValidate {
     inputSpec.set("$projectDir/src/main/resources/openapi/openapi.yaml")
 }
 
+// https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-spec.md
 openApiGenerate {
     var properties = new HashMap<String, String>()
     properties.put("supportAsync", "true")
     properties.put("useMutiny", "true")
     properties.put("useMicroProfileOpenAPIAnnotations", "true")
+    properties.put("useBeanValidation", "false")
     properties.put("hideGenerationTimestamp", "true")
     properties.put("library", "quarkus")
     properties.put("dateLibrary", "java8")
     properties.put("interfaceOnly", "true")
-    properties.put("enumUnknownDefaultCase", "true")
     properties.put("returnResponse", "false")
-    properties.put("useOneOfInterfaces", "true")
+    properties.put("useOneOfInterfaces", "false")
     properties.put("generateBuilders", "true")
     properties.put("generatePom", "false")
-//    properties.put("apiPackage", "true")
-//    properties.put("modelPackage", "true")
+    properties.put("apiPackage", "kasanari.api.iceberg")
+    properties.put("modelPackage", "kasanari.api.iceberg.dto")
+    properties.put("modelNamePrefix", "Iceberg")
+    properties.put("generateApiTests", "false")
+    properties.put("useTags", "true")
+    properties.put("useJakartaEe", "true")
+    properties.put("generateConstructorWithAllArgs", "true")
+    properties.put("generateJsonCreator", "false")
+    properties.put("cleanupOutput", "true")
+    // not working for jax-rs#quarkus
+//    properties.put("useEnumCaseInsensitive", "true")
+//    properties.put("enumUnknownDefaultCase", "true")
+//    properties.put("enumPropertyNaming", "legacy")
+//    properties.put("discriminatorCaseSensitive", "true")
 
     generatorName.set("jaxrs-spec")
     additionalProperties.putAll(properties)
     inputSpec.set("$projectDir/src/main/resources/openapi/openapi.yaml")
     outputDir.set("$buildDir/generated")
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir "${buildDir}/generated/src/gen/java"
+        }
+    }
+}
+
+tasks.compileJava {
+    dependsOn(tasks.openApiGenerate)
 }

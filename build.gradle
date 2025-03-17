@@ -3,7 +3,7 @@ plugins {
 }
 
 allprojects {
-    group 'local'
+    group 'kasanari'
     version '0.1.0'
 
     repositories {
@@ -14,26 +14,15 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
-    // for `api` modifier
     apply plugin: 'java-library'
-//    apply plugin: "io.quarkus"
-
-    if (name != "application") {
-//        apply plugin: 'org.kordamp.gradle.jandex'
-    }
 
     java {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    dependencies {
-        implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
-    }
-
     test {
         useJUnitPlatform()
-        systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
     }
 
     compileJava {

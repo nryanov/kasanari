@@ -5,35 +5,23 @@ pluginManagement {
         mavenLocal()
     }
     plugins {
-//        id "${quarkusPluginId}" version "${quarkusPluginVersion}"
-//        id 'org.kordamp.gradle.jandex' version '1.0.0'
+        id "io.quarkus" version "3.15.1"
+        id "org.kordamp.gradle.jandex" version "1.0.0"
         id "org.openapi.generator" version "7.12.0"
     }
 }
 
 // change it
-rootProject.name='rest-catalogs'
+rootProject.name='kasanari'
 
 include(
-        'modules:core',
-        'modules:catalog',
-        'modules:catalog:catalog-iceberg-rest',
-        'modules:catalog:catalog-paimon-rest',
         'modules:api',
         'modules:api:api-iceberg',
-        'modules:api:api-paimon',
         'modules:server'
 )
 
-findProject(':modules:core')?.name = 'core'
-
-findProject(':modules:catalog')?.name = 'catalog'
-findProject(':modules:catalog:catalog-iceberg-rest')?.name = 'catalog-iceberg-rest'
-findProject(':modules:catalog:catalog-paimon-rest')?.name = 'catalog-paimon-rest'
-
 findProject(':modules:api')?.name = 'api'
 findProject(':modules:api:api-iceberg')?.name = 'api-iceberg'
-findProject(':modules:api:api-paimon')?.name = 'api-paimon'
 
 findProject(':modules:server')?.name = 'server'
 
