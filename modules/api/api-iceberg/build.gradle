@@ -1,3 +1,5 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 plugins {
     // https://github.com/OpenAPITools/openapi-generator/blob/master/modules/openapi-generator-gradle-plugin/README.adoc
     alias(libs.plugins.openapi.generator)
@@ -59,16 +61,37 @@ sourceSets {
     }
 }
 
-tasks.register('deleteRestCode', Delete) {
-    delete(
-            files("${buildDir}/generated/src/gen/java/kasanari/api/RestApplication.java"),
-            files("${buildDir}/generated/src/gen/java/kasanari/api/RestResourceRoot.java")
-    )
+tasks.openApiGenerate {
+    doLast {
+        delete(
+                files("${buildDir}/generated/src/gen/java/kasanari/api/RestApplication.java"),
+                files("${buildDir}/generated/src/gen/java/kasanari/api/RestResourceRoot.java")
+        )
+
+        copy {
+            from "$buildDir/generated/src/gen/java/kasanari/api/iceberg"
+            into "$buildDir/generated/src/gen/java/kasanari/api/iceberg"
+
+            include "*.java"
+
+            // add path root
+            filter { String line ->
+                line.startsWith("@Path(\"/v1/") ? line.replace("@Path(\"/v1/", "@Path(\"/iceberg/v1/") : line
+            }
+            // rename ApiApi -> Api
+            filter { String line -> line.replace("CatalogApiApi", "IcebergCatalogApi")}
+            filter { String line -> line.replace("ConfigurationApiApi", "IcebergConfigurationApi")}
+            filter { String line -> line.replace("OAuth2ApiApi", "IcebergOAuth2Api")}
+
+            rename("(.+)Api", "Iceberg\$1")
+        }
+
+        delete(fileTree("$buildDir/generated/src/gen/java/kasanari/api/iceberg").matching {
+            include "*ApiApi.java"
+        })
+    }
 }
 
 tasks.compileJava {
-    dependsOn(
-            tasks.openApiGenerate,
-            tasks.deleteRestCode
-    )
+    dependsOn(tasks.openApiGenerate)
 }

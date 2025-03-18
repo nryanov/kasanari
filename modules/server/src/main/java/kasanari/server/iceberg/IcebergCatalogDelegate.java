@@ -2,11 +2,11 @@ package kasanari.server.iceberg;
 
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import kasanari.api.iceberg.CatalogApiApi;
+import kasanari.api.iceberg.IcebergCatalogApi;
 import kasanari.api.iceberg.dto.*;
 
 @ApplicationScoped
-public class IcebergCatalogApi implements CatalogApiApi {
+public class IcebergCatalogDelegate implements IcebergCatalogApi {
     @Override
     public Uni<Void> cancelPlanning(String prefix, String namespace, String table, String planId) {
         return null;

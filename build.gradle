@@ -34,3 +34,12 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 }
+//
+//tasks.compileJava {
+//    doLast {
+//        tasks.findByPath("api:api-iceberg:cleanupCodeGeneration")
+//        tasks.findByPath("api:api-paimon:cleanupCodeGeneration")
+//        println("Deleted RestApplication & RestResourceRoot")
+//    }
+//}
+

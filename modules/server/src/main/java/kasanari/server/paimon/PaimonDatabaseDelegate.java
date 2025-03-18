@@ -2,11 +2,11 @@ package kasanari.server.paimon;
 
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import kasanari.api.paimon.DatabaseApi;
+import kasanari.api.paimon.PaimonDatabaseApi;
 import kasanari.api.paimon.dto.*;
 
 @ApplicationScoped
-public class PaimonDatabaseApi implements DatabaseApi {
+public class PaimonDatabaseDelegate implements PaimonDatabaseApi {
     @Override
     public Uni<PaimonAlterDatabaseResponse> alterDatabase(String prefix, String database, PaimonAlterDatabaseRequest paimonAlterDatabaseRequest) {
         return null;
