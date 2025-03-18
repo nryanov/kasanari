@@ -34,11 +34,13 @@ openApiGenerate {
     properties.put("modelPackage", "kasanari.api.paimon.dto")
     properties.put("modelNamePrefix", "Paimon")
     properties.put("generateApiTests", "false")
-    properties.put("useTags", "true")
+//    properties.put("useTags", "true")
     properties.put("useJakartaEe", "true")
     properties.put("generateConstructorWithAllArgs", "true")
     properties.put("generateJsonCreator", "false")
     properties.put("cleanupOutput", "true")
+//    properties.put("x-tags", "Iceberg API")
+//    properties.put("SET_TAGS_TO_VENDOR_EXTENSION", "x-tags")
     // not working for jax-rs#quarkus
 //    properties.put("useEnumCaseInsensitive", "true")
 //    properties.put("enumUnknownDefaultCase", "true")
@@ -73,19 +75,26 @@ tasks.openApiGenerate {
             include "*.java"
 
             // add path root
-            filter { String line -> line
-                line.startsWith("@Path(\"/v1/") ? line.replace("@Path(\"/v1/", "@Path(\"/paimon/v1/") : line
+            filter { String line ->
+                line.startsWith("@Path(\"/v1") ? line.replace("@Path(\"/v1", "@Path(\"/paimon/v1") : line
             }
 
-            filter { String line -> line.replace("ConfigApi", "PaimonConfigApi") }
-            filter { String line -> line.replace("DatabaseApi", "PaimonDatabaseApi") }
+            // remove all tags
+            filter { String line ->
+                line.trim().startsWith("@org.eclipse.microprofile.openapi.annotations.tags.Tag") ? null : line
+            }
 
-            rename("(.+)", "Paimon\$1")
+            filter { String line ->
+                line.contains("interface") ? "@org.eclipse.microprofile.openapi.annotations.tags.Tag(name=\"Paimon API\")\n" + line : line
+            }
+
+            filter { String line -> line.replace("V1Api", "PaimonApi") }
+
+            rename("(.+)", "PaimonApi.java")
         }
 
         delete(fileTree("$buildDir/generated/src/gen/java/kasanari/api/paimon").matching {
-            include "ConfigApi.java"
-            include "DatabaseApi.java"
+            include "V1Api.java"
         })
     }
 }

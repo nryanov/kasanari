@@ -36,7 +36,7 @@ openApiGenerate {
     properties.put("modelPackage", "kasanari.api.iceberg.dto")
     properties.put("modelNamePrefix", "Iceberg")
     properties.put("generateApiTests", "false")
-    properties.put("useTags", "true")
+//    properties.put("useTags", "true")
     properties.put("useJakartaEe", "true")
     properties.put("generateConstructorWithAllArgs", "true")
     properties.put("generateJsonCreator", "false")
@@ -76,18 +76,26 @@ tasks.openApiGenerate {
 
             // add path root
             filter { String line ->
-                line.startsWith("@Path(\"/v1/") ? line.replace("@Path(\"/v1/", "@Path(\"/iceberg/v1/") : line
+                line.startsWith("@Path(\"/v1") ? line.replace("@Path(\"/v1", "@Path(\"/iceberg/v1") : line
             }
-            // rename ApiApi -> Api
-            filter { String line -> line.replace("CatalogApiApi", "IcebergCatalogApi")}
-            filter { String line -> line.replace("ConfigurationApiApi", "IcebergConfigurationApi")}
-            filter { String line -> line.replace("OAuth2ApiApi", "IcebergOAuth2Api")}
 
-            rename("(.+)Api", "Iceberg\$1")
+            // remove all tags
+            filter { String line ->
+                line.trim().startsWith("@org.eclipse.microprofile.openapi.annotations.tags.Tag") ? null : line
+            }
+
+            // add global tag
+            filter { String line ->
+                line.contains("interface") ? "@org.eclipse.microprofile.openapi.annotations.tags.Tag(name=\"Iceberg API\")\n" + line : line
+            }
+
+            filter { String line -> line.replace("V1Api", "IcebergApi") }
+
+            rename("(.+)", "IcebergApi.java")
         }
 
         delete(fileTree("$buildDir/generated/src/gen/java/kasanari/api/iceberg").matching {
-            include "*ApiApi.java"
+            include "V1Api.java"
         })
     }
 }

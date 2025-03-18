@@ -2,11 +2,11 @@ package kasanari.server.iceberg;
 
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import kasanari.api.iceberg.IcebergCatalogApi;
+import kasanari.api.iceberg.IcebergApi;
 import kasanari.api.iceberg.dto.*;
 
 @ApplicationScoped
-public class IcebergCatalogDelegate implements IcebergCatalogApi {
+public class IcebergApiDelegate implements IcebergApi {
     @Override
     public Uni<Void> cancelPlanning(String prefix, String namespace, String table, String planId) {
         return null;
@@ -54,6 +54,16 @@ public class IcebergCatalogDelegate implements IcebergCatalogApi {
 
     @Override
     public Uni<IcebergFetchScanTasksResult> fetchScanTasks(String prefix, String namespace, String table, IcebergFetchScanTasksRequest icebergFetchScanTasksRequest) {
+        return null;
+    }
+
+    @Override
+    public Uni<IcebergCatalogConfig> getConfig(String warehouse) {
+        return null;
+    }
+
+    @Override
+    public Uni<IcebergOAuthTokenResponse> getToken(String grantType, String scope, String clientId, String clientSecret, IcebergTokenType requestedTokenType, String subjectToken, IcebergTokenType subjectTokenType, String actorToken, IcebergTokenType actorTokenType) {
         return null;
     }
 
