@@ -1,4 +1,4 @@
 dependencies {
-    implementation 'org.apache.iceberg:iceberg-core:1.7.1'
-    implementation 'org.apache.iceberg:iceberg-nessie:1.7.1'
+    implementation project(':modules:catalog:catalog-iceberg-core')
+    implementation libs.iceberg.nessie
 }

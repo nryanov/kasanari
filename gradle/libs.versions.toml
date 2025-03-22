@@ -10,6 +10,7 @@ quarkus-jackson = { group = "io.quarkus", name = "quarkus-rest-jackson" }
 quarkus-openapi = { group = "io.quarkus", name = "quarkus-smallrye-openapi" }
 
 iceberg-core = { group = "org.apache.iceberg", name = "iceberg-core", version.ref = "iceberg" }
+iceberg-nessie = { group = "org.apache.iceberg", name = "iceberg-nessie", version.ref = "iceberg" }
 
 [plugins]
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }

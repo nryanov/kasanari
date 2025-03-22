@@ -1,5 +1,3 @@
-import org.apache.tools.ant.filters.ReplaceTokens
-
 plugins {
     // https://github.com/OpenAPITools/openapi-generator/blob/master/modules/openapi-generator-gradle-plugin/README.adoc
     alias(libs.plugins.openapi.generator)
@@ -36,16 +34,10 @@ openApiGenerate {
     properties.put("modelPackage", "kasanari.api.iceberg.dto")
     properties.put("modelNamePrefix", "Iceberg")
     properties.put("generateApiTests", "false")
-//    properties.put("useTags", "true")
     properties.put("useJakartaEe", "true")
     properties.put("generateConstructorWithAllArgs", "true")
     properties.put("generateJsonCreator", "false")
     properties.put("cleanupOutput", "true")
-    // not working for jax-rs#quarkus
-//    properties.put("useEnumCaseInsensitive", "true")
-//    properties.put("enumUnknownDefaultCase", "true")
-//    properties.put("enumPropertyNaming", "legacy")
-//    properties.put("discriminatorCaseSensitive", "true")
 
     generatorName.set("jaxrs-spec")
     additionalProperties.putAll(properties)

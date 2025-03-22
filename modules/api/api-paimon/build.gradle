@@ -34,18 +34,10 @@ openApiGenerate {
     properties.put("modelPackage", "kasanari.api.paimon.dto")
     properties.put("modelNamePrefix", "Paimon")
     properties.put("generateApiTests", "false")
-//    properties.put("useTags", "true")
     properties.put("useJakartaEe", "true")
     properties.put("generateConstructorWithAllArgs", "true")
     properties.put("generateJsonCreator", "false")
     properties.put("cleanupOutput", "true")
-//    properties.put("x-tags", "Iceberg API")
-//    properties.put("SET_TAGS_TO_VENDOR_EXTENSION", "x-tags")
-    // not working for jax-rs#quarkus
-//    properties.put("useEnumCaseInsensitive", "true")
-//    properties.put("enumUnknownDefaultCase", "true")
-//    properties.put("enumPropertyNaming", "legacy")
-//    properties.put("discriminatorCaseSensitive", "true")
 
     generatorName.set("jaxrs-spec")
     additionalProperties.putAll(properties)
