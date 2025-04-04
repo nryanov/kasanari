@@ -67,10 +67,6 @@ public class DRAFTIcebergCatalogAdapter {
 //        catalog.createTable()
     }
 
-    public void createView(String prefix, String namespace, Object icebergCreateViewRequest) {
-//        asViewCatalog.buildView()
-    }
-
     public void dropTable(String prefix, String namespace, String table, Boolean purgeRequested) {
 //        catalog.dropTable()
     }

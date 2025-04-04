@@ -13,4 +13,6 @@ public interface IcebergCatalogAdapter {
     boolean namespaceExists(IcebergNamespace.Name namespace);
 
     IcebergNamespaceListing listNamespaces(IcebergNamespaceListing.Filter filter);
+
+    void createView(IcebergNamespace.Name namespace, Object icebergCreateViewRequest);
 }

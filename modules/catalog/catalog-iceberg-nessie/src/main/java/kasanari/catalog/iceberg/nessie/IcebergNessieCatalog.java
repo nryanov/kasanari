@@ -62,4 +62,15 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
 
         return new IcebergNamespaceListing(subList, nextToken);
     }
+
+    @Override
+    public void createView(IcebergNamespace.Name namespace, Object icebergCreateViewRequest) {
+        catalog
+                .buildView(null)
+                .withLocation("")
+                .withProperties(null)
+                .withSchema(null)
+                .withDefaultCatalog("")
+                .create();
+    }
 }
