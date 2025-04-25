@@ -71,24 +71,12 @@ public class DRAFTIcebergCatalogAdapter {
 //        catalog.dropTable()
     }
 
-    public void dropView(String prefix, String namespace, String view) {
-//        asViewCatalog.dropView()
-    }
-
     public void listTables(String prefix, String namespace, String pageToken, Integer pageSize) {
 //        catalog.listTables()
     }
 
-    public void listViews(String prefix, String namespace, String pageToken, Integer pageSize) {
-//        asViewCatalog.listViews()
-    }
-
     public void loadTable(String prefix, String namespace, String table, String xIcebergAccessDelegation, String ifNoneMatch, String snapshots) {
 //        catalog.loadTable()
-    }
-
-    public void loadView(String prefix, String namespace, String view) {
-//        asViewCatalog.loadView()
     }
 
     public void registerTable(String prefix, String namespace, Object icebergRegisterTableRequest) {
@@ -97,14 +85,6 @@ public class DRAFTIcebergCatalogAdapter {
 
     public void renameTable(String prefix, Object icebergRenameTableRequest) {
 //        catalog.renameTable();
-    }
-
-    public void renameView(String prefix, Object icebergRenameTableRequest) {
-//        asViewCatalog.renameView();
-    }
-
-    public void replaceView(String prefix, String namespace, String view, Object icebergCommitViewRequest) {
-//        catalog.newReplaceTableTransaction()
     }
 
     public void tableExists(String prefix, String namespace, String table) {
@@ -138,9 +118,5 @@ public class DRAFTIcebergCatalogAdapter {
 
     public void updateTable(String prefix, String namespace, String table, Object icebergCommitTableRequest) {
         // todo
-    }
-
-    public void viewExists(String prefix, String namespace, String view) {
-//        asViewCatalog.viewExists()
     }
 }
