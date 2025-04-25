@@ -3,6 +3,7 @@ package kasanari.catalog.iceberg.nessie;
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.model.IcebergCatalog;
 import kasanari.catalog.iceberg.core.model.IcebergNamespace;
+import kasanari.catalog.iceberg.core.model.IcebergTable;
 import kasanari.catalog.iceberg.core.model.IcebergView;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -179,6 +180,48 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
         var currentMetadata = ops.current();
 
         return toIcebergViewMetadata(view.namespace(), currentMetadata);
+    }
+
+    @Override
+    public boolean tableExists(IcebergNamespace.Name namespace, IcebergTable.Name name) {
+        var identifier = TableIdentifier.of(Namespace.of(namespace.levels()), name.value());
+        return catalog.tableExists(identifier);
+    }
+
+    @Override
+    public void dropTable(IcebergTable table, boolean purge) {
+        catalog.dropTable(table.toIceberg(), purge);
+    }
+
+    @Override
+    public IcebergTable.Listing listTables(IcebergNamespace.Name namespace, IcebergTable.Listing.Filter filter) {
+        var namespaceIdentifier = Namespace.of(namespace.levels());
+
+        var views = catalog.listTables(namespaceIdentifier);
+
+        var pageToken = filter.pageToken().orElse("");
+        var start = "".equals(pageToken) ? 0 : Integer.parseInt(pageToken);
+        var end = start + filter.pageSize().orElse(0);
+
+        var nextToken = Optional.of(String.valueOf(end));
+        var subList = views.subList(start, end).stream().map(it -> new IcebergTable(namespace, new IcebergTable.Name(it.name()))).toList();
+
+        if (end >= views.size()) {
+            nextToken = Optional.empty();
+        }
+
+        return new IcebergTable.Listing(subList, nextToken);
+    }
+
+    public void createTable(IcebergTable.CreateRequest request) {
+        var identifier = TableIdentifier.of(Namespace.of(request.namespace().levels()), request.name().value());
+        catalog.createTable(
+                identifier,
+                request.schema(),
+                null,
+                request.location().value(),
+                request.properties()
+        );
     }
 
     private SQLViewRepresentation asSQLViewRepresentation(ViewRepresentation value) {

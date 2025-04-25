@@ -112,7 +112,7 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
     }
 
     public record Listing(
-            List<IcebergView> namespaces,
+            List<IcebergView> views,
             Optional<String> nextPageToken
     ) {
         public record Filter(
@@ -134,6 +134,7 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
             );
         }
 
+        // https://github.com/apache/iceberg/blob/main/open-api/rest-catalog-open-api.yaml#L3185
         public sealed interface Requirement
                 permits Requirement.AssertViewUUID {
             UpdateRequirement toIceberg();
@@ -146,6 +147,7 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
             }
         }
 
+        // https://github.com/apache/iceberg/blob/main/open-api/rest-catalog-open-api.yaml#L3035
         public sealed interface Update permits
                 Update.AssignUUIDUpdate,
                 Update.UpgradeFormatVersionUpdate,

@@ -67,14 +67,6 @@ public class DRAFTIcebergCatalogAdapter {
 //        catalog.createTable()
     }
 
-    public void dropTable(String prefix, String namespace, String table, Boolean purgeRequested) {
-//        catalog.dropTable()
-    }
-
-    public void listTables(String prefix, String namespace, String pageToken, Integer pageSize) {
-//        catalog.listTables()
-    }
-
     public void loadTable(String prefix, String namespace, String table, String xIcebergAccessDelegation, String ifNoneMatch, String snapshots) {
 //        catalog.loadTable()
     }
@@ -85,10 +77,6 @@ public class DRAFTIcebergCatalogAdapter {
 
     public void renameTable(String prefix, Object icebergRenameTableRequest) {
 //        catalog.renameTable();
-    }
-
-    public void tableExists(String prefix, String namespace, String table) {
-//        catalog.tableExists()
     }
 
     public void updateProperties(String prefix, String namespace, Object icebergUpdateNamespacePropertiesRequest) {

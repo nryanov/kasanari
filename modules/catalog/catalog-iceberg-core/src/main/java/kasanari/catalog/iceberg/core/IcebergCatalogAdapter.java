@@ -1,6 +1,7 @@
 package kasanari.catalog.iceberg.core;
 
 import kasanari.catalog.iceberg.core.model.IcebergNamespace;
+import kasanari.catalog.iceberg.core.model.IcebergTable;
 import kasanari.catalog.iceberg.core.model.IcebergView;
 
 public interface IcebergCatalogAdapter {
@@ -27,4 +28,10 @@ public interface IcebergCatalogAdapter {
     void dropView(IcebergView view);
 
     IcebergView.Metadata replaceView(IcebergView view, IcebergView.UpdateRequest rq);
+
+    boolean tableExists(IcebergNamespace.Name namespace, IcebergTable.Name name);
+
+    void dropTable(IcebergTable table, boolean purge);
+
+    IcebergTable.Listing listTables(IcebergNamespace.Name namespace, IcebergTable.Listing.Filter filter);
 }
