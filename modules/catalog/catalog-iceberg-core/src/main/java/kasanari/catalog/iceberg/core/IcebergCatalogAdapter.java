@@ -2,6 +2,7 @@ package kasanari.catalog.iceberg.core;
 
 import kasanari.catalog.iceberg.core.model.IcebergNamespace;
 import kasanari.catalog.iceberg.core.model.IcebergTable;
+import kasanari.catalog.iceberg.core.model.IcebergValues;
 import kasanari.catalog.iceberg.core.model.IcebergView;
 
 public interface IcebergCatalogAdapter {
@@ -34,4 +35,14 @@ public interface IcebergCatalogAdapter {
     void dropTable(IcebergTable table, boolean purge);
 
     IcebergTable.Listing listTables(IcebergNamespace.Name namespace, IcebergTable.Listing.Filter filter);
+
+    void createTable(IcebergTable.CreateRequest rq);
+
+    void renameTable(IcebergTable from, IcebergTable to);
+
+    IcebergTable.LoadedTable registerTable(IcebergTable table, IcebergValues.Location location);
+
+    IcebergTable.Commit updateTable(IcebergTable table, IcebergTable.UpdateRequest rq);
+
+    IcebergTable.LoadedTable loadTable(IcebergTable table);
 }

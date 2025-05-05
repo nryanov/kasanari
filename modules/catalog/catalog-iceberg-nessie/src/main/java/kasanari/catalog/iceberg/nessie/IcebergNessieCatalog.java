@@ -3,8 +3,13 @@ package kasanari.catalog.iceberg.nessie;
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.model.IcebergCatalog;
 import kasanari.catalog.iceberg.core.model.IcebergNamespace;
+import kasanari.catalog.iceberg.core.model.IcebergSnapshot;
 import kasanari.catalog.iceberg.core.model.IcebergTable;
+import kasanari.catalog.iceberg.core.model.IcebergValues;
 import kasanari.catalog.iceberg.core.model.IcebergView;
+import org.apache.iceberg.BaseTable;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitFailedException;
@@ -16,7 +21,9 @@ import org.apache.iceberg.view.View;
 import org.apache.iceberg.view.ViewMetadata;
 import org.apache.iceberg.view.ViewRepresentation;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -213,14 +220,84 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
         return new IcebergTable.Listing(subList, nextToken);
     }
 
+    @Override
     public void createTable(IcebergTable.CreateRequest request) {
         var identifier = TableIdentifier.of(Namespace.of(request.namespace().levels()), request.name().value());
-        catalog.createTable(
-                identifier,
-                request.schema(),
-                null,
-                request.location().value(),
-                request.properties()
+
+        catalog
+                .buildTable(identifier, request.schema())
+                .withLocation(request.location().value())
+                .withProperties(request.properties())
+                .withPartitionSpec(request.partitionSpecification().toIceberg(request.schema()))
+                .withSortOrder(request.sortSpecification().toIceberg(request.schema()))
+                .create();
+    }
+
+    @Override
+    public void renameTable(IcebergTable from, IcebergTable to) {
+        catalog.renameTable(from.toIceberg(), to.toIceberg());
+    }
+
+    @Override
+    public IcebergTable.LoadedTable registerTable(IcebergTable table, IcebergValues.Location location) {
+        catalog.registerTable(table.toIceberg(), location.value());
+
+        var loadedTable = asBaseTable(catalog.loadTable(table.toIceberg()));
+        var metadata = loadedTable.operations().current();
+        return new IcebergTable.LoadedTable(toIcebergTableMetadata(table.namespace(), metadata));
+    }
+
+    @Override
+    public IcebergTable.LoadedTable loadTable(IcebergTable table) {
+        var loadedTable = asBaseTable(catalog.loadTable(table.toIceberg()));
+        var metadata = loadedTable.operations().current();
+        return new IcebergTable.LoadedTable(toIcebergTableMetadata(table.namespace(), metadata));
+    }
+
+    @Override
+    public IcebergTable.Commit updateTable(IcebergTable table, IcebergTable.UpdateRequest rq) {
+        var identifier = table.toIceberg();
+        var loadedTable = asBaseTable(catalog.loadTable(identifier));
+        var ops = loadedTable.operations();
+
+        var updates = rq.toIceberg(identifier);
+        var isRetry = new AtomicBoolean(false);
+        Tasks.foreach(ops)
+                .retry(COMMIT_NUM_RETRIES_DEFAULT) // todo: configure
+                .exponentialBackoff(
+                        COMMIT_MIN_RETRY_WAIT_MS_DEFAULT,
+                        COMMIT_MAX_RETRY_WAIT_MS_DEFAULT,
+                        COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT,
+                        2.0
+                ) // todo: configure
+                .onlyRetryOn(CommitFailedException.class)
+                .run(task -> {
+                    var base = isRetry.get() ? task.refresh() : task.current();
+                    isRetry.set(true);
+
+                    // validate request
+                    try {
+                        updates.requirements().forEach(it -> it.validate(base));
+                    } catch (CommitFailedException e) {
+                        // to avoid unnecessary retry
+                        throw new IllegalStateException("Unsatisfied requirement"); // todo: domain error
+                    }
+
+                    var metadataBuilder = TableMetadata.buildFrom(base);
+                    updates.updates().forEach(it -> it.applyTo(metadataBuilder));
+                    var updated = metadataBuilder.build();
+
+                    if (!updated.changes().isEmpty()) {
+                        // commit only if changes is not empty
+                        task.commit(base, updated);
+                    }
+                });
+
+        var currentMetadata = ops.current();
+
+        return new IcebergTable.Commit(
+                new IcebergValues.Location(currentMetadata.location()),
+                toIcebergTableMetadata(table.namespace(), currentMetadata)
         );
     }
 
@@ -232,12 +309,16 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
         return (BaseView) value;
     }
 
+    private BaseTable asBaseTable(Table value) {
+        return (BaseTable) value;
+    }
+
     private IcebergView.Metadata toIcebergViewMetadata(IcebergNamespace.Name namespace, ViewMetadata metadata) {
         var versions = metadata.versions().stream().map(it ->
                 new IcebergView.Metadata.Version(
-                        new IcebergView.Metadata.VersionId(it.versionId()),
-                        new IcebergView.Metadata.Timestamp(it.timestampMillis()),
-                        new IcebergView.Metadata.SchemaId(it.schemaId()),
+                        new IcebergValues.VersionId(it.versionId()),
+                        new IcebergValues.Timestamp(it.timestampMillis()),
+                        new IcebergValues.SchemaId(it.schemaId()),
                         it.summary(),
                         it.representations().stream().map(repr -> {
                             var sqlRepr = asSQLViewRepresentation(repr);
@@ -254,19 +335,143 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
         ).toList();
 
         var versionsHistory = metadata.history().stream().map(it -> new IcebergView.Metadata.HistoryEntry(
-                new IcebergView.Metadata.VersionId(it.versionId()),
-                new IcebergView.Metadata.Timestamp(it.timestampMillis())
+                new IcebergValues.VersionId(it.versionId()),
+                new IcebergValues.Timestamp(it.timestampMillis())
         )).toList();
 
         return new IcebergView.Metadata(
-                new IcebergView.Uuid(metadata.uuid()),
-                new IcebergView.Metadata.FormatVersion(metadata.formatVersion()),
-                new IcebergView.Location(metadata.location()),
-                new IcebergView.Metadata.VersionId(metadata.currentVersionId()),
+                new IcebergValues.Uuid(metadata.uuid()),
+                new IcebergValues.FormatVersion(metadata.formatVersion()),
+                new IcebergValues.Location(metadata.location()),
+                new IcebergValues.VersionId(metadata.currentVersionId()),
                 versions,
                 versionsHistory,
                 metadata.schemas(),
                 metadata.properties()
+        );
+    }
+
+    private IcebergTable.Metadata toIcebergTableMetadata(IcebergNamespace.Name namespace, TableMetadata metadata) {
+        var partitionSpecifications = metadata.specs().stream().map(it -> {
+            if (it.isPartitioned()) {
+                return new IcebergTable.PartitionSpecification.Partitioned(
+                        Optional.of(new IcebergTable.PartitionSpecification.Id(it.specId())),
+                        it
+                                .fields()
+                                .stream()
+                                .map(field -> new IcebergTable.PartitionSpecification.Partitioned.Field(
+                                        Optional.of(new IcebergValues.ColumnId(field.fieldId())),
+                                        new IcebergValues.SourceId(field.sourceId()),
+                                        new IcebergTable.PartitionSpecification.Partitioned.Field.Name(field.name()),
+                                        IcebergTable.Transform.fromIceberg(field.transform())
+
+                                ))
+                                .toList()
+                );
+            } else {
+                return (IcebergTable.PartitionSpecification) new IcebergTable.PartitionSpecification.Unpartitioned();
+            }
+        }).toList();
+
+        var sortOrderSpecifications = metadata.sortOrders().stream().map(it -> {
+            if (it.isSorted()) {
+                return new IcebergTable.SortSpecification.Sorted(
+                        new IcebergTable.SortSpecification.Id(it.orderId()),
+                        it.fields().stream().map(field -> new IcebergTable.SortSpecification.Sorted.Field(
+                                new IcebergValues.SourceId(field.sourceId()),
+                                IcebergTable.Transform.fromIceberg(field.transform()),
+                                IcebergTable.SortSpecification.Sorted.Direction.valueOf(field.direction().name().toUpperCase()),
+                                IcebergTable.SortSpecification.Sorted.NullOrder.valueOf(field.nullOrder().name().toUpperCase())
+
+                        )).toList()
+                );
+            } else {
+                return (IcebergTable.SortSpecification) new IcebergTable.SortSpecification.Unsorted();
+            }
+        }).toList();
+
+        var snapshots = metadata.snapshots().stream().map(it -> new IcebergSnapshot(
+                new IcebergSnapshot.Id(it.snapshotId()),
+                Optional.ofNullable(it.parentId()).map(IcebergSnapshot.Id::new),
+                new IcebergValues.SequenceNumber(it.sequenceNumber()),
+                new IcebergValues.Timestamp(it.timestampMillis()),
+                new IcebergValues.Location(it.manifestListLocation()),
+                new IcebergSnapshot.Summary(
+                        IcebergSnapshot.Summary.Operation.valueOf(it.operation().toUpperCase()),
+                        it.summary()
+                )
+        )).toList();
+
+        var snapshotReferences = new HashMap<String, IcebergSnapshot.Reference>();
+        metadata.refs().forEach((id, ref) -> {
+            var type = ref.isBranch() ? IcebergSnapshot.Reference.Type.BRANCH : IcebergSnapshot.Reference.Type.TAG;
+
+            snapshotReferences.put(id, new IcebergSnapshot.Reference(
+                    type,
+                    new IcebergSnapshot.Id(ref.snapshotId()),
+                    new IcebergSnapshot.Reference.KeepDuration(ref.maxRefAgeMs()),
+                    new IcebergSnapshot.Reference.KeepDuration(ref.maxSnapshotAgeMs()),
+                    new IcebergSnapshot.Reference.KeepCount(ref.minSnapshotsToKeep())
+            ));
+        });
+
+        var snapshotLog = metadata.snapshotLog().stream().map(it -> new IcebergSnapshot.Log(
+                new IcebergSnapshot.Id(it.snapshotId()),
+                new IcebergValues.Timestamp(it.timestampMillis())
+        )).toList();
+
+        var metadataLog = metadata.previousFiles().stream().map(it ->
+                new IcebergTable.Metadata.Log(
+                        new IcebergValues.Location(it.file()),
+                        new IcebergValues.Timestamp(it.timestampMillis())
+                )
+        ).toList();
+
+        var statistics = metadata.statisticsFiles().stream().map(it ->
+                new IcebergSnapshot.Statistics(
+                        new IcebergSnapshot.Id(it.snapshotId()),
+                        new IcebergValues.Location(it.path()),
+                        new IcebergValues.ByteSize(it.fileSizeInBytes()),
+                        new IcebergValues.ByteSize(it.fileFooterSizeInBytes()),
+                        it.blobMetadata().stream().map(blob -> new IcebergSnapshot.Statistics.BlobMetadata(
+                                new IcebergSnapshot.Statistics.BlobMetadata.Type(blob.type()),
+                                new IcebergSnapshot.Id(blob.sourceSnapshotId()),
+                                new IcebergValues.SequenceNumber(blob.sourceSnapshotSequenceNumber()),
+                                blob.fields().stream().map(IcebergSnapshot.Statistics.BlobMetadata.Field::new).toList(),
+                                blob.properties()
+                        )).toList()
+                )
+        ).toList();
+
+        var partitionStatistics = metadata.partitionStatisticsFiles().stream().map(it ->
+                new IcebergSnapshot.PartitionStatistics(
+                        new IcebergSnapshot.Id(it.snapshotId()),
+                        new IcebergValues.Location(it.path()),
+                        new IcebergValues.ByteSize(it.fileSizeInBytes())
+                )).toList();
+
+        return new IcebergTable.Metadata(
+                new IcebergValues.FormatVersion(metadata.formatVersion()),
+                new IcebergValues.Uuid(metadata.uuid()),
+                new IcebergValues.Location(metadata.location()),
+                new IcebergValues.Timestamp(metadata.lastUpdatedMillis()),
+                metadata.properties(),
+                metadata.schemas(),
+                new IcebergValues.SchemaId(metadata.currentSchemaId()),
+                new IcebergValues.ColumnId(metadata.lastColumnId()),
+                partitionSpecifications,
+                new IcebergTable.PartitionSpecification.Id(metadata.defaultSpecId()),
+                new IcebergTable.PartitionSpecification.Id(metadata.lastAssignedPartitionId()),
+                sortOrderSpecifications,
+                new IcebergTable.SortSpecification.Id(metadata.defaultSortOrderId()),
+                snapshots,
+                snapshotReferences,
+                new IcebergSnapshot.Id(metadata.currentSnapshot().snapshotId()),
+                new IcebergValues.SequenceNumber(metadata.lastSequenceNumber()),
+                snapshotLog,
+                metadataLog,
+                statistics,
+                partitionStatistics
         );
     }
 }

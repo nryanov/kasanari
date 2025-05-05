@@ -25,51 +25,30 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
     public record Name(String value) {
     }
 
-    public record Location(String value) {
-    }
-
     public record CreateRequest(
             IcebergNamespace.Name namespace,
             Name name,
-            Location location,
+            IcebergValues.Location location,
             Schema schema,
             Map<String, String> properties
     ) {
     }
 
-    public record Uuid(String value) {
-        public Uuid(UUID uuid) {
-            this(uuid.toString());
-        }
-    }
-
     public record Metadata(
-            Uuid uuid,
-            FormatVersion formatVersion,
-            Location location,
-            VersionId currentVersionId,
+            IcebergValues.Uuid uuid,
+            IcebergValues.FormatVersion formatVersion,
+            IcebergValues.Location location,
+            IcebergValues.VersionId currentVersionId,
             List<Version> versions,
             List<HistoryEntry> versionLog,
             List<Schema> schemas,
             Map<String, String> properties
     ) {
 
-        public record FormatVersion(int value) {
-        }
-
-        public record VersionId(int value) {
-        }
-
-        public record SchemaId(int value) {
-        }
-
-        public record Timestamp(long value) {
-        }
-
         public record Version(
-                VersionId versionId,
-                Timestamp timestampMs,
-                SchemaId schemaId,
+                IcebergValues.VersionId versionId,
+                IcebergValues.Timestamp timestampMs,
+                IcebergValues.SchemaId schemaId,
                 Map<String, String> summary,
                 List<Representation> representations,
                 Optional<IcebergCatalog.Name> defaultCatalog,
@@ -77,9 +56,9 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
         ) {
             public ViewVersion toIceberg() {
                 return ImmutableViewVersion.builder()
-                        .versionId(versionId.value)
-                        .timestampMillis(timestampMs.value)
-                        .schemaId(schemaId.value)
+                        .versionId(versionId.value())
+                        .timestampMillis(timestampMs.value())
+                        .schemaId(schemaId.value())
                         .summary(summary)
                         .defaultNamespace(Namespace.of(namespace.levels()))
                         .defaultCatalog(defaultCatalog.map(IcebergCatalog.Name::value).orElse(null))
@@ -107,7 +86,10 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
             }
         }
 
-        public record HistoryEntry(VersionId versionId, Timestamp timestampMs) {
+        public record HistoryEntry(
+                IcebergValues.VersionId versionId,
+                IcebergValues.Timestamp timestampMs
+        ) {
         }
     }
 
@@ -139,10 +121,10 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
                 permits Requirement.AssertViewUUID {
             UpdateRequirement toIceberg();
 
-            record AssertViewUUID(Uuid uuid) implements Requirement {
+            record AssertViewUUID(IcebergValues.Uuid uuid) implements Requirement {
                 @Override
                 public UpdateRequirement toIceberg() {
-                    return new UpdateRequirement.AssertViewUUID(uuid.value);
+                    return new UpdateRequirement.AssertViewUUID(uuid.value());
                 }
             }
         }
@@ -160,34 +142,32 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
 
             MetadataUpdate toIceberg();
 
-            record AssignUUIDUpdate(Uuid uuid) implements Update {
+            record AssignUUIDUpdate(IcebergValues.Uuid uuid) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
-                    return new MetadataUpdate.AssignUUID(uuid().value);
+                    return new MetadataUpdate.AssignUUID(uuid().value());
                 }
             }
 
-            record UpgradeFormatVersionUpdate(Metadata.FormatVersion version) implements Update {
+            record UpgradeFormatVersionUpdate(IcebergValues.FormatVersion version) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
-                    return new MetadataUpdate.UpgradeFormatVersion(version.value);
+                    return new MetadataUpdate.UpgradeFormatVersion(version.value());
                 }
             }
 
-            record AddSchemaUpdate(Schema schema, ColumnId lastColumnId) implements Update {
-                public record ColumnId(int value) {
-                }
+            record AddSchemaUpdate(Schema schema, IcebergValues.ColumnId lastColumnId) implements Update {
 
                 @Override
                 public MetadataUpdate toIceberg() {
-                    return new MetadataUpdate.AddSchema(schema, lastColumnId.value);
+                    return new MetadataUpdate.AddSchema(schema, lastColumnId.value());
                 }
             }
 
-            record SetLocationUpdate(Location location) implements Update {
+            record SetLocationUpdate(IcebergValues.Location location) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
-                    return new MetadataUpdate.SetLocation(location.value);
+                    return new MetadataUpdate.SetLocation(location.value());
                 }
             }
 
@@ -212,10 +192,10 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
                 }
             }
 
-            record SetCurrentViewVersionUpdate(Metadata.VersionId currentVersion) implements Update {
+            record SetCurrentViewVersionUpdate(IcebergValues.VersionId currentVersion) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
-                    return new MetadataUpdate.SetCurrentViewVersion(currentVersion.value);
+                    return new MetadataUpdate.SetCurrentViewVersion(currentVersion.value());
                 }
             }
         }

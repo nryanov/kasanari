@@ -63,22 +63,6 @@ public class DRAFTIcebergCatalogAdapter {
          */
     }
 
-    public void createTable(String prefix, String namespace, Object icebergCreateTableRequest, String xIcebergAccessDelegation) {
-//        catalog.createTable()
-    }
-
-    public void loadTable(String prefix, String namespace, String table, String xIcebergAccessDelegation, String ifNoneMatch, String snapshots) {
-//        catalog.loadTable()
-    }
-
-    public void registerTable(String prefix, String namespace, Object icebergRegisterTableRequest) {
-//        catalog.registerTable()
-    }
-
-    public void renameTable(String prefix, Object icebergRenameTableRequest) {
-//        catalog.renameTable();
-    }
-
     public void updateProperties(String prefix, String namespace, Object icebergUpdateNamespacePropertiesRequest) {
         /*
             Set<String> removals = Sets.newHashSet(request.removals());
@@ -102,9 +86,5 @@ public class DRAFTIcebergCatalogAdapter {
         .addRemoved(Sets.difference(removals, missing))
         .build();
          */
-    }
-
-    public void updateTable(String prefix, String namespace, String table, Object icebergCommitTableRequest) {
-        // todo
     }
 }
