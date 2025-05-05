@@ -8,12 +8,17 @@ import kasanari.catalog.iceberg.core.model.IcebergTable;
 import kasanari.catalog.iceberg.core.model.IcebergValues;
 import kasanari.catalog.iceberg.core.model.IcebergView;
 import org.apache.iceberg.BaseTable;
+import org.apache.iceberg.BaseTransaction;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableMetadata;
+import org.apache.iceberg.TableOperations;
+import org.apache.iceberg.Transaction;
+import org.apache.iceberg.Transactions;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.nessie.NessieCatalog;
+import org.apache.iceberg.rest.requests.UpdateTableRequest;
 import org.apache.iceberg.util.Tasks;
 import org.apache.iceberg.view.BaseView;
 import org.apache.iceberg.view.SQLViewRepresentation;
@@ -21,6 +26,7 @@ import org.apache.iceberg.view.View;
 import org.apache.iceberg.view.ViewMetadata;
 import org.apache.iceberg.view.ViewRepresentation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +44,10 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
     public IcebergNessieCatalog() {
         // todo: configure
         this.catalog = new NessieCatalog();
+    }
+
+    public void foo() {
+
     }
 
     @Override
@@ -278,8 +288,36 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
         var identifier = table.toIceberg();
         var loadedTable = asBaseTable(catalog.loadTable(identifier));
         var ops = loadedTable.operations();
-
         var updates = rq.toIceberg(identifier);
+
+        var currentMetadata = commitTableUpdates(updates, ops);
+
+        return new IcebergTable.Commit(
+                new IcebergValues.Location(currentMetadata.location()),
+                toIcebergTableMetadata(table.namespace(), currentMetadata)
+        );
+    }
+
+    @Override
+    public void commitTransaction(List<IcebergTable.Transaction> transactions) {
+        var awaitingTransactions = new ArrayList<Transaction>();
+
+        transactions.forEach(tx -> {
+            var tableIdentifier = tx.table().toIceberg();
+            var loadedTable = asBaseTable(catalog.loadTable(tableIdentifier));
+            var openedTx = Transactions.newTransaction(tableIdentifier.toString(), loadedTable.operations());
+            awaitingTransactions.add(openedTx);
+
+            var updates = tx.changes().toIceberg(tableIdentifier);
+            var ops = (BaseTransaction.TransactionTable) openedTx.table();
+
+            commitTableUpdates(updates, ops.operations());
+        });
+
+        awaitingTransactions.forEach(Transaction::commitTransaction);
+    }
+
+    private TableMetadata commitTableUpdates(UpdateTableRequest updates, TableOperations ops) {
         var isRetry = new AtomicBoolean(false);
         Tasks.foreach(ops)
                 .retry(COMMIT_NUM_RETRIES_DEFAULT) // todo: configure
@@ -312,12 +350,7 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
                     }
                 });
 
-        var currentMetadata = ops.current();
-
-        return new IcebergTable.Commit(
-                new IcebergValues.Location(currentMetadata.location()),
-                toIcebergTableMetadata(table.namespace(), currentMetadata)
-        );
+        return ops.current();
     }
 
     private SQLViewRepresentation asSQLViewRepresentation(ViewRepresentation value) {

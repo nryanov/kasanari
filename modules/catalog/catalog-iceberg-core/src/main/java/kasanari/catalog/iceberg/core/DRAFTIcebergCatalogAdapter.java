@@ -25,15 +25,11 @@ public class DRAFTIcebergCatalogAdapter {
         // ???
     }
 
-    public void getToken(String grantType, String scope, String clientId, String clientSecret, Object requestedTokenType, String subjectToken, Object subjectTokenType, String actorToken, Object actorTokenType) {
-        // ???
-    }
-
-    public void loadCredentials(String prefix, String namespace, String table) {
-        // ???
-    }
-
     public void reportMetrics(String prefix, String namespace, String table, Object icebergReportMetricsRequest) {
+        // ???
+    }
+
+    public void getToken(String grantType, String scope, String clientId, String clientSecret, Object requestedTokenType, String subjectToken, Object subjectTokenType, String actorToken, Object actorTokenType) {
         // ???
     }
 
@@ -41,25 +37,7 @@ public class DRAFTIcebergCatalogAdapter {
         // ???
     }
 
-    public void commitTransaction(String prefix, Object icebergCommitTransactionRequest) {
-        /*
-                List<Transaction> transactions = Lists.newArrayList();
-        Iterator var3 = request.tableChanges().iterator();
-
-        while(var3.hasNext()) {
-            UpdateTableRequest tableChange = (UpdateTableRequest)var3.next();
-            Table table = catalog.loadTable(tableChange.identifier());
-            if (!(table instanceof BaseTable)) {
-                throw new IllegalStateException("Cannot wrap catalog that does not produce BaseTable");
-            }
-
-            Transaction transaction = Transactions.newTransaction(tableChange.identifier().toString(), ((BaseTable)table).operations());
-            transactions.add(transaction);
-            BaseTransaction.TransactionTable txTable = (BaseTransaction.TransactionTable)transaction.table();
-            CatalogHandlers.commit(txTable.operations(), tableChange);
-        }
-
-        transactions.forEach(Transaction::commitTransaction);
-         */
+    public void loadCredentials(String prefix, String namespace, String table) {
+        // ???
     }
 }

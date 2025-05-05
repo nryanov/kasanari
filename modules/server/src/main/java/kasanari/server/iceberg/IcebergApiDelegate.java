@@ -8,16 +8,6 @@ import kasanari.api.iceberg.dto.*;
 @ApplicationScoped
 public class IcebergApiDelegate implements IcebergApi {
     @Override
-    public Uni<Void> cancelPlanning(String prefix, String namespace, String table, String planId) {
-        return null;
-    }
-
-    @Override
-    public Uni<Void> commitTransaction(String prefix, IcebergCommitTransactionRequest icebergCommitTransactionRequest) {
-        return null;
-    }
-
-    @Override
     public Uni<IcebergCreateNamespaceResponse> createNamespace(String prefix, IcebergCreateNamespaceRequest icebergCreateNamespaceRequest) {
         return null;
     }
@@ -44,16 +34,6 @@ public class IcebergApiDelegate implements IcebergApi {
 
     @Override
     public Uni<Void> dropView(String prefix, String namespace, String view) {
-        return null;
-    }
-
-    @Override
-    public Uni<IcebergFetchPlanningResult> fetchPlanningResult(String prefix, String namespace, String table, String planId) {
-        return null;
-    }
-
-    @Override
-    public Uni<IcebergFetchScanTasksResult> fetchScanTasks(String prefix, String namespace, String table, IcebergFetchScanTasksRequest icebergFetchScanTasksRequest) {
         return null;
     }
 
@@ -108,11 +88,6 @@ public class IcebergApiDelegate implements IcebergApi {
     }
 
     @Override
-    public Uni<IcebergPlanTableScanResult> planTableScan(String prefix, String namespace, String table, IcebergPlanTableScanRequest icebergPlanTableScanRequest) {
-        return null;
-    }
-
-    @Override
     public Uni<IcebergLoadTableResult> registerTable(String prefix, String namespace, IcebergRegisterTableRequest icebergRegisterTableRequest) {
         return null;
     }
@@ -133,11 +108,6 @@ public class IcebergApiDelegate implements IcebergApi {
     }
 
     @Override
-    public Uni<Void> reportMetrics(String prefix, String namespace, String table, IcebergReportMetricsRequest icebergReportMetricsRequest) {
-        return null;
-    }
-
-    @Override
     public Uni<Void> tableExists(String prefix, String namespace, String table) {
         return null;
     }
@@ -154,6 +124,40 @@ public class IcebergApiDelegate implements IcebergApi {
 
     @Override
     public Uni<Void> viewExists(String prefix, String namespace, String view) {
+        return null;
+    }
+
+
+//    ////////////////////////////////////////////////////////////
+
+
+    @Override
+    public Uni<Void> reportMetrics(String prefix, String namespace, String table, IcebergReportMetricsRequest icebergReportMetricsRequest) {
+        return null;
+    }
+
+    @Override
+    public Uni<IcebergPlanTableScanResult> planTableScan(String prefix, String namespace, String table, IcebergPlanTableScanRequest icebergPlanTableScanRequest) {
+        return null;
+    }
+
+    @Override
+    public Uni<IcebergFetchPlanningResult> fetchPlanningResult(String prefix, String namespace, String table, String planId) {
+        return null;
+    }
+
+    @Override
+    public Uni<IcebergFetchScanTasksResult> fetchScanTasks(String prefix, String namespace, String table, IcebergFetchScanTasksRequest icebergFetchScanTasksRequest) {
+        return null;
+    }
+
+    @Override
+    public Uni<Void> cancelPlanning(String prefix, String namespace, String table, String planId) {
+        return null;
+    }
+
+    @Override
+    public Uni<Void> commitTransaction(String prefix, IcebergCommitTransactionRequest icebergCommitTransactionRequest) {
         return null;
     }
 }

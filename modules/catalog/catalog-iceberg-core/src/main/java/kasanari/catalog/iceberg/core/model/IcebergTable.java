@@ -9,7 +9,6 @@ import org.apache.iceberg.UpdateRequirement;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
-import org.apache.iceberg.transforms.Transform;
 
 import java.util.List;
 import java.util.Map;
@@ -509,4 +508,9 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
                 IcebergValues.Timestamp timestamp
         ) {}
     }
+
+    public record Transaction(
+            IcebergTable table,
+            UpdateRequest changes
+    ) {}
 }
