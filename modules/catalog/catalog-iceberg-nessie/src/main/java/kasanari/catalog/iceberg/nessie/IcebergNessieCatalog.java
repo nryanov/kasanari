@@ -23,7 +23,6 @@ import org.apache.iceberg.view.ViewRepresentation;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -84,6 +83,26 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
         }
 
         return new IcebergNamespace.Listing(subList, nextToken);
+    }
+
+    @Override
+    public IcebergNamespace updateNamespace(IcebergNamespace.Name namespace, IcebergNamespace.Update rq) {
+        var removals = rq.removals();
+        var updates = rq.updates();
+
+        var namespaceIdentifier = namespace.toIceberg();
+
+        if (!updates.isEmpty()) {
+            catalog.setProperties(namespaceIdentifier, updates);
+        }
+
+        if (!removals.isEmpty()) {
+            catalog.removeProperties(namespaceIdentifier, removals);
+        }
+
+        var updatedProperties = catalog.loadNamespaceMetadata(namespaceIdentifier);
+
+        return new IcebergNamespace(namespace, updatedProperties);
     }
 
     @Override

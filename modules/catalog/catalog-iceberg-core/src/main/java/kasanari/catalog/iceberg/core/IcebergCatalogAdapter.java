@@ -16,6 +16,8 @@ public interface IcebergCatalogAdapter {
 
     IcebergNamespace.Listing listNamespaces(IcebergNamespace.Listing.Filter filter);
 
+    IcebergNamespace updateNamespace(IcebergNamespace.Name namespace, IcebergNamespace.Update rq);
+
     IcebergView.Metadata createView(IcebergView.CreateRequest createRq);
 
     boolean viewExists(IcebergNamespace.Name namespace, IcebergView.Name view);

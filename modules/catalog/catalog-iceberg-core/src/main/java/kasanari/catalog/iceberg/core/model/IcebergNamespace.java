@@ -1,8 +1,11 @@
 package kasanari.catalog.iceberg.core.model;
 
+import org.apache.iceberg.catalog.Namespace;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public record IcebergNamespace(
         Name name,
@@ -28,6 +31,10 @@ public record IcebergNamespace(
         public Name(String name) {
             this(name.split("[.]"));
         }
+
+        public Namespace toIceberg() {
+            return Namespace.of(levels);
+        }
     }
 
     public record Listing(
@@ -40,4 +47,9 @@ public record IcebergNamespace(
                 Optional<Integer> pageSize
         ) {}
     }
+
+    public record Update(
+            Set<String> removals,
+            Map<String, String> updates
+    ) {}
 }
