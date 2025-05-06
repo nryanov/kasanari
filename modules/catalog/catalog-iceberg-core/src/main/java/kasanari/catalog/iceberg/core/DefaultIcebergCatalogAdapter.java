@@ -1,6 +1,6 @@
-package kasanari.catalog.iceberg.nessie;
+package kasanari.catalog.iceberg.core;
 
-import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
+import kasanari.catalog.iceberg.core.exception.IcebergCatalogAdapterException;
 import kasanari.catalog.iceberg.core.model.IcebergCatalog;
 import kasanari.catalog.iceberg.core.model.IcebergNamespace;
 import kasanari.catalog.iceberg.core.model.IcebergSnapshot;
@@ -14,10 +14,12 @@ import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.Transactions;
+import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.catalog.ViewCatalog;
 import org.apache.iceberg.exceptions.CommitFailedException;
-import org.apache.iceberg.nessie.NessieCatalog;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
 import org.apache.iceberg.util.Tasks;
 import org.apache.iceberg.view.BaseView;
@@ -37,48 +39,51 @@ import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS_DEFAUL
 import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT;
 
+public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
+    private final Catalog catalog;
+    private final SupportsNamespaces namespaceCatalog;
+    private final ViewCatalog viewCatalog;
 
-public class IcebergNessieCatalog implements IcebergCatalogAdapter {
-    private final NessieCatalog catalog;
-
-    public IcebergNessieCatalog() {
-        // todo: configure
-        this.catalog = new NessieCatalog();
-    }
-
-    public void foo() {
-
+    public DefaultIcebergCatalogAdapter(Catalog catalog) {
+        this.catalog = catalog;
+        this.namespaceCatalog = catalog instanceof SupportsNamespaces ? (SupportsNamespaces) catalog : null;
+        this.viewCatalog = catalog instanceof ViewCatalog ? (ViewCatalog) catalog : null;
     }
 
     @Override
     public void createNamespace(IcebergNamespace namespace) {
-        catalog.createNamespace(Namespace.of(namespace.name().levels()), namespace.properties());
+        isNamespaceMethodAllowed("createNamespace");
+        namespaceCatalog.createNamespace(Namespace.of(namespace.name().levels()), namespace.properties());
     }
 
     @Override
     public void dropNamespace(IcebergNamespace.Name namespace) {
-        catalog.dropNamespace(Namespace.of(namespace.levels()));
+        isNamespaceMethodAllowed("dropNamespace");
+        namespaceCatalog.dropNamespace(Namespace.of(namespace.levels()));
     }
 
     @Override
     public IcebergNamespace loadNamespaceMetadata(IcebergNamespace.Name namespace) {
-        var metadata = catalog.loadNamespaceMetadata(Namespace.of(namespace.levels()));
+        isNamespaceMethodAllowed("loadNamespaceMetadata");
+        var metadata = namespaceCatalog.loadNamespaceMetadata(Namespace.of(namespace.levels()));
         return new IcebergNamespace(namespace, metadata);
     }
 
     @Override
     public boolean namespaceExists(IcebergNamespace.Name namespace) {
-        return catalog.namespaceExists(Namespace.of(namespace.levels()));
+        isNamespaceMethodAllowed("namespaceExists");
+        return namespaceCatalog.namespaceExists(Namespace.of(namespace.levels()));
     }
 
     @Override
     public IcebergNamespace.Listing listNamespaces(IcebergNamespace.Listing.Filter filter) {
+        isNamespaceMethodAllowed("listNamespaces");
         List<Namespace> namespaces;
 
         if (filter.parent().isEmpty()) {
-            namespaces = catalog.listNamespaces();
+            namespaces = namespaceCatalog.listNamespaces();
         } else {
-            namespaces = catalog.listNamespaces(Namespace.of(filter.parent().get()));
+            namespaces = namespaceCatalog.listNamespaces(Namespace.of(filter.parent().get()));
         }
 
         var pageToken = filter.pageToken().orElse("");
@@ -97,29 +102,31 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
 
     @Override
     public IcebergNamespace updateNamespace(IcebergNamespace.Name namespace, IcebergNamespace.Update rq) {
+        isNamespaceMethodAllowed("updateNamespace");
         var removals = rq.removals();
         var updates = rq.updates();
 
         var namespaceIdentifier = namespace.toIceberg();
 
         if (!updates.isEmpty()) {
-            catalog.setProperties(namespaceIdentifier, updates);
+            namespaceCatalog.setProperties(namespaceIdentifier, updates);
         }
 
         if (!removals.isEmpty()) {
-            catalog.removeProperties(namespaceIdentifier, removals);
+            namespaceCatalog.removeProperties(namespaceIdentifier, removals);
         }
 
-        var updatedProperties = catalog.loadNamespaceMetadata(namespaceIdentifier);
+        var updatedProperties = namespaceCatalog.loadNamespaceMetadata(namespaceIdentifier);
 
         return new IcebergNamespace(namespace, updatedProperties);
     }
 
     @Override
     public IcebergView.Metadata createView(IcebergView.CreateRequest rq) {
+        isViewMethodAllowed("createView");
         var identifier = TableIdentifier.of(Namespace.of(rq.namespace().levels()), rq.name().value());
 
-        var view = catalog
+        var view = viewCatalog
                 .buildView(identifier)
                 .withLocation(rq.location().value())
                 .withProperties(rq.properties())
@@ -133,27 +140,31 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
 
     @Override
     public boolean viewExists(IcebergNamespace.Name namespace, IcebergView.Name view) {
+        isViewMethodAllowed("viewExists");
         var identifier = TableIdentifier.of(Namespace.of(namespace.levels()), view.value());
-        return catalog.viewExists(identifier);
+        return viewCatalog.viewExists(identifier);
     }
 
     @Override
     public IcebergView.Metadata loadView(IcebergView view) {
-        var loadedView = asBaseView(catalog.loadView(view.toIceberg()));
+        isViewMethodAllowed("loadView");
+        var loadedView = asBaseView(viewCatalog.loadView(view.toIceberg()));
         var metadata = loadedView.operations().current();
         return toIcebergViewMetadata(view.namespace(), metadata);
     }
 
     @Override
     public void renameView(IcebergView from, IcebergView to) {
-        catalog.renameView(from.toIceberg(), to.toIceberg());
+        isViewMethodAllowed("renameView");
+        viewCatalog.renameView(from.toIceberg(), to.toIceberg());
     }
 
     @Override
     public IcebergView.Listing listViews(IcebergNamespace.Name namespace, IcebergView.Listing.Filter filter) {
+        isViewMethodAllowed("listViews");
         var namespaceIdentifier = Namespace.of(namespace.levels());
 
-        var views = catalog.listViews(namespaceIdentifier);
+        var views = viewCatalog.listViews(namespaceIdentifier);
 
         var pageToken = filter.pageToken().orElse("");
         var start = "".equals(pageToken) ? 0 : Integer.parseInt(pageToken);
@@ -171,13 +182,15 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
 
     @Override
     public void dropView(IcebergView view) {
-        catalog.dropView(view.toIceberg());
+        isViewMethodAllowed("dropView");
+        viewCatalog.dropView(view.toIceberg());
     }
 
     @Override
     public IcebergView.Metadata replaceView(IcebergView view, IcebergView.UpdateRequest rq) {
+        isViewMethodAllowed("replaceView");
         var identifier = view.toIceberg();
-        var loadedView = asBaseView(catalog.loadView(identifier));
+        var loadedView = asBaseView(viewCatalog.loadView(identifier));
         var ops = loadedView.operations();
 
         var updates = rq.toIceberg(identifier);
@@ -525,5 +538,17 @@ public class IcebergNessieCatalog implements IcebergCatalogAdapter {
                 statistics,
                 partitionStatistics
         );
+    }
+
+    private void isViewMethodAllowed(String method) {
+        if (viewCatalog == null) {
+            throw IcebergCatalogAdapterException.UnsupportedMethod.view(method);
+        }
+    }
+
+    private void isNamespaceMethodAllowed(String method) {
+        if (namespaceCatalog == null) {
+            throw IcebergCatalogAdapterException.UnsupportedMethod.namespace(method);
+        }
     }
 }
