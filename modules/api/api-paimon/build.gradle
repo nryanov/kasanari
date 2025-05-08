@@ -16,10 +16,11 @@ openApiValidate {
 }
 
 // https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-spec.md
+// https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-gradle-plugin
 openApiGenerate {
     var properties = new HashMap<String, String>()
-    properties.put("supportAsync", "true")
-    properties.put("useMutiny", "true")
+    properties.put("supportAsync", "false")
+    properties.put("useMutiny", "false")
     properties.put("useMicroProfileOpenAPIAnnotations", "true")
     properties.put("useBeanValidation", "false")
     properties.put("hideGenerationTimestamp", "true")
@@ -33,6 +34,7 @@ openApiGenerate {
     properties.put("apiPackage", "kasanari.api.paimon")
     properties.put("modelPackage", "kasanari.api.paimon.dto")
     properties.put("modelNamePrefix", "Paimon")
+    properties.put("modelNameSuffix", "Dto")
     properties.put("generateApiTests", "false")
     properties.put("useJakartaEe", "true")
     properties.put("generateConstructorWithAllArgs", "true")

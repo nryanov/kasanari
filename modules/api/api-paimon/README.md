@@ -5,3 +5,11 @@ To overcome it use after enum definition in openapi.yaml `x-enum-varnames: ["val
 
 ## Version
 - 1.0.0
+
+## Generate
+```shell
+# iceberg
+./gradlew :modules:api:api-iceberg:openApiGenerate
+# paimon
+./gradlew :modules:api:api-paimon:openApiGenerate
+```

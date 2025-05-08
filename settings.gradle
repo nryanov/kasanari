@@ -19,6 +19,8 @@ include(
 
         'modules:catalog',
         'modules:catalog:catalog-iceberg-core',
+        'modules:catalog:catalog-iceberg-hadoop',
+        'modules:catalog:catalog-iceberg-inmemory',
         'modules:catalog:catalog-iceberg-hive',
         'modules:catalog:catalog-iceberg-nessie',
         'modules:catalog:catalog-iceberg-rest',
@@ -40,6 +42,8 @@ findProject(':modules:api:api-paimon')?.name = 'api-paimon'
 findProject(':modules:server')?.name = 'server'
 findProject(':modules:catalog')?.name = 'catalog'
 findProject(':modules:catalog:catalog-iceberg-core')?.name = 'catalog-iceberg-core'
+findProject(':modules:catalog:catalog-iceberg-hadoop')?.name = 'catalog-iceberg-hadoop'
+findProject(':modules:catalog:catalog-iceberg-inmemory')?.name = 'catalog-iceberg-inmemory'
 findProject(':modules:catalog:catalog-iceberg-hive')?.name = 'catalog-iceberg-hive'
 findProject(':modules:catalog:catalog-iceberg-nessie')?.name = 'catalog-iceberg-nessie'
 findProject(':modules:catalog:catalog-iceberg-rest')?.name = 'catalog-iceberg-rest'

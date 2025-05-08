@@ -1,3 +1,6 @@
 dependencies {
     api libs.iceberg.core
+
+    testImplementation libs.junit
+    testImplementation libs.junit.engine
 }

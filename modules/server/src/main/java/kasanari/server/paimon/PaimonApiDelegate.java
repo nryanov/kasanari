@@ -1,6 +1,5 @@
 package kasanari.server.paimon;
 
-import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import kasanari.api.paimon.PaimonApi;
 import kasanari.api.paimon.dto.*;
@@ -8,32 +7,32 @@ import kasanari.api.paimon.dto.*;
 @ApplicationScoped
 public class PaimonApiDelegate implements PaimonApi {
     @Override
-    public Uni<PaimonAlterDatabaseResponse> alterDatabase(String prefix, String database, PaimonAlterDatabaseRequest paimonAlterDatabaseRequest) {
+    public PaimonAlterDatabaseResponseDto alterDatabase(String prefix, String database, PaimonAlterDatabaseRequestDto paimonAlterDatabaseRequestDto) {
         return null;
     }
 
     @Override
-    public Uni<PaimonCreateDatabaseResponse> createDatabases(String prefix, PaimonCreateDatabaseRequest paimonCreateDatabaseRequest) {
+    public PaimonCreateDatabaseResponseDto createDatabases(String prefix, PaimonCreateDatabaseRequestDto paimonCreateDatabaseRequestDto) {
         return null;
     }
 
     @Override
-    public Uni<Void> dropDatabase(String prefix, String database) {
+    public void dropDatabase(String prefix, String database) {
+
+    }
+
+    @Override
+    public PaimonConfigResponseDto getConfig() {
         return null;
     }
 
     @Override
-    public Uni<PaimonConfigResponse> getConfig() {
+    public PaimonGetDatabaseResponseDto getDatabases(String prefix, String database) {
         return null;
     }
 
     @Override
-    public Uni<PaimonGetDatabaseResponse> getDatabases(String prefix, String database) {
-        return null;
-    }
-
-    @Override
-    public Uni<PaimonListDatabasesResponse> listDatabases(String prefix) {
+    public PaimonListDatabasesResponseDto listDatabases(String prefix) {
         return null;
     }
 }

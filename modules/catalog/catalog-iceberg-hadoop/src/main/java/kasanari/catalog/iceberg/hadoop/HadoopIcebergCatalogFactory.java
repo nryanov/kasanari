@@ -1,17 +1,17 @@
-package kasanari.catalog.iceberg.hive;
+package kasanari.catalog.iceberg.hadoop;
 
 import kasanari.catalog.iceberg.core.DefaultIcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.IcebergCatalogFactory;
-import org.apache.iceberg.hive.HiveCatalog;
+import org.apache.iceberg.hadoop.HadoopCatalog;
 
 import java.util.Map;
 
-public class HiveIcebergCatalogFactory implements IcebergCatalogFactory {
+public class HadoopIcebergCatalogFactory implements IcebergCatalogFactory {
     @Override
     public IcebergCatalogAdapter create(Map<String, String> properties) {
-        var catalog = new HiveCatalog();
-        catalog.initialize("hive", properties);
+        var catalog = new HadoopCatalog();
+        catalog.initialize("hadoop", properties);
         return new DefaultIcebergCatalogAdapter(catalog);
     }
 }
