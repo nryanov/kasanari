@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS_DEFAULT;
@@ -126,14 +127,34 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
         isViewMethodAllowed("createView");
         var identifier = TableIdentifier.of(Namespace.of(rq.namespace().levels()), rq.name().value());
 
-        var view = viewCatalog
+        var viewBuilder = viewCatalog
                 .buildView(identifier)
                 .withLocation(rq.location().value())
                 .withProperties(rq.properties())
-                .withSchema(rq.schema())
-                .withDefaultNamespace(identifier.namespace())
-                .create();
-        var baseView = asBaseView(view);
+                .withSchema(rq.schema().value())
+                .withDefaultNamespace(identifier.namespace());
+
+
+        var icebergViewVersion = rq.version().toIceberg();
+
+        var unsupportedRepresentations =
+                icebergViewVersion.representations().stream()
+                        .filter(r -> !(r instanceof SQLViewRepresentation))
+                        .map(ViewRepresentation::type)
+                        .collect(Collectors.toSet());
+
+        // todo: domain error
+        if (!unsupportedRepresentations.isEmpty()) {
+            throw new IllegalStateException(
+                    String.format("Found unsupported view representations: %s", unsupportedRepresentations));
+        }
+
+        icebergViewVersion.representations().stream()
+                .filter(SQLViewRepresentation.class::isInstance)
+                .map(SQLViewRepresentation.class::cast)
+                .forEach(it -> viewBuilder.withQuery(it.dialect(), it.sql()));
+
+        var baseView = asBaseView(viewBuilder.create());
 
         return toIcebergViewMetadata(rq.namespace(), baseView.operations().current());
     }
@@ -167,8 +188,8 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
         var views = viewCatalog.listViews(namespaceIdentifier);
 
         var pageToken = filter.pageToken().orElse("");
-        var start = pageToken.isEmpty() ? 0 : Integer.parseInt(pageToken);
-        var end = start + filter.pageSize().orElse(0);
+        var start = Math.min(views.size(), pageToken.isEmpty() ? 0 : Integer.parseInt(pageToken));
+        var end = Math.min(views.size(), start + filter.pageSize().orElse(0));
 
         var nextToken = Optional.of(String.valueOf(end));
         var subList = views.subList(start, end).stream().map(it -> new IcebergView(namespace, new IcebergView.Name(it.name()))).toList();
@@ -246,16 +267,16 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
     public IcebergTable.Listing listTables(IcebergNamespace.Name namespace, IcebergTable.Listing.Filter filter) {
         var namespaceIdentifier = Namespace.of(namespace.levels());
 
-        var views = catalog.listTables(namespaceIdentifier);
+        var tables = catalog.listTables(namespaceIdentifier);
 
         var pageToken = filter.pageToken().orElse("");
-        var start = "".equals(pageToken) ? 0 : Integer.parseInt(pageToken);
-        var end = start + filter.pageSize().orElse(0);
+        var start = Math.min(tables.size(), pageToken.isEmpty() ? 0 : Integer.parseInt(pageToken));
+        var end = Math.min(tables.size(), start + filter.pageSize().orElse(0));
 
         var nextToken = Optional.of(String.valueOf(end));
-        var subList = views.subList(start, end).stream().map(it -> new IcebergTable(namespace, new IcebergTable.Name(it.name()))).toList();
+        var subList = tables.subList(start, end).stream().map(it -> new IcebergTable(namespace, new IcebergTable.Name(it.name()))).toList();
 
-        if (end >= views.size()) {
+        if (end >= tables.size()) {
             nextToken = Optional.empty();
         }
 
@@ -267,7 +288,7 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
         var identifier = TableIdentifier.of(Namespace.of(request.namespace().levels()), request.name().value());
 
         catalog
-                .buildTable(identifier, request.schema())
+                .buildTable(identifier, request.schema().value())
                 .withLocation(request.location().value())
                 .withProperties(request.properties())
                 .withPartitionSpec(request.partitionSpecification().toIceberg(request.schema()))
@@ -411,7 +432,7 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
                 new IcebergValues.VersionId(metadata.currentVersionId()),
                 versions,
                 versionsHistory,
-                metadata.schemas(),
+                metadata.schemas().stream().map(IcebergValues.Schema::new).toList(),
                 metadata.properties()
         );
     }
@@ -521,7 +542,7 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
                 new IcebergValues.Location(metadata.location()),
                 new IcebergValues.Timestamp(metadata.lastUpdatedMillis()),
                 metadata.properties(),
-                metadata.schemas(),
+                metadata.schemas().stream().map(IcebergValues.Schema::new).toList(),
                 new IcebergValues.SchemaId(metadata.currentSchemaId()),
                 new IcebergValues.ColumnId(metadata.lastColumnId()),
                 partitionSpecifications,

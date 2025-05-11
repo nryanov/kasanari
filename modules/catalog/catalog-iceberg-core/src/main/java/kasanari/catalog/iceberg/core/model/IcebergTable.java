@@ -2,7 +2,6 @@ package kasanari.catalog.iceberg.core.model;
 
 import org.apache.iceberg.MetadataUpdate;
 import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortDirection;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.UpdateRequirement;
@@ -32,13 +31,18 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
                 Optional<String> pageToken,
                 Optional<Integer> pageSize
         ) {
+            public final static int DEFAULT_PAGE_SIZE = 20;
+
+            public Filter() {
+                this(Optional.empty(), Optional.of(DEFAULT_PAGE_SIZE));
+            }
         }
     }
 
     public record CreateRequest(
             IcebergNamespace.Name namespace,
             Name name,
-            Schema schema,
+            IcebergValues.Schema schema,
             IcebergValues.Location location,
             PartitionSpecification partitionSpecification,
             SortSpecification sortSpecification,
@@ -49,11 +53,11 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
         record Id(int value) {
         }
 
-        SortOrder toIceberg(Schema schema);
+        SortOrder toIceberg(IcebergValues.Schema schema);
 
         record Unsorted() implements SortSpecification {
             @Override
-            public SortOrder toIceberg(Schema schema) {
+            public SortOrder toIceberg(IcebergValues.Schema schema) {
                 return SortOrder.unsorted();
             }
         }
@@ -63,13 +67,13 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
                 List<Field> fields
         ) implements SortSpecification {
             @Override
-            public SortOrder toIceberg(Schema schema) {
+            public SortOrder toIceberg(IcebergValues.Schema schema) {
                 var builder = SortOrder
-                        .builderFor(schema)
+                        .builderFor(schema.value())
                         .withOrderId(id.value);
 
                 fields.forEach(field -> {
-                    var nestedField = schema.findField(field.sourceId.value());
+                    var nestedField = schema.value().findField(field.sourceId.value());
                     builder.sortBy(nestedField.name(), field.direction.icebergDirection, field.nullOrder.icebergNullOrder);
                 });
 
@@ -112,11 +116,11 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
     public sealed interface PartitionSpecification permits PartitionSpecification.Partitioned, PartitionSpecification.Unpartitioned {
         record Id(int value) {}
 
-        PartitionSpec toIceberg(Schema schema);
+        PartitionSpec toIceberg(IcebergValues.Schema schema);
 
         record Unpartitioned() implements PartitionSpecification {
             @Override
-            public PartitionSpec toIceberg(Schema schema) {
+            public PartitionSpec toIceberg(IcebergValues.Schema schema) {
                 return PartitionSpec.unpartitioned();
             }
         }
@@ -126,8 +130,8 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
                 List<Field> fields
         ) implements PartitionSpecification {
             @Override
-            public PartitionSpec toIceberg(Schema schema) {
-                var builder = PartitionSpec.builderFor(schema);
+            public PartitionSpec toIceberg(IcebergValues.Schema schema) {
+                var builder = PartitionSpec.builderFor(schema.value());
 
                 specId.ifPresent(it -> builder.withSpecId(it.value));
                 fields.forEach(field -> {
@@ -264,10 +268,10 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
                 }
             }
 
-            record AddSchemaUpdate(Schema schema, IcebergValues.ColumnId lastColumnId) implements Update {
+            record AddSchemaUpdate(IcebergValues.Schema schema, IcebergValues.ColumnId lastColumnId) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
-                    return new MetadataUpdate.AddSchema(schema, lastColumnId.value());
+                    return new MetadataUpdate.AddSchema(schema.value(), lastColumnId.value());
                 }
             }
 
@@ -278,7 +282,7 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
                 }
             }
 
-            record AddPartitionSpecUpdate(Schema schema, PartitionSpecification partitionSpecification) implements Update {
+            record AddPartitionSpecUpdate(IcebergValues.Schema schema, PartitionSpecification partitionSpecification) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
                     return new MetadataUpdate.AddPartitionSpec(partitionSpecification.toIceberg(schema));
@@ -292,7 +296,7 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
                 }
             }
 
-            record AddSortOrderUpdate(Schema schema, SortSpecification sortSpecification) implements Update {
+            record AddSortOrderUpdate(IcebergValues.Schema schema, SortSpecification sortSpecification) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
                     return new MetadataUpdate.AddSortOrder(sortSpecification.toIceberg(schema));
@@ -486,7 +490,7 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
             IcebergValues.Location location,
             IcebergValues.Timestamp lastUpdated,
             Map<String, String> properties,
-            List<Schema> schemas,
+            List<IcebergValues.Schema> schemas,
             IcebergValues.SchemaId currentSchemaId,
             IcebergValues.ColumnId lastColumnId,
             List<PartitionSpecification> partitionSpecifications,

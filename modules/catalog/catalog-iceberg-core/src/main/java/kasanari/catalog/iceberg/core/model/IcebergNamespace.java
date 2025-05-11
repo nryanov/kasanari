@@ -5,6 +5,7 @@ import org.apache.iceberg.catalog.Namespace;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -42,6 +43,18 @@ public record IcebergNamespace(
             return "Name{" +
                     "levels=" + Arrays.toString(levels) +
                     '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            Name name = (Name) o;
+            return Objects.deepEquals(levels, name.levels);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(levels);
         }
     }
 

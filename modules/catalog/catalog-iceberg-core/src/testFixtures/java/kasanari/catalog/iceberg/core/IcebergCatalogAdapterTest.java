@@ -1,12 +1,15 @@
 package kasanari.catalog.iceberg.core;
 
 import kasanari.catalog.iceberg.core.model.IcebergNamespace;
+import kasanari.catalog.iceberg.core.model.IcebergValues;
+import kasanari.catalog.iceberg.core.model.IcebergView;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -123,5 +126,190 @@ public abstract class IcebergCatalogAdapterTest {
         ));
 
         assertEquals(expectedNamespace, loadedNamespace);
+    }
+
+    @Test
+    public void correctlyPaginateNamespaceListing() {
+        var namespaceName1 = new IcebergNamespace.Name("ns7.1");
+        var namespace1 = new IcebergNamespace(namespaceName1, Map.of());
+        var namespaceName2 = new IcebergNamespace.Name("ns7.2");
+        var namespace2 = new IcebergNamespace(namespaceName2, Map.of());
+
+        catalog.createNamespace(namespace1);
+        catalog.createNamespace(namespace2);
+
+        var filter1 = new IcebergNamespace.Listing.Filter(
+                Optional.of("ns7"),
+                Optional.empty(),
+                Optional.of(1)
+        );
+        var page1 = catalog.listNamespaces(filter1);
+
+        assertEquals(List.of(namespaceName1), page1.namespaces());
+
+        var filter2 = new IcebergNamespace.Listing.Filter(
+                Optional.of("ns7"),
+                page1.nextPageToken(),
+                Optional.of(1)
+        );
+
+        var page2 = catalog.listNamespaces(filter2);
+        assertEquals(List.of(namespaceName2), page2.namespaces());
+    }
+
+    @Test
+    public void returnFalseIfViewDoesNotExist() {
+        var namespaceName = new IcebergNamespace.Name("ns_view1");
+        var namespace = new IcebergNamespace(namespaceName, Map.of());
+        catalog.createNamespace(namespace);
+
+        var view = new IcebergView.Name("view");
+        var result = catalog.viewExists(namespaceName, view);
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void returnEmptyViewListing() {
+        var namespaceName = new IcebergNamespace.Name("ns_view2");
+        var namespace = new IcebergNamespace(namespaceName, Map.of());
+        catalog.createNamespace(namespace);
+
+        var filter = new IcebergView.Listing.Filter();
+        var result = catalog.listViews(namespaceName, filter);
+
+        assertTrue(result.views().isEmpty());
+    }
+
+    @Test
+    public void successfullyCreateView() {
+        var namespaceName = new IcebergNamespace.Name("ns_view3");
+        var namespace = new IcebergNamespace(namespaceName, Map.of());
+        catalog.createNamespace(namespace);
+
+        var viewName = new IcebergView.Name("view");
+        var view = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
+        catalog.createView(view);
+
+        var result = catalog.viewExists(namespaceName, view.name());
+        assertTrue(result);
+    }
+
+    @Test
+    public void successfullyDropView() {
+        var namespaceName = new IcebergNamespace.Name("ns_view4");
+        var namespace = new IcebergNamespace(namespaceName, Map.of());
+        catalog.createNamespace(namespace);
+
+        var viewName = new IcebergView.Name("view");
+        var view = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
+        catalog.createView(view);
+
+        assertTrue(catalog.viewExists(namespaceName, view.name()));
+
+        catalog.dropView(new IcebergView(namespaceName, view.name()));
+
+        var resultAfterDelete = catalog.viewExists(namespaceName, view.name());
+        assertFalse(resultAfterDelete);
+    }
+
+    @Test
+    public void returnNonEmptyListOfViews() {
+        var namespaceName = new IcebergNamespace.Name("ns_view5");
+        var namespace = new IcebergNamespace(namespaceName, Map.of());
+        catalog.createNamespace(namespace);
+
+        var viewName = new IcebergView.Name("view");
+        var view = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
+        catalog.createView(view);
+
+        var filter = new IcebergView.Listing.Filter();
+        var result = catalog.listViews(namespaceName, filter);
+
+        var expectedView = new IcebergView(namespaceName, viewName);
+        assertEquals(List.of(expectedView), result.views());
+    }
+
+    @Test
+    public void successfullyRenameView() {
+        var namespaceName = new IcebergNamespace.Name("ns_view6");
+        var namespace = new IcebergNamespace(namespaceName, Map.of());
+        catalog.createNamespace(namespace);
+
+        var viewName = new IcebergView.Name("view");
+        var view = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
+        catalog.createView(view);
+
+        var newViewName = new IcebergView.Name("renamed_view");
+
+        var oldView = new IcebergView(namespaceName, viewName);
+        var newView = new IcebergView(namespaceName, newViewName);
+
+        catalog.renameView(oldView, newView);
+
+        assertFalse(catalog.viewExists(namespaceName, oldView.name()));
+        assertTrue(catalog.viewExists(namespaceName, newView.name()));
+    }
+
+    @Test
+    public void successfullyLoadView() {
+        var namespaceName = new IcebergNamespace.Name("ns_view7");
+        var namespace = new IcebergNamespace(namespaceName, Map.of());
+        catalog.createNamespace(namespace);
+
+        var viewName = new IcebergView.Name("view");
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
+        catalog.createView(rq);
+
+        var view = new IcebergView(namespaceName, viewName);
+        var result = catalog.loadView(view);
+
+        assertEquals(new IcebergValues.VersionId(1), result.currentVersionId());
+        assertEquals(new IcebergValues.Location("location"), result.location());
+        assertEquals(new IcebergValues.FormatVersion(1), result.formatVersion());
+
+        assertEquals(1, result.versions().size());
+        assertEquals(1, result.versionLog().size());
+
+        var resultVersion = result.versions().getFirst();
+
+        assertEquals(1, resultVersion.representations().size());
+
+        var resultVersionRepresentation = resultVersion.representations().getFirst();
+
+        assertEquals(new IcebergView.Metadata.Version.Representation(
+                new IcebergView.Metadata.Version.Representation.Type("sql"),
+                new IcebergView.Metadata.Version.Representation.Sql("select * from table"),
+                new IcebergView.Metadata.Version.Representation.Dialect("sql")
+        ), resultVersionRepresentation);
+
+        var resultVersionLog = result.versionLog().getFirst();
+
+        assertEquals(new IcebergValues.VersionId(1), resultVersionLog.versionId());
+
+        assertEquals(1, result.schemas().size());
+    }
+
+    @Test
+    public void successfullyReplaceView() {
+        var namespaceName = new IcebergNamespace.Name("ns_view8");
+        var namespace = new IcebergNamespace(namespaceName, Map.of());
+        catalog.createNamespace(namespace);
+
+        var viewName = new IcebergView.Name("view");
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
+        var metadata = catalog.createView(rq);
+
+        var view = new IcebergView(namespaceName, viewName);
+        var updateRq = new IcebergView.UpdateRequest(
+                List.of(new IcebergView.UpdateRequest.Requirement.AssertViewUUID(metadata.uuid())),
+                List.of(new IcebergView.UpdateRequest.Update.SetLocationUpdate(new IcebergValues.Location("newLocation")))
+        );
+
+        catalog.replaceView(view, updateRq);
+
+        var result = catalog.loadView(view);
+
+        assertEquals(new IcebergValues.Location("newLocation"), result.location());
     }
 }

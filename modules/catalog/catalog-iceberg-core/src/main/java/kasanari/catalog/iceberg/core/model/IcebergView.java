@@ -1,7 +1,6 @@
 package kasanari.catalog.iceberg.core.model;
 
 import org.apache.iceberg.MetadataUpdate;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.UpdateRequirement;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 public record IcebergView(IcebergNamespace.Name namespace, Name name) {
     public TableIdentifier toIceberg() {
@@ -29,7 +27,8 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
             IcebergNamespace.Name namespace,
             Name name,
             IcebergValues.Location location,
-            Schema schema,
+            IcebergValues.Schema schema,
+            Metadata.Version version,
             Map<String, String> properties
     ) {
     }
@@ -41,7 +40,7 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
             IcebergValues.VersionId currentVersionId,
             List<Version> versions,
             List<HistoryEntry> versionLog,
-            List<Schema> schemas,
+            List<IcebergValues.Schema> schemas,
             Map<String, String> properties
     ) {
 
@@ -101,6 +100,11 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
                 Optional<String> pageToken,
                 Optional<Integer> pageSize
         ) {
+            public final static int DEFAULT_PAGE_SIZE = 20;
+
+            public Filter() {
+                this(Optional.empty(), Optional.of(DEFAULT_PAGE_SIZE));
+            }
         }
     }
 
@@ -156,11 +160,11 @@ public record IcebergView(IcebergNamespace.Name namespace, Name name) {
                 }
             }
 
-            record AddSchemaUpdate(Schema schema, IcebergValues.ColumnId lastColumnId) implements Update {
+            record AddSchemaUpdate(IcebergValues.Schema schema, IcebergValues.ColumnId lastColumnId) implements Update {
 
                 @Override
                 public MetadataUpdate toIceberg() {
-                    return new MetadataUpdate.AddSchema(schema, lastColumnId.value());
+                    return new MetadataUpdate.AddSchema(schema.value(), lastColumnId.value());
                 }
             }
 

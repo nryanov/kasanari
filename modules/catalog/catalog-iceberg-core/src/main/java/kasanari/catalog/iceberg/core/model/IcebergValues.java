@@ -1,5 +1,7 @@
 package kasanari.catalog.iceberg.core.model;
 
+import org.apache.iceberg.SchemaParser;
+
 import java.util.UUID;
 
 public final class IcebergValues {
@@ -36,5 +38,11 @@ public final class IcebergValues {
     public record ByteSize(long value) {}
 
     public record SourceId(int value) {
+    }
+
+    public record Schema(org.apache.iceberg.Schema value) {
+        public Schema(String json) {
+            this(SchemaParser.fromJson(json));
+        }
     }
 }
