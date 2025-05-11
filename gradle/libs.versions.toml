@@ -5,6 +5,7 @@ jandex = "1.0.0"
 iceberg = "1.7.1"
 # test dependencies
 junit = "5.12.2"
+junit-platform = "1.12.2"
 testcontainers = "1.21.0"
 
 
@@ -18,8 +19,9 @@ iceberg-nessie = { group = "org.apache.iceberg", name = "iceberg-nessie", versio
 iceberg-hive = { group = "org.apache.iceberg", name = "iceberg-hive-runtime", version.ref = "iceberg" }
 
 # test dependencies
-junit = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit" }
-junit-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }
+junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit" }
+junit = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit-platform" }
 
 testcontainers-core = { group = "org.testcontainers", name = "testcontainers", version.ref = "testcontainers" }
 testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql", version.ref = "testcontainers" }

@@ -87,8 +87,8 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
         }
 
         var pageToken = filter.pageToken().orElse("");
-        var start = "".equals(pageToken) ? 0 : Integer.parseInt(pageToken);
-        var end = start + filter.pageSize().orElse(0);
+        var start = Math.min(namespaces.size(), pageToken.isEmpty() ? 0 : Integer.parseInt(pageToken));
+        var end = Math.min(namespaces.size(), start + filter.pageSize().orElse(0));
 
         var nextToken = Optional.of(String.valueOf(end));
         var subList = namespaces.subList(start, end).stream().map(it -> new IcebergNamespace.Name(it.levels())).toList();
@@ -167,7 +167,7 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
         var views = viewCatalog.listViews(namespaceIdentifier);
 
         var pageToken = filter.pageToken().orElse("");
-        var start = "".equals(pageToken) ? 0 : Integer.parseInt(pageToken);
+        var start = pageToken.isEmpty() ? 0 : Integer.parseInt(pageToken);
         var end = start + filter.pageSize().orElse(0);
 
         var nextToken = Optional.of(String.valueOf(end));
@@ -550,5 +550,10 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
         if (namespaceCatalog == null) {
             throw IcebergCatalogAdapterException.UnsupportedMethod.namespace(method);
         }
+    }
+
+    @Override
+    public Catalog delegate() {
+        return catalog;
     }
 }

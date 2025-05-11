@@ -2,6 +2,7 @@ package kasanari.catalog.iceberg.core.model;
 
 import org.apache.iceberg.catalog.Namespace;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,6 +36,13 @@ public record IcebergNamespace(
         public Namespace toIceberg() {
             return Namespace.of(levels);
         }
+
+        @Override
+        public String toString() {
+            return "Name{" +
+                    "levels=" + Arrays.toString(levels) +
+                    '}';
+        }
     }
 
     public record Listing(
@@ -45,7 +53,14 @@ public record IcebergNamespace(
                 Optional<String> parent,
                 Optional<String> pageToken,
                 Optional<Integer> pageSize
-        ) {}
+        ) {
+            public final static int DEFAULT_PAGE_SIZE = 20;
+
+
+            public Filter() {
+                this(Optional.empty(), Optional.empty(), Optional.of(DEFAULT_PAGE_SIZE));
+            }
+        }
     }
 
     public record Update(

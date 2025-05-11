@@ -4,6 +4,7 @@ import kasanari.catalog.iceberg.core.model.IcebergNamespace;
 import kasanari.catalog.iceberg.core.model.IcebergTable;
 import kasanari.catalog.iceberg.core.model.IcebergValues;
 import kasanari.catalog.iceberg.core.model.IcebergView;
+import org.apache.iceberg.catalog.Catalog;
 
 import java.util.List;
 
@@ -51,4 +52,6 @@ public interface IcebergCatalogAdapter {
     IcebergTable.LoadedTable loadTable(IcebergTable table);
 
     void commitTransaction(List<IcebergTable.Transaction> transactions);
+
+    Catalog delegate();
 }

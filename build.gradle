@@ -25,6 +25,12 @@ subprojects {
         useJUnitPlatform()
     }
 
+    dependencies {
+        testImplementation platform(libs.junit.bom)
+        testImplementation libs.junit
+        testRuntimeOnly libs.junit.platform.launcher
+    }
+
     compileJava {
         options.encoding = 'UTF-8'
         options.compilerArgs << '-parameters'
