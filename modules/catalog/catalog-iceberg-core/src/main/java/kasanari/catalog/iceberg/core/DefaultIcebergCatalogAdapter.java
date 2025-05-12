@@ -284,16 +284,20 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public void createTable(IcebergTable.CreateRequest request) {
+    public IcebergTable.LoadedTable createTable(IcebergTable.CreateRequest request) {
         var identifier = TableIdentifier.of(Namespace.of(request.namespace().levels()), request.name().value());
 
-        catalog
+        var createdTable = catalog
                 .buildTable(identifier, request.schema().value())
                 .withLocation(request.location().value())
                 .withProperties(request.properties())
                 .withPartitionSpec(request.partitionSpecification().toIceberg(request.schema()))
                 .withSortOrder(request.sortSpecification().toIceberg(request.schema()))
                 .create();
+
+        var icebergTable = asBaseTable(createdTable);
+        var metadata = icebergTable.operations().current();
+        return new IcebergTable.LoadedTable(toIcebergTableMetadata(request.namespace(), metadata));
     }
 
     @Override
@@ -552,7 +556,7 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
                 new IcebergTable.SortSpecification.Id(metadata.defaultSortOrderId()),
                 snapshots,
                 snapshotReferences,
-                new IcebergSnapshot.Id(metadata.currentSnapshot().snapshotId()),
+                Optional.ofNullable(metadata.currentSnapshot()).map(it -> new IcebergSnapshot.Id(it.snapshotId())),
                 new IcebergValues.SequenceNumber(metadata.lastSequenceNumber()),
                 snapshotLog,
                 metadataLog,

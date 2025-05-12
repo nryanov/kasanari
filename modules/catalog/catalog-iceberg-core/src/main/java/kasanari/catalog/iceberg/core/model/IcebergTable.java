@@ -185,11 +185,11 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
                     var maybeTruncate = TRUNCATE.matcher(literal);
 
                     if (maybeBucket.find()) {
-                        yield new Transform.Bucket(Integer.parseInt(maybeBucket.group(0)));
+                        yield new Transform.Bucket(Integer.parseInt(maybeBucket.group(1)));
                     }
 
                     if (maybeTruncate.find()) {
-                        yield new Transform.Truncate(Integer.parseInt(maybeTruncate.group(0)));
+                        yield new Transform.Truncate(Integer.parseInt(maybeTruncate.group(1)));
                     }
 
                     throw new IllegalArgumentException("Unknown partition type");
@@ -500,7 +500,7 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
             SortSpecification.Id defaultSortOderdId,
             List<IcebergSnapshot> snapshots,
             Map<String, IcebergSnapshot.Reference> snapshotRefs,
-            IcebergSnapshot.Id currentSnapshotId,
+            Optional<IcebergSnapshot.Id> currentSnapshotId,
             IcebergValues.SequenceNumber lastSequenceNumber,
             List<IcebergSnapshot.Log> snapshotLogs,
             List<Log> metadataLog,

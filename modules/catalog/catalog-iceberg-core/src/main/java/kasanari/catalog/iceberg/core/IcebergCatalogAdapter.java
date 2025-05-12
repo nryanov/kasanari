@@ -41,7 +41,7 @@ public interface IcebergCatalogAdapter {
 
     IcebergTable.Listing listTables(IcebergNamespace.Name namespace, IcebergTable.Listing.Filter filter);
 
-    void createTable(IcebergTable.CreateRequest rq);
+    IcebergTable.LoadedTable createTable(IcebergTable.CreateRequest rq);
 
     void renameTable(IcebergTable from, IcebergTable to);
 
