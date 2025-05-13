@@ -7,6 +7,7 @@ import kasanari.catalog.iceberg.core.model.IcebergView;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -482,5 +483,98 @@ public abstract class IcebergCatalogAdapterTest {
 
         assertFalse(catalog.tableExists(namespaceName, oldTable.name()));
         assertTrue(catalog.tableExists(namespaceName, newTable.name()));
+    }
+
+    @Test
+    public void successfullyUpdateTable() {
+        var namespaceName = new IcebergNamespace.Name("ns_table8");
+        var namespace = new IcebergNamespace(namespaceName, Map.of());
+        catalog.createNamespace(namespace);
+
+        var tableName = new IcebergTable.Name("table");
+        var rq = new IcebergTable.CreateRequest(
+                namespaceName,
+                tableName,
+                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
+                new IcebergValues.Location("location"),
+                new IcebergTable.PartitionSpecification.Unpartitioned(),
+                new IcebergTable.SortSpecification.Unsorted(),
+                Map.of(
+                        "custom-property", "value"
+                )
+        );
+
+        var createdTableMetadata = catalog.createTable(rq);
+
+        var update = new IcebergTable.UpdateRequest(
+                List.of(
+                        new IcebergTable.UpdateRequest.Requirement.AssertTableUuid(createdTableMetadata.metadata().uuid())
+                ),
+                List.of(
+                        new IcebergTable.UpdateRequest.Update.SetPropertiesUpdate(
+                                Map.of("custom-property", "updated-value")
+                        )
+                )
+        );
+
+        var table = new IcebergTable(namespaceName, tableName);
+        var commit = catalog.updateTable(table, update);
+        var updatedTable = catalog.loadTable(table);
+
+        assertNotEquals(createdTableMetadata.metadata().lastUpdated(), commit.metadata().lastUpdated());
+        assertEquals("value", createdTableMetadata.metadata().properties().get("custom-property"));
+        assertEquals("updated-value", updatedTable.metadata().properties().get("custom-property"));
+    }
+
+    @Test
+    public void successfullyLoadTable() {
+        var namespaceName = new IcebergNamespace.Name("ns_table9");
+        var namespace = new IcebergNamespace(namespaceName, Map.of());
+        catalog.createNamespace(namespace);
+
+        var tableName = new IcebergTable.Name("table");
+        var rq = new IcebergTable.CreateRequest(
+                namespaceName,
+                tableName,
+                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
+                new IcebergValues.Location("location"),
+                new IcebergTable.PartitionSpecification.Unpartitioned(),
+                new IcebergTable.SortSpecification.Unsorted(),
+                Map.of()
+        );
+
+        var createdTable = catalog.createTable(rq);
+        var table = new IcebergTable(namespaceName, tableName);
+        var loadedTable = catalog.loadTable(table);
+
+        assertEquals(createdTable.metadata().uuid(), loadedTable.metadata().uuid());
+    }
+
+    @Test
+    @Disabled() // todo: fix it
+    public void successfullyRegisterTable() {
+        var namespaceName = new IcebergNamespace.Name("ns_table10");
+        var namespace = new IcebergNamespace(namespaceName, Map.of());
+        catalog.createNamespace(namespace);
+
+        var tableName = new IcebergTable.Name("table");
+        var registeredTableName = new IcebergTable.Name("registered-table");
+
+        var location = new IcebergValues.Location("location");
+
+        var rq = new IcebergTable.CreateRequest(
+                namespaceName,
+                tableName,
+                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
+                location,
+                new IcebergTable.PartitionSpecification.Unpartitioned(),
+                new IcebergTable.SortSpecification.Unsorted(),
+                Map.of()
+        );
+
+        catalog.createTable(rq);
+
+        var table = new IcebergTable(namespaceName, registeredTableName);
+        var registeredTable = catalog.registerTable(table, location);
     }
 }
