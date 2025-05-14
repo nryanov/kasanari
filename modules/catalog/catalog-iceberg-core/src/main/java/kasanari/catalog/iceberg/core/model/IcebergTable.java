@@ -1,7 +1,9 @@
 package kasanari.catalog.iceberg.core.model;
 
+import org.apache.iceberg.IcebergConverters;
 import org.apache.iceberg.MetadataUpdate;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SortDirection;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.UpdateRequirement;
@@ -231,6 +233,9 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
             );
         }
 
+        /*
+         */
+
         // https://github.com/apache/iceberg/blob/main/open-api/rest-catalog-open-api.yaml#L3010
         public sealed interface Update permits
                 Update.AssignUuidUpdate,
@@ -250,8 +255,7 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
                 Update.RemovePropertiesUpdate,
                 Update.SetStatisticsUpdate,
                 Update.RemoveStatisticsUpdate,
-                Update.RemovePartitionSpecsUpdate,
-                Update.EnableRowLineageUpdate {
+                Update.RemovePartitionSpecsUpdate {
             MetadataUpdate toIceberg();
 
             record AssignUuidUpdate(IcebergValues.Uuid uuid) implements Update {
@@ -310,31 +314,38 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
                 }
             }
 
-            record AddSnapshotUpdate() implements Update {
+            record AddSnapshotUpdate(Snapshot icebergSnapshot) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
-                    throw new UnsupportedOperationException("AddSnapshotUpdate");
+                    return new MetadataUpdate.AddSnapshot(icebergSnapshot);
                 }
             }
 
-            record SetSnapshotRefUpdate() implements Update {
+            record SetSnapshotRefUpdate(IcebergSnapshot.Ref ref, IcebergSnapshot.Reference reference) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
-                    throw new UnsupportedOperationException("SetSnapshotRefUpdate");
+                    return new MetadataUpdate.SetSnapshotRef(
+                            ref.value(),
+                            reference.id().value(),
+                            IcebergConverters.toIceberg(reference.type()),
+                            reference.minSnapshotsToKeep().value(),
+                            reference.snapshotAge().value().toMillis(),
+                            reference.maxRefAge().value().toMillis()
+                    );
                 }
             }
 
-            record RemoveSnapshotsUpdate() implements Update {
+            record RemoveSnapshotsUpdate(IcebergSnapshot.Id id) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
-                    throw new UnsupportedOperationException("RemoveSnapshotsUpdate");
+                    return new MetadataUpdate.RemoveSnapshot(id.value());
                 }
             }
 
-            record RemoveSnapshotRefUpdate() implements Update {
+            record RemoveSnapshotRefUpdate(IcebergSnapshot.Ref ref) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
-                    return null;
+                    return new MetadataUpdate.RemoveSnapshotRef(ref.value());
                 }
             }
 
@@ -359,10 +370,10 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
                 }
             }
 
-            record SetStatisticsUpdate() implements Update {
+            record SetStatisticsUpdate(IcebergSnapshot.Id id, IcebergSnapshot.Statistics statistics) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
-                    throw new UnsupportedOperationException("SetStatisticsUpdate");
+                    return new MetadataUpdate.SetStatistics(id.value(), statistics.toIceberg());
                 }
             }
 
@@ -376,15 +387,7 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
             record RemovePartitionSpecsUpdate() implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
-                    // todo
-                    return new MetadataUpdate.AddPartitionSpec(PartitionSpec.unpartitioned());
-                }
-            }
-
-            record EnableRowLineageUpdate() implements Update {
-                @Override
-                public MetadataUpdate toIceberg() {
-                    throw new UnsupportedOperationException("EnableRowLineageUpdate");
+                    throw new UnsupportedOperationException("RemovePartitionSpecsUpdate");
                 }
             }
         }

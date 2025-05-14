@@ -1,5 +1,9 @@
 package kasanari.catalog.iceberg.core.model;
 
+import org.apache.iceberg.GenericBlobMetadata;
+import org.apache.iceberg.GenericStatisticsFile;
+import org.apache.iceberg.StatisticsFile;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +18,8 @@ public record IcebergSnapshot(
         Summary summary
 
 ) {
+    public record Ref(String value) {}
+
     public record Id(long value) {
     }
 
@@ -58,6 +64,22 @@ public record IcebergSnapshot(
             IcebergValues.ByteSize fileFooterSize,
             List<BlobMetadata> blobMetadata
     ) {
+        public StatisticsFile toIceberg() {
+            return new GenericStatisticsFile(
+                    snapshotId.value,
+                    path.value(),
+                    fileSize.value(),
+                    fileFooterSize.value(),
+                    blobMetadata.stream().<org.apache.iceberg.BlobMetadata>map(it -> new GenericBlobMetadata(
+                            it.type.value,
+                            it.snapshotId.value,
+                            it.sequenceNumber.value(),
+                            it.fields.stream().map(field -> field.value).toList(),
+                            it.additionalProperties
+                    )).toList()
+            );
+        }
+
         public record BlobMetadata(
                 Type type,
                 Id snapshotId,
