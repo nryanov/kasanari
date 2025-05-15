@@ -3,7 +3,6 @@ package kasanari.catalog.iceberg.core.model;
 import org.apache.iceberg.IcebergConverters;
 import org.apache.iceberg.MetadataUpdate;
 import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SortDirection;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.UpdateRequirement;
@@ -314,10 +313,10 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
                 }
             }
 
-            record AddSnapshotUpdate(Snapshot icebergSnapshot) implements Update {
+            record AddSnapshotUpdate(IcebergValues.SchemaId id, IcebergSnapshot snapshot) implements Update {
                 @Override
                 public MetadataUpdate toIceberg() {
-                    return new MetadataUpdate.AddSnapshot(icebergSnapshot);
+                    return new MetadataUpdate.AddSnapshot(IcebergConverters.toIceberg(id, snapshot));
                 }
             }
 

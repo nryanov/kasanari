@@ -577,4 +577,49 @@ public abstract class IcebergCatalogAdapterTest {
         var table = new IcebergTable(namespaceName, registeredTableName);
         var registeredTable = catalog.registerTable(table, location);
     }
+
+    @Test
+    public void successfullyCommitTransaction() {
+        var namespaceName = new IcebergNamespace.Name("ns_tx1");
+        var namespace = new IcebergNamespace(namespaceName, Map.of());
+        catalog.createNamespace(namespace);
+
+        var tableName = new IcebergTable.Name("table");
+        var location = new IcebergValues.Location("location");
+
+        var rq = new IcebergTable.CreateRequest(
+                namespaceName,
+                tableName,
+                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
+                location,
+                new IcebergTable.PartitionSpecification.Unpartitioned(),
+                new IcebergTable.SortSpecification.Unsorted(),
+                Map.of()
+        );
+
+        var table = new IcebergTable(namespaceName, tableName);
+        var createdTable = catalog.createTable(rq);
+
+        var transaction = List.of(
+                new IcebergTable.Transaction(
+                        table,
+                        new IcebergTable.UpdateRequest(
+                                List.of(
+                                        new IcebergTable.UpdateRequest.Requirement.AssertTableUuid(createdTable.metadata().uuid())
+                                ),
+                                List.of(
+                                        new IcebergTable.UpdateRequest.Update.SetPropertiesUpdate(
+                                                Map.of("transaction-property", "value")
+                                        )
+                                )
+                        )
+                )
+        );
+
+        catalog.commitTransaction(transaction);
+
+        var loadedTable = catalog.loadTable(table);
+
+        assertEquals("value", loadedTable.metadata().properties().get("transaction-property"));
+    }
 }
