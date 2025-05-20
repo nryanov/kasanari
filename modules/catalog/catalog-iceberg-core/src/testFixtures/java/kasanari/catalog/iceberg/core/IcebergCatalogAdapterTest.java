@@ -273,11 +273,11 @@ public abstract class IcebergCatalogAdapterTest {
         assertEquals(1, result.versions().size());
         assertEquals(1, result.versionLog().size());
 
-        var resultVersion = result.versions().getFirst();
+        var resultVersion = result.versions().get(0);
 
         assertEquals(1, resultVersion.representations().size());
 
-        var resultVersionRepresentation = resultVersion.representations().getFirst();
+        var resultVersionRepresentation = resultVersion.representations().get(0);
 
         assertEquals(new IcebergView.Metadata.Version.Representation(
                 new IcebergView.Metadata.Version.Representation.Type("sql"),
@@ -285,7 +285,7 @@ public abstract class IcebergCatalogAdapterTest {
                 new IcebergView.Metadata.Version.Representation.Dialect("sql")
         ), resultVersionRepresentation);
 
-        var resultVersionLog = result.versionLog().getFirst();
+        var resultVersionLog = result.versionLog().get(0);
 
         assertEquals(new IcebergValues.VersionId(1), resultVersionLog.versionId());
 

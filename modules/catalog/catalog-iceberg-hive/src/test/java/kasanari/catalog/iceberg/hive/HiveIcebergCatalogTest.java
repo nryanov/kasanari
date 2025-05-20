@@ -2,13 +2,11 @@ package kasanari.catalog.iceberg.hive;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapterTest;
-import org.junit.jupiter.api.Disabled;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.util.Map;
 
-@Disabled("getSubject is supported only if a security manager is allowed. Java version <= 17")
 public class HiveIcebergCatalogTest extends IcebergCatalogAdapterTest {
     private final GenericContainer hive = new GenericContainer<>(DockerImageName.parse("apache/hive:4.0.0"))
             .withExposedPorts(9083)

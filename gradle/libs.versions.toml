@@ -20,6 +20,8 @@ quarkus-jackson = { group = "io.quarkus", name = "quarkus-rest-jackson" }
 quarkus-openapi = { group = "io.quarkus", name = "quarkus-smallrye-openapi" }
 
 iceberg-core = { group = "org.apache.iceberg", name = "iceberg-core", version.ref = "iceberg" }
+iceberg-api = { group = "org.apache.iceberg", name = "iceberg-api", version.ref = "iceberg" }
+iceberg-common = { group = "org.apache.iceberg", name = "iceberg-common", version.ref = "iceberg" }
 iceberg-nessie = { group = "org.apache.iceberg", name = "iceberg-nessie", version.ref = "iceberg" }
 iceberg-hive = { group = "org.apache.iceberg", name = "iceberg-hive-runtime", version.ref = "iceberg" }
 

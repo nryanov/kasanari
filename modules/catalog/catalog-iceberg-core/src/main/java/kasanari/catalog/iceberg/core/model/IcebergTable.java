@@ -136,14 +136,21 @@ public record IcebergTable(IcebergNamespace.Name namespace, Name name) {
 
                 specId.ifPresent(it -> builder.withSpecId(it.value));
                 fields.forEach(field -> {
-                    switch (field.transform) {
-                        case Transform.Identity _ -> builder.identity(field.name.value);
-                        case Transform.Year _ -> builder.year(field.name.value);
-                        case Transform.Month _ -> builder.month(field.name.value);
-                        case Transform.Day _ -> builder.day(field.name.value);
-                        case Transform.Hour _ -> builder.hour(field.name.value);
-                        case Transform.Bucket bucket -> builder.bucket(field.name.value, bucket.buckets);
-                        case Transform.Truncate truncate -> builder.truncate(field.name.value, truncate.length);
+                    // jdk 17 is currently the maximum allowed version until hadoop libs are not updated properly
+                    if (field.transform instanceof Transform.Identity) {
+                        builder.identity(field.name.value);
+                    } else if (field.transform instanceof Transform.Year) {
+                        builder.year(field.name.value);
+                    } else if (field.transform instanceof Transform.Month) {
+                        builder.month(field.name.value);
+                    } else if (field.transform instanceof Transform.Day) {
+                        builder.day(field.name.value);
+                    } else if (field.transform instanceof Transform.Hour) {
+                        builder.hour(field.name.value);
+                    } else if (field.transform instanceof Transform.Bucket bucket) {
+                        builder.bucket(field.name.value, bucket.buckets);
+                    } else if (field.transform instanceof Transform.Truncate truncate) {
+                        builder.truncate(field.name.value, truncate.length);
                     }
                 });
 
