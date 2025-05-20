@@ -2,3 +2,7 @@
 
 Goal: implement REST catalogs for `Apache Iceberg` and `Apache Paimon` 
 which may act like a complete catalog implementation or just a proxy to other (like `hive`, `jdbc` or even another `rest` catalog implementation).
+
+## Testing
+### Docker issues
+- Colima: `sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock`

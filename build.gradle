@@ -26,6 +26,9 @@ subprojects {
     }
 
     dependencies {
+        implementation libs.slf4j
+
+        testImplementation libs.logback
         testImplementation platform(libs.junit.bom)
         testImplementation libs.junit
         testRuntimeOnly libs.junit.platform.launcher
