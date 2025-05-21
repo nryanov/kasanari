@@ -132,11 +132,14 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void correctlyPaginateNamespaceListing() {
+        var namespaceParentName = new IcebergNamespace.Name("ns7");
         var namespaceName1 = new IcebergNamespace.Name("ns7.1");
+        var namespaceParent = new IcebergNamespace(namespaceParentName, Map.of());
         var namespace1 = new IcebergNamespace(namespaceName1, Map.of());
         var namespaceName2 = new IcebergNamespace.Name("ns7.2");
         var namespace2 = new IcebergNamespace(namespaceName2, Map.of());
 
+        catalog.createNamespace(namespaceParent);
         catalog.createNamespace(namespace1);
         catalog.createNamespace(namespace2);
 

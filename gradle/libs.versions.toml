@@ -12,6 +12,7 @@ junit-platform = "1.12.2"
 testcontainers = "1.21.0"
 testcontainers-nessie = "0.104.1"
 logback = "1.5.18"
+jdbc-postgresql = "42.7.5"
 
 
 [libraries]
@@ -44,6 +45,8 @@ testcontainers-core = { group = "org.testcontainers", name = "testcontainers", v
 testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql", version.ref = "testcontainers" }
 testcontainers-minio = { group = "org.testcontainers", name = "minio", version.ref = "testcontainers" }
 testcontainers-nessie = { group = "org.projectnessie.nessie", name = "nessie-nessie-testcontainer", version.ref = "testcontainers-nessie" }
+
+jdbc-postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "jdbc-postgresql" }
 
 [plugins]
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }
