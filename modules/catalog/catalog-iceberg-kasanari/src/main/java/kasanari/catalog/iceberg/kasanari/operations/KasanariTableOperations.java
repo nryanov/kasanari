@@ -1,4 +1,4 @@
-package kasanari.catalog.iceberg.kasanari;
+package kasanari.catalog.iceberg.kasanari.operations;
 
 import org.apache.iceberg.BaseMetastoreTableOperations;
 import org.apache.iceberg.TableMetadata;

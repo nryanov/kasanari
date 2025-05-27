@@ -6,6 +6,8 @@ iceberg = "1.7.1"
 hadoop3 = "3.4.1"
 hive = { strictly = "2.3.9" }
 slfj4 = "2.0.17"
+jdbi = "3.49.4"
+agroal = "2.7.1"
 # test dependencies
 junit = "5.12.2"
 junit-platform = "1.12.2"
@@ -32,6 +34,9 @@ hadoop3-common = { group = "org.apache.hadoop", name = "hadoop-common", version.
 
 hive-metastore = { group = "org.apache.hive", name = "hive-metastore", version.ref = "hive" }
 hive-common = { group = "org.apache.hive", name = "hive-common", version.ref = "hive" }
+
+jdbi-core = { group = "org.jdbi", name = "jdbi3-core", version.ref = "jdbi" }
+agroal-pool = { group = "io.agroal", name = "agroal-pool", version.ref = "agroal" }
 
 slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slfj4" }
 logback = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }

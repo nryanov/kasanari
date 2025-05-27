@@ -3,4 +3,11 @@ dependencies {
 
     implementation libs.iceberg.api
     implementation libs.iceberg.common
+
+    implementation libs.jdbi.core
+    implementation libs.agroal.pool
+
+    testImplementation libs.jdbc.postgresql
+    testImplementation libs.testcontainers.postgresql
+    testImplementation testFixtures(project(':modules:catalog:catalog-iceberg-core'))
 }
