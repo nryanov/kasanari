@@ -6,6 +6,7 @@ import io.agroal.api.configuration.supplier.AgroalConnectionFactoryConfiguration
 import io.agroal.api.configuration.supplier.AgroalConnectionPoolConfigurationSupplier;
 import io.agroal.api.configuration.supplier.AgroalDataSourceConfigurationSupplier;
 import io.agroal.api.security.NamePrincipal;
+import io.agroal.api.security.SimplePassword;
 import io.agroal.pool.DataSource;
 import kasanari.catalog.iceberg.kasanari.KasanariCatalogProperties;
 import org.jdbi.v3.core.Jdbi;
@@ -24,7 +25,7 @@ public class KasanariDataSource {
 
         agroalConnectionFactoryConfiguration.jdbcUrl(dataSourceProperties.getUri());
         agroalConnectionFactoryConfiguration.principal(new NamePrincipal(dataSourceProperties.getUser()));
-        agroalConnectionFactoryConfiguration.credential(dataSourceProperties.getPassword());
+        agroalConnectionFactoryConfiguration.credential(new SimplePassword(dataSourceProperties.getPassword()));
         agroalConnectionFactoryConfiguration.jdbcTransactionIsolation(AgroalConnectionFactoryConfiguration.TransactionIsolation.READ_COMMITTED);
 
         var agroalConnectionPoolConfiguration = new AgroalConnectionPoolConfigurationSupplier();
@@ -107,5 +108,9 @@ public class KasanariDataSource {
 
             return mapper.apply(maybeValue);
         }
+    }
+
+    public Jdbi getJdbi() {
+        return jdbi;
     }
 }

@@ -1,38 +1,44 @@
 package kasanari.catalog.iceberg.kasanari.repository.jdbc;
 
 public class JdbcQueries {
-    private final static String CREATE_CATALOGS_DDL = """
+    public final static String CREATE_CATALOGS_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_iceberg_catalog
             (
                 catalog_name TEXT,
-                CONSTRAINT kasanari_iceberg_catalog PRIMARY KEY (catalog_name)
+                created_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT kasanari_iceberg_catalog_pk PRIMARY KEY (catalog_name)
             )
             """;
 
-    private final static String CREATE_NAMESPACES_DDL = """
+    public final static String CREATE_NAMESPACES_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_iceberg_namespaces
             (
                 catalog_name   TEXT,
                 namespace_name TEXT,
-                CONSTRAINT kasanari_iceberg_namespaces PRIMARY KEY (catalog_name, namespace_name),
-                CONSTRAINT kasanari_iceberg_namespaces_catalog_fk FOREIGN KEY (catalog_name) REFERENCES kasanari_iceberg_catalog (catalog_name)
+                created_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT kasanari_iceberg_namespaces_pk PRIMARY KEY (catalog_name, namespace_name),
+                CONSTRAINT kasanari_iceberg_namespaces_catalog_fk FOREIGN KEY (catalog_name) REFERENCES kasanari_iceberg_catalog (catalog_name) ON DELETE CASCADE
             )
             """;
 
-    private final static String CREATE_NAMESPACE_PROPERTIES_DDL = """
+    public final static String CREATE_NAMESPACE_PROPERTIES_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_iceberg_namespace_properties
             (
                 catalog_name   TEXT,
                 namespace_name TEXT,
                 property_key   TEXT,
                 property_value TEXT,
+                created_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 CONSTRAINT kasanari_iceberg_namespace_properties_pk PRIMARY KEY (catalog_name, namespace_name, property_key),
-                CONSTRAINT kasanari_iceberg_namespace_properties_catalog_fk FOREIGN KEY (catalog_name) REFERENCES kasanari_iceberg_catalog (catalog_name),
-                CONSTRAINT kasanari_iceberg_namespace_properties_namespace_fk FOREIGN KEY (namespace_name) REFERENCES kasanari_iceberg_namespaces (namespace_name)
+                CONSTRAINT kasanari_iceberg_namespace_properties_catalog_fk FOREIGN KEY (catalog_name) REFERENCES kasanari_iceberg_catalog (catalog_name) ON DELETE CASCADE,
+                CONSTRAINT kasanari_iceberg_namespace_properties_namespace_fk FOREIGN KEY (catalog_name, namespace_name) REFERENCES kasanari_iceberg_namespaces (catalog_name, namespace_name) ON DELETE CASCADE
             )
             """;
 
-    private final static String CREATE_TABLES_DDL = """
+    public final static String CREATE_TABLES_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_iceberg_tables
             (
                 catalog_name               TEXT,
@@ -40,13 +46,15 @@ public class JdbcQueries {
                 table_name                 TEXT,
                 metadata_location          TEXT,
                 previous_metadata_location TEXT,
+                created_at                 TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at                 TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 CONSTRAINT kasanari_iceberg_tables_pk PRIMARY KEY (catalog_name, namespace_name, table_name),
-                CONSTRAINT kasanari_iceberg_tables_catalog_fk FOREIGN KEY (catalog_name) REFERENCES kasanari_iceberg_catalog (catalog_name),
-                CONSTRAINT kasanari_iceberg_tables_namespace_fk FOREIGN KEY (namespace_name) REFERENCES kasanari_iceberg_namespaces (namespace_name)
+                CONSTRAINT kasanari_iceberg_tables_catalog_fk FOREIGN KEY (catalog_name) REFERENCES kasanari_iceberg_catalog (catalog_name) ON DELETE CASCADE,
+                CONSTRAINT kasanari_iceberg_tables_namespace_fk FOREIGN KEY (catalog_name, namespace_name) REFERENCES kasanari_iceberg_namespaces (catalog_name, namespace_name) ON DELETE CASCADE
             )
             """;
 
-    private final static String CREATE_VIEWS_DDL = """
+    public final static String CREATE_VIEWS_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_iceberg_views
             (
                 catalog_name               TEXT,
@@ -54,9 +62,16 @@ public class JdbcQueries {
                 view_name                  TEXT,
                 metadata_location          TEXT,
                 previous_metadata_location TEXT,
+                created_at                 TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at                 TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 CONSTRAINT kasanari_iceberg_views_pk PRIMARY KEY (catalog_name, namespace_name, view_name),
-                CONSTRAINT kasanari_iceberg_views_catalog_fk FOREIGN KEY (catalog_name) REFERENCES kasanari_iceberg_catalog (catalog_name),
-                CONSTRAINT kasanari_iceberg_views_namespace_fk FOREIGN KEY (namespace_name) REFERENCES kasanari_iceberg_namespaces (namespace_name)
+                CONSTRAINT kasanari_iceberg_views_catalog_fk FOREIGN KEY (catalog_name) REFERENCES kasanari_iceberg_catalog (catalog_name) ON DELETE CASCADE,
+                CONSTRAINT kasanari_iceberg_views_namespace_fk FOREIGN KEY (catalog_name, namespace_name) REFERENCES kasanari_iceberg_namespaces (catalog_name, namespace_name) ON DELETE CASCADE
             )
             """;
+
+    // to avoid creation of additional tuples on upsert
+    public final static String CHECK_IF_CATALOG_EXISTS = "SELECT EXISTS(SELECT 1 FROM kasanari_iceberg_catalog WHERE catalog_name = ?)";
+
+    public final static String REGISTER_CATALOG = "INSERT INTO kasanari_iceberg_catalog(catalog_name) VALUES (?)";
 }
