@@ -1,5 +1,6 @@
 package kasanari.catalog.iceberg.kasanari;
 
+import kasanari.catalog.iceberg.kasanari.repository.jdbc.JdbcTableInitializer;
 import kasanari.catalog.iceberg.kasanari.repository.jdbc.KasanariDataSource;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.Namespace;
@@ -16,23 +17,26 @@ import java.util.Map;
 import java.util.Set;
 
 public class KasanariCatalog extends BaseMetastoreViewCatalog implements SupportsNamespaces, Configurable<Object> {
-    private String name;
+    private String catalogName;
     private String warehouse;
     private KasanariDataSource dataSource;
 
     @Override
-    public void initialize(String name, Map<String, String> properties) {
-        this.name = name;
+    public void initialize(String catalogName, Map<String, String> properties) {
+        this.catalogName = catalogName;
         this.dataSource = new KasanariDataSource(properties);
 
         this.warehouse = properties.get(KasanariCatalogProperties.WAREHOUSE);
         if (this.warehouse == null) {
             throw new IllegalArgumentException("Warehouse location is not set");
         }
+
+        initializeTables();
     }
 
     private void initializeTables() {
-
+        var initializer = new JdbcTableInitializer(dataSource);
+        initializer.initialize(catalogName);
     }
 
     @Override

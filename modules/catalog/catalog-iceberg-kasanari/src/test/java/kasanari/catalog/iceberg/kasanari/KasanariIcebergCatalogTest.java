@@ -12,19 +12,33 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
             DockerImageName.
                     parse("postgres:17")
                     .asCompatibleSubstituteFor("postgres")
-    );
+    )
+            .withUsername("postgres")
+            .withPassword("postgres")
+            .withDatabaseName("kasanari");
 
     @Override
     public IcebergCatalogAdapter setupCatalog() {
-        postgres.start();
+//        postgres.start();
 
         var factory = new KasanariIcebergCatalogFactory();
-        return factory.create(Map.of());
-    }
+//        return factory.create(Map.of(
+//                KasanariCatalogProperties.WAREHOUSE, "file:///tmp/iceberg-kasanari-catalog-warehouse",
+//                KasanariCatalogProperties.URI, postgres.getJdbcUrl(),
+//                KasanariCatalogProperties.USER, postgres.getUsername(),
+//                KasanariCatalogProperties.PASSWORD, postgres.getPassword()
+//        ));
 
+        return factory.create(Map.of(
+                KasanariCatalogProperties.WAREHOUSE, "file:///tmp/iceberg-kasanari-catalog-warehouse",
+                KasanariCatalogProperties.URI, "jdbc:postgresql://localhost:5432/postgres",
+                KasanariCatalogProperties.USER, "postgres",
+                KasanariCatalogProperties.PASSWORD, "postgres"
+        ));
+    }
 
     @Override
     public void close() {
-        postgres.close();
+//        postgres.close();
     }
 }
