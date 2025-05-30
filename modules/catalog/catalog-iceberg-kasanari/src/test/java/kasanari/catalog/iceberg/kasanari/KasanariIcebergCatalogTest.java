@@ -41,4 +41,15 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
     public void close() {
 //        postgres.close();
     }
+
+    @Override
+    public void reset() {
+        var catalogDelegate = (KasanariCatalog) catalog.delegate();
+        catalogDelegate.getDataSource().getJdbi().useTransaction(tx -> {
+            tx.execute("TRUNCATE TABLE kasanari_iceberg_namespace_properties CASCADE");
+            tx.execute("TRUNCATE TABLE kasanari_iceberg_tables CASCADE");
+            tx.execute("TRUNCATE TABLE kasanari_iceberg_views CASCADE");
+            tx.execute("TRUNCATE TABLE kasanari_iceberg_namespaces CASCADE");
+        });
+    }
 }

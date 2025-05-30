@@ -111,36 +111,42 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     public void createNamespace(Namespace namespace, Map<String, String> metadata) {
+        namespaceRepository.createNamespace(namespace, metadata);
     }
 
     @Override
     public List<Namespace> listNamespaces(Namespace namespace) throws NoSuchNamespaceException {
-        return List.of();
+        return namespaceRepository.listNamespaces(namespace);
     }
 
     @Override
     public Map<String, String> loadNamespaceMetadata(Namespace namespace) throws NoSuchNamespaceException {
-        return Map.of();
+        return namespaceRepository.loadNamespaceMetadata(namespace);
     }
 
     @Override
     public boolean dropNamespace(Namespace namespace) throws NamespaceNotEmptyException {
-        return false;
+        return namespaceRepository.dropNamespace(namespace);
     }
 
     @Override
     public boolean setProperties(Namespace namespace, Map<String, String> properties) throws NoSuchNamespaceException {
-        return false;
+        return namespaceRepository.setProperties(namespace, properties);
     }
 
     @Override
     public boolean removeProperties(Namespace namespace, Set<String> properties) throws NoSuchNamespaceException {
-        return false;
+        return namespaceRepository.removeProperties(namespace, properties);
     }
 
     @Override
     public void close() throws IOException {
         super.close();
         dataSource.close();
+    }
+
+    // for testing only
+    KasanariDataSource getDataSource() {
+        return dataSource;
     }
 }
