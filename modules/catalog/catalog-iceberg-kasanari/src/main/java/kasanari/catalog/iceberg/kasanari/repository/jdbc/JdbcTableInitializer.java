@@ -7,9 +7,8 @@ public class JdbcTableInitializer {
         this.dataSource = dataSource;
     }
 
-    public void initialize(String catalog) {
+    public void initialize() {
         createTables();
-        registerCatalog(catalog);
     }
 
     private void createTables() {
@@ -25,21 +24,6 @@ public class JdbcTableInitializer {
             namespacePropertiesDdlQuery.execute();
             tablesDdlQuery.execute();
             viewsDdlQuery.execute();
-        });
-    }
-
-    private void registerCatalog(String catalog) {
-        dataSource.getJdbi().useTransaction(tx -> {
-            var checkExistenceQuery = tx.createQuery(JdbcQueries.CHECK_IF_CATALOG_EXISTS);
-            checkExistenceQuery.bind(0, catalog);
-
-            var exists = checkExistenceQuery.mapTo(Boolean.class);
-
-            if (!exists.first()) {
-                var registerCatalogQuery = tx.createUpdate(JdbcQueries.REGISTER_CATALOG);
-                registerCatalogQuery.bind(0, catalog);
-                registerCatalogQuery.execute();
-            }
         });
     }
 }

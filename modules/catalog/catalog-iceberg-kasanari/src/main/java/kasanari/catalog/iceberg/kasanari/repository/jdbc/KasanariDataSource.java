@@ -11,11 +11,13 @@ import io.agroal.pool.DataSource;
 import kasanari.catalog.iceberg.kasanari.KasanariCatalogProperties;
 import org.jdbi.v3.core.Jdbi;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.function.Function;
 
-public class KasanariDataSource {
+public class KasanariDataSource implements Closeable {
     private final DataSource pool;
     private final Jdbi jdbi;
 
@@ -112,5 +114,10 @@ public class KasanariDataSource {
 
     public Jdbi getJdbi() {
         return jdbi;
+    }
+
+    @Override
+    public void close() throws IOException {
+        pool.close();
     }
 }
