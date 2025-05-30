@@ -35,9 +35,11 @@ public abstract class IcebergCatalogAdapterTest {
     }
 
     @BeforeEach
-    public void reset() {
-
+    public final void beforeEach() {
+        reset();
     }
+
+    public void reset() {}
 
     @Test
     public void returnEmptyNamespaceList() {

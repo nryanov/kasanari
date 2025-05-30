@@ -82,10 +82,18 @@ public class JdbcQueries {
     public final static String UPSERT_NAMESPACE_PROPERTIES = """
             INSERT INTO kasanari_iceberg_namespace_properties(catalog_name, namespace_name, property_key, property_value)
             VALUES (?, ?, ?, ?)
-            ON CONFLICT DO UPDATE SET updated_at = CURRENT_TIMESTAMP
+            ON CONFLICT (catalog_name, namespace_name, property_key) DO UPDATE SET updated_at = CURRENT_TIMESTAMP
             """;
 
-    public static String SELECT_NAMESPACES = "SELECT namespace_name FROM kasanari_iceberg_namespaces WHERE catalog_name = ?";
+    public static String SELECT_ROOT_NAMESPACES = """
+            SELECT namespace_name FROM kasanari_iceberg_namespaces
+            WHERE catalog_name = ? AND POSITION('.' IN namespace_name) = 0
+            """;
+
+    public static String SELECT_CHILD_NAMESPACES = """
+            SELECT namespace_name FROM kasanari_iceberg_namespaces
+            WHERE catalog_name = ? AND namespace_name ~ ?;
+            """;
 
     public static String SELECT_NAMESPACE_PROPERTIES = """
             SELECT property_key, property_value FROM kasanari_iceberg_namespace_properties
@@ -96,5 +104,11 @@ public class JdbcQueries {
 
     public static String CHECK_NAMESPACE_VIEWS_RELATIONSHIPS = "SELECT EXISTS(SELECT 1 FROM kasanari_iceberg_views WHERE catalog_name = ? AND namespace_name = ?)";
 
-    public static String DROP_NAMESPACE = "DELETE FROM kasanari_iceberg_namespaces WHERE catalog_name = ? AND namespace_name = ?";
+    public static String DELETE_NAMESPACE = "DELETE FROM kasanari_iceberg_namespaces WHERE catalog_name = ? AND namespace_name = ?";
+
+    public static String REMOVE_NAMESPACE_PROPERTIES = """
+            DELETE FROM kasanari_iceberg_namespace_properties
+            WHERE catalog_name = ? AND namespace_name = ?
+            AND property_key = ANY(?)
+            """;
 }
