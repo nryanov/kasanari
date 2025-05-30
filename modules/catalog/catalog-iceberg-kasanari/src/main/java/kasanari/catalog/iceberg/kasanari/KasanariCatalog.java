@@ -1,6 +1,14 @@
 package kasanari.catalog.iceberg.kasanari;
 
+import kasanari.catalog.iceberg.kasanari.repository.CatalogRepository;
+import kasanari.catalog.iceberg.kasanari.repository.NamespaceRepository;
+import kasanari.catalog.iceberg.kasanari.repository.TableRepository;
+import kasanari.catalog.iceberg.kasanari.repository.ViewRepository;
+import kasanari.catalog.iceberg.kasanari.repository.jdbc.JdbcCatalogRepository;
+import kasanari.catalog.iceberg.kasanari.repository.jdbc.JdbcNamespaceRepository;
 import kasanari.catalog.iceberg.kasanari.repository.jdbc.JdbcTableInitializer;
+import kasanari.catalog.iceberg.kasanari.repository.jdbc.JdbcTableRepository;
+import kasanari.catalog.iceberg.kasanari.repository.jdbc.JdbcViewRepository;
 import kasanari.catalog.iceberg.kasanari.repository.jdbc.KasanariDataSource;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.Namespace;
@@ -12,6 +20,7 @@ import org.apache.iceberg.hadoop.Configurable;
 import org.apache.iceberg.view.BaseMetastoreViewCatalog;
 import org.apache.iceberg.view.ViewOperations;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +29,11 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
     private String catalogName;
     private String warehouse;
     private KasanariDataSource dataSource;
+
+    private CatalogRepository catalogRepository;
+    private NamespaceRepository namespaceRepository;
+    private TableRepository tableRepository;
+    private ViewRepository viewRepository;
 
     @Override
     public void initialize(String catalogName, Map<String, String> properties) {
@@ -31,12 +45,18 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
             throw new IllegalArgumentException("Warehouse location is not set");
         }
 
-        initializeTables();
+        this.catalogRepository = new JdbcCatalogRepository(this.dataSource, this.catalogName);
+        this.namespaceRepository = new JdbcNamespaceRepository(this.dataSource, this.catalogName);
+        this.tableRepository = new JdbcTableRepository(this.dataSource, this.catalogName);
+        this.viewRepository = new JdbcViewRepository(this.dataSource, this.catalogName);
+
+        initialize();
     }
 
-    private void initializeTables() {
+    private void initialize() {
         var initializer = new JdbcTableInitializer(dataSource);
-        initializer.initialize(catalogName);
+        initializer.initialize();
+        catalogRepository.registerCurrentCatalog();
     }
 
     @Override
@@ -116,5 +136,11 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
     @Override
     public boolean removeProperties(Namespace namespace, Set<String> properties) throws NoSuchNamespaceException {
         return false;
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
+        dataSource.close();
     }
 }

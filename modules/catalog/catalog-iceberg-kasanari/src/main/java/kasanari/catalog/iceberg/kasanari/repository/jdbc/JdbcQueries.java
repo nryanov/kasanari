@@ -74,4 +74,27 @@ public class JdbcQueries {
     public final static String CHECK_IF_CATALOG_EXISTS = "SELECT EXISTS(SELECT 1 FROM kasanari_iceberg_catalog WHERE catalog_name = ?)";
 
     public final static String REGISTER_CATALOG = "INSERT INTO kasanari_iceberg_catalog(catalog_name) VALUES (?)";
+
+    public final static String CHECK_IF_NAMESPACE_EXISTS = "SELECT EXISTS(SELECT 1 FROM kasanari_iceberg_namespaces WHERE catalog_name = ? AND namespace_name = ?)";
+
+    public final static String CREATE_NAMESPACE = "INSERT INTO kasanari_iceberg_namespaces(catalog_name, namespace_name) VALUES (?, ?)";
+
+    public final static String UPSERT_NAMESPACE_PROPERTIES = """
+            INSERT INTO kasanari_iceberg_namespace_properties(catalog_name, namespace_name, property_key, property_value)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT DO UPDATE SET updated_at = CURRENT_TIMESTAMP
+            """;
+
+    public static String SELECT_NAMESPACES = "SELECT namespace_name FROM kasanari_iceberg_namespaces WHERE catalog_name = ?";
+
+    public static String SELECT_NAMESPACE_PROPERTIES = """
+            SELECT property_key, property_value FROM kasanari_iceberg_namespace_properties
+            WHERE catalog_name = ? AND namespace_name = ?
+            """;
+
+    public static String CHECK_NAMESPACE_TABLES_RELATIONSHIPS = "SELECT EXISTS(SELECT 1 FROM kasanari_iceberg_tables WHERE catalog_name = ? AND namespace_name = ?)";
+
+    public static String CHECK_NAMESPACE_VIEWS_RELATIONSHIPS = "SELECT EXISTS(SELECT 1 FROM kasanari_iceberg_views WHERE catalog_name = ? AND namespace_name = ?)";
+
+    public static String DROP_NAMESPACE = "DELETE FROM kasanari_iceberg_namespaces WHERE catalog_name = ? AND namespace_name = ?";
 }
