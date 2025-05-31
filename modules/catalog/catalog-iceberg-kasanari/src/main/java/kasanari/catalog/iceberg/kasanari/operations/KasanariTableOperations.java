@@ -1,27 +1,163 @@
 package kasanari.catalog.iceberg.kasanari.operations;
 
+import kasanari.catalog.iceberg.kasanari.repository.NamespaceRepository;
+import kasanari.catalog.iceberg.kasanari.repository.TableRepository;
+import kasanari.catalog.iceberg.kasanari.repository.ViewRepository;
+import kasanari.catalog.iceberg.kasanari.repository.model.IcebergTableRecord;
+import kasanari.catalog.iceberg.kasanari.utils.IcebergUtils;
 import org.apache.iceberg.BaseMetastoreTableOperations;
 import org.apache.iceberg.TableMetadata;
+import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.exceptions.CommitFailedException;
+import org.apache.iceberg.exceptions.NoSuchNamespaceException;
+import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.io.FileIO;
 
+import java.util.Objects;
+
 public class KasanariTableOperations extends BaseMetastoreTableOperations {
+    private final NamespaceRepository namespaceRepository;
+    private final TableRepository tableRepository;
+    private final ViewRepository viewRepository;
+    private final FileIO fileIO;
+    private final TableIdentifier tableIdentifier;
+    private final String catalogName;
+
+    public KasanariTableOperations(
+            NamespaceRepository namespaceRepository,
+            TableRepository tableRepository,
+            ViewRepository viewRepository,
+            FileIO fileIO,
+            TableIdentifier tableIdentifier,
+            String catalogName
+    ) {
+        this.namespaceRepository = namespaceRepository;
+        this.tableRepository = tableRepository;
+        this.viewRepository = viewRepository;
+        this.fileIO = fileIO;
+        this.tableIdentifier = tableIdentifier;
+        this.catalogName = catalogName;
+    }
+
     @Override
     protected String tableName() {
-        return "";
+        return tableIdentifier.toString();
     }
 
     @Override
     public FileIO io() {
-        return null;
+        return fileIO;
     }
 
     @Override
     protected void doRefresh() {
-        super.doRefresh();
+        if (tableRepository.exists(tableIdentifier)) {
+            var table = tableRepository.loadTable(tableIdentifier);
+
+            if (table.metadataLocation() == null) {
+                throw new ValidationException("State of table `%s` is incorrect: metadata location is null", tableIdentifier);
+            }
+
+            refreshFromMetadataLocation(table.metadataLocation());
+        } else {
+            // if table does not exist but there is a metadata info
+            if (currentMetadataLocation() != null) {
+                throw new NoSuchTableException(
+                        "Table `%s` couldn't be loaded from catalog `%s` because it was dropped",
+                        tableIdentifier.toString(), catalogName
+                );
+            } else {
+                // table does not exist and there is no existing metadata
+                disableRefresh();
+            }
+        }
     }
 
     @Override
     protected void doCommit(TableMetadata base, TableMetadata metadata) {
-        super.doCommit(base, metadata);
+        var isNewTable = base == null;
+        var newMetadataLocation = writeNewMetadataIfRequired(isNewTable, metadata);
+
+        var failure = false;
+
+        try {
+            if (isNewTable) {
+                createTable(newMetadataLocation);
+            } else {
+                var existingTable = tableRepository.loadTable(tableIdentifier);
+                // check that current location didn't change yet
+                validateMetadataLocation(existingTable, base);
+                updateTable(existingTable.metadataLocation(), newMetadataLocation);
+            }
+        } catch (Exception e) {
+            failure = true;
+        } finally {
+            if (failure) {
+                fileIO.deleteFile(newMetadataLocation);
+            }
+        }
+    }
+
+    private void validateMetadataLocation(IcebergTableRecord table, TableMetadata base) {
+        String catalogMetadataLocation = table.metadataLocation();
+        String baseMetadataLocation = base != null ? base.metadataFileLocation() : null;
+
+        if (!Objects.equals(baseMetadataLocation, catalogMetadataLocation)) {
+            throw new CommitFailedException(
+                    "Cannot commit %s: metadata location %s has changed from %s",
+                    tableIdentifier, baseMetadataLocation, catalogMetadataLocation);
+        }
+    }
+
+    private void createTable(String newMetadataLocation) {
+        var namespaceName = IcebergUtils.namespaceName(tableIdentifier.namespace());
+
+        if (!namespaceRepository.exists(tableIdentifier.namespace())) {
+            throw new NoSuchNamespaceException(
+                    "Table couldn't be created because namespace `%s` does not exist in catalog `%s`",
+                    namespaceName,
+                    catalogName
+            );
+        }
+
+        if (viewRepository.exists(tableIdentifier)) {
+            throw new AlreadyExistsException(
+                    "Table couldn't be created because view with the same name `%s` is already exist in catalog `%s`",
+                    tableIdentifier.toString(),
+                    catalogName
+            );
+        }
+
+        if (tableRepository.exists(tableIdentifier)) {
+            throw new AlreadyExistsException(
+                    "Table couldn't be created because table with the same name `%s` is already exist in catalog `%s`",
+                    tableIdentifier.toString(),
+                    catalogName
+            );
+        }
+
+        var result = tableRepository.create(tableIdentifier, newMetadataLocation);
+
+        if (!result) {
+            throw new CommitFailedException(
+                    "Table `%s` wasn't created in catalog `%s`",
+                    tableIdentifier,
+                    catalogName
+            );
+        }
+    }
+
+    private void updateTable(String previousMetadataLocation, String newMetadataLocation) {
+        var result = tableRepository.update(tableIdentifier, previousMetadataLocation, newMetadataLocation);
+
+        if (!result) {
+            throw new CommitFailedException(
+                    "Table `%s` wasn't updated in catalog `%s`",
+                    tableIdentifier.toString(),
+                    catalogName
+            );
+        }
     }
 }

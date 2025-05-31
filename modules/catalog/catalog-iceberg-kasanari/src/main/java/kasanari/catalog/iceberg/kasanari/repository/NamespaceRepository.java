@@ -20,4 +20,6 @@ public interface NamespaceRepository {
     boolean setProperties(Namespace namespace, Map<String, String> properties) throws NoSuchNamespaceException;
 
     boolean removeProperties(Namespace namespace, Set<String> properties) throws NoSuchNamespaceException;
+
+    boolean exists(Namespace namespace);
 }

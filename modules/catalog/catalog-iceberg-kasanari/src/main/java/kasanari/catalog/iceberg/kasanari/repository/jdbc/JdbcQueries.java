@@ -111,4 +111,18 @@ public class JdbcQueries {
             WHERE catalog_name = ? AND namespace_name = ?
             AND property_key = ANY(?)
             """;
+
+    public static String SELECT_TABLE = """
+            SELECT catalog_name, namespace_name, table_name, metadata_location, previous_metadata_location
+            FROM kasanari_iceberg_tables WHERE catalog_name = ? AND namespace_name = ? AND table_name = ?
+            """;
+
+    public static String SELECT_VIEW = """
+            SELECT catalog_name, namespace_name, view_name, metadata_location, previous_metadata_location
+            FROM kasanari_iceberg_views WHERE catalog_name = ? AND namespace_name = ? AND view_name = ?
+            """;
+
+    public static String CHECK_IF_TABLE_EXISTS = "SELECT EXISTS(SELECT 1 FROM kasanari_iceberg_tables WHERE catalog_name = ? AND namespace_name = ? AND table_name = ?)";
+
+    public static String CHECK_IF_VIEW_EXISTS = "SELECT EXISTS(SELECT 1 FROM kasanari_iceberg_views WHERE catalog_name = ? AND namespace_name = ? AND view_name = ?)";
 }

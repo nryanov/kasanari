@@ -1,6 +1,7 @@
 package kasanari.catalog.iceberg.kasanari.repository.jdbc;
 
 import kasanari.catalog.iceberg.kasanari.repository.NamespaceRepository;
+import kasanari.catalog.iceberg.kasanari.utils.IcebergUtils;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.NamespaceNotEmptyException;
@@ -24,7 +25,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository {
 
     @Override
     public void createNamespace(Namespace namespace, Map<String, String> metadata) {
-        var namespaceName = String.join(".", namespace.levels());
+        var namespaceName = IcebergUtils.namespaceName(namespace);
 
         dataSource.getJdbi().useTransaction(tx -> {
             var checkIfNamespaceExistsQuery = tx.createQuery(JdbcQueries.CHECK_IF_NAMESPACE_EXISTS);
@@ -59,7 +60,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository {
 
     @Override
     public List<Namespace> listNamespaces(Namespace namespace) throws NoSuchNamespaceException {
-        var namespaceName = String.join(".", namespace.levels());
+        var namespaceName = IcebergUtils.namespaceName(namespace);
 
         return dataSource.getJdbi().inTransaction(tx -> {
             var namespaces = new ArrayList<Namespace>();
@@ -88,7 +89,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository {
 
     @Override
     public Map<String, String> loadNamespaceMetadata(Namespace namespace) throws NoSuchNamespaceException {
-        var namespaceName = String.join(".", namespace.levels());
+        var namespaceName = IcebergUtils.namespaceName(namespace);
 
         return dataSource.getJdbi().inTransaction(tx -> {
             var checkIfNamespaceExistsQuery = tx.createQuery(JdbcQueries.CHECK_IF_NAMESPACE_EXISTS);
@@ -119,7 +120,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository {
 
     @Override
     public boolean dropNamespace(Namespace namespace) throws NamespaceNotEmptyException {
-        var namespaceName = String.join(".", namespace.levels());
+        var namespaceName = IcebergUtils.namespaceName(namespace);
 
         return dataSource.getJdbi().inTransaction(tx -> {
             var checkIfNamespaceExistsQuery = tx.createQuery(JdbcQueries.CHECK_IF_NAMESPACE_EXISTS);
@@ -158,7 +159,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository {
 
     @Override
     public boolean setProperties(Namespace namespace, Map<String, String> properties) throws NoSuchNamespaceException {
-        var namespaceName = String.join(".", namespace.levels());
+        var namespaceName = IcebergUtils.namespaceName(namespace);
 
         dataSource.getJdbi().useTransaction(tx -> {
             var checkIfNamespaceExistsQuery = tx.createQuery(JdbcQueries.CHECK_IF_NAMESPACE_EXISTS);
@@ -189,7 +190,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository {
 
     @Override
     public boolean removeProperties(Namespace namespace, Set<String> properties) throws NoSuchNamespaceException {
-        var namespaceName = String.join(".", namespace.levels());
+        var namespaceName = IcebergUtils.namespaceName(namespace);
 
         dataSource.getJdbi().useTransaction(tx -> {
             var checkIfNamespaceExistsQuery = tx.createQuery(JdbcQueries.CHECK_IF_NAMESPACE_EXISTS);
@@ -211,5 +212,18 @@ public class JdbcNamespaceRepository implements NamespaceRepository {
         });
 
         return true;
+    }
+
+    @Override
+    public boolean exists(Namespace namespace) {
+        var namespaceName = IcebergUtils.namespaceName(namespace);
+
+        return dataSource.getJdbi().inTransaction(tx -> {
+            var checkIfNamespaceExistsQuery = tx.createQuery(JdbcQueries.CHECK_IF_NAMESPACE_EXISTS);
+            checkIfNamespaceExistsQuery.bind(0, catalogName);
+            checkIfNamespaceExistsQuery.bind(1, namespaceName);
+
+            return checkIfNamespaceExistsQuery.mapTo(Boolean.class).first();
+        });
     }
 }
