@@ -88,11 +88,13 @@ public class JdbcQueries {
     public static String SELECT_ROOT_NAMESPACES = """
             SELECT namespace_name FROM kasanari_iceberg_namespaces
             WHERE catalog_name = ? AND POSITION('.' IN namespace_name) = 0
+            ORDER BY namespace_name
             """;
 
     public static String SELECT_CHILD_NAMESPACES = """
             SELECT namespace_name FROM kasanari_iceberg_namespaces
-            WHERE catalog_name = ? AND namespace_name ~ ?;
+            WHERE catalog_name = ? AND namespace_name ~ ?
+            ORDER BY namespace_name
             """;
 
     public static String SELECT_NAMESPACE_PROPERTIES = """
@@ -125,4 +127,46 @@ public class JdbcQueries {
     public static String CHECK_IF_TABLE_EXISTS = "SELECT EXISTS(SELECT 1 FROM kasanari_iceberg_tables WHERE catalog_name = ? AND namespace_name = ? AND table_name = ?)";
 
     public static String CHECK_IF_VIEW_EXISTS = "SELECT EXISTS(SELECT 1 FROM kasanari_iceberg_views WHERE catalog_name = ? AND namespace_name = ? AND view_name = ?)";
+
+    public static String CREATE_TABLE = """
+            INSERT INTO kasanari_iceberg_tables(catalog_name, namespace_name, table_name, metadata_location, previous_metadata_location)
+            VALUES (?, ?, ?, ?, null)
+            """;
+
+    public static String UPDATE_TABLE = """
+            UPDATE kasanari_iceberg_tables SET metadata_location = ?, previous_metadata_location = ?
+            WHERE catalog_name = ? AND namespace_name = ? AND table_name = ? AND previous_metadata_location = ?
+            """;
+
+    public static String CREATE_VIEW = """
+            INSERT INTO kasanari_iceberg_views(catalog_name, namespace_name, view_name, metadata_location, previous_metadata_location)
+            VALUES (?, ?, ?, ?, null)
+            """;
+
+    public static String UPDATE_VIEW = """
+            UPDATE kasanari_iceberg_views SET metadata_location = ?, previous_metadata_location = ?
+            WHERE catalog_name = ? AND namespace_name = ? AND view_name = ? AND previous_metadata_location = ?
+            """;
+
+    public static String LIST_TABLES = """
+            SELECT table_name FROM kasanari_iceberg_tables
+            WHERE  catalog_name = ? AND namespace_name = ?
+            ORDER BY table_name
+            """;
+
+    public static String LIST_VIEWS = """
+            SELECT view_name FROM kasanari_iceberg_views
+            WHERE  catalog_name = ? AND namespace_name = ?
+            ORDER BY view_name
+            """;
+
+    public static String DELETE_TABLE = """
+            DELETE FROM kasanari_iceberg_tables
+            WHERE  catalog_name = ? AND namespace_name = ? AND table_name = ?
+            """;
+
+    public static String DELETE_VIEW = """
+            DELETE FROM kasanari_iceberg_views
+            WHERE  catalog_name = ? AND namespace_name = ? AND view_name = ?
+            """;
 }

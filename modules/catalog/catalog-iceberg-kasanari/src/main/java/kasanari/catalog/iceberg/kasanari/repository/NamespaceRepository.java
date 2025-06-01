@@ -9,17 +9,21 @@ import java.util.Map;
 import java.util.Set;
 
 public interface NamespaceRepository {
-    void createNamespace(Namespace namespace, Map<String, String> metadata);
+    void create(Namespace namespace, Map<String, String> metadata);
 
-    List<Namespace> listNamespaces(Namespace namespace) throws NoSuchNamespaceException;
+    List<Namespace> list(Namespace namespace) throws NoSuchNamespaceException;
 
-    Map<String, String> loadNamespaceMetadata(Namespace namespace) throws NoSuchNamespaceException;
+    Map<String, String> load(Namespace namespace) throws NoSuchNamespaceException;
 
-    boolean dropNamespace(Namespace namespace) throws NamespaceNotEmptyException;
+    boolean delete(Namespace namespace) throws NamespaceNotEmptyException;
 
     boolean setProperties(Namespace namespace, Map<String, String> properties) throws NoSuchNamespaceException;
 
     boolean removeProperties(Namespace namespace, Set<String> properties) throws NoSuchNamespaceException;
 
     boolean exists(Namespace namespace);
+
+    default boolean notExist(Namespace namespace) {
+        return !exists(namespace);
+    }
 }

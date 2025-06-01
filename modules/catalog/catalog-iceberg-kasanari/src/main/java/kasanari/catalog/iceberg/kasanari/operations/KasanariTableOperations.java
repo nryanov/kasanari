@@ -54,7 +54,7 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
     @Override
     protected void doRefresh() {
         if (tableRepository.exists(tableIdentifier)) {
-            var table = tableRepository.loadTable(tableIdentifier);
+            var table = tableRepository.load(tableIdentifier);
 
             if (table.metadataLocation() == null) {
                 throw new ValidationException("State of table `%s` is incorrect: metadata location is null", tableIdentifier);
@@ -86,7 +86,7 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
             if (isNewTable) {
                 createTable(newMetadataLocation);
             } else {
-                var existingTable = tableRepository.loadTable(tableIdentifier);
+                var existingTable = tableRepository.load(tableIdentifier);
                 // check that current location didn't change yet
                 validateMetadataLocation(existingTable, base);
                 updateTable(existingTable.metadataLocation(), newMetadataLocation);

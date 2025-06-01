@@ -24,7 +24,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository {
     }
 
     @Override
-    public void createNamespace(Namespace namespace, Map<String, String> metadata) {
+    public void create(Namespace namespace, Map<String, String> metadata) {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
         dataSource.getJdbi().useTransaction(tx -> {
@@ -59,7 +59,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository {
     }
 
     @Override
-    public List<Namespace> listNamespaces(Namespace namespace) throws NoSuchNamespaceException {
+    public List<Namespace> list(Namespace namespace) throws NoSuchNamespaceException {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
         return dataSource.getJdbi().inTransaction(tx -> {
@@ -88,7 +88,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository {
     }
 
     @Override
-    public Map<String, String> loadNamespaceMetadata(Namespace namespace) throws NoSuchNamespaceException {
+    public Map<String, String> load(Namespace namespace) throws NoSuchNamespaceException {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
         return dataSource.getJdbi().inTransaction(tx -> {
@@ -119,7 +119,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository {
     }
 
     @Override
-    public boolean dropNamespace(Namespace namespace) throws NamespaceNotEmptyException {
+    public boolean delete(Namespace namespace) throws NamespaceNotEmptyException {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
         return dataSource.getJdbi().inTransaction(tx -> {

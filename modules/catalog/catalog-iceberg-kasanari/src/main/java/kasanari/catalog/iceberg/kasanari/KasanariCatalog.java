@@ -1,5 +1,7 @@
 package kasanari.catalog.iceberg.kasanari;
 
+import kasanari.catalog.iceberg.kasanari.operations.KasanariTableOperations;
+import kasanari.catalog.iceberg.kasanari.operations.KasanariViewOperations;
 import kasanari.catalog.iceberg.kasanari.repository.CatalogRepository;
 import kasanari.catalog.iceberg.kasanari.repository.NamespaceRepository;
 import kasanari.catalog.iceberg.kasanari.repository.TableRepository;
@@ -10,13 +12,19 @@ import kasanari.catalog.iceberg.kasanari.repository.jdbc.JdbcTableInitializer;
 import kasanari.catalog.iceberg.kasanari.repository.jdbc.JdbcTableRepository;
 import kasanari.catalog.iceberg.kasanari.repository.jdbc.JdbcViewRepository;
 import kasanari.catalog.iceberg.kasanari.repository.jdbc.KasanariDataSource;
+import kasanari.catalog.iceberg.kasanari.utils.IcebergUtils;
+import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.CatalogUtil;
+import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.NamespaceNotEmptyException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
+import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.hadoop.Configurable;
+import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.view.BaseMetastoreViewCatalog;
 import org.apache.iceberg.view.ViewOperations;
 
@@ -35,6 +43,9 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
     private TableRepository tableRepository;
     private ViewRepository viewRepository;
 
+    private FileIO io;
+    private Object hadoopConfig;
+
     @Override
     public void initialize(String catalogName, Map<String, String> properties) {
         this.catalogName = catalogName;
@@ -50,18 +61,24 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
         this.tableRepository = new JdbcTableRepository(this.dataSource, this.catalogName);
         this.viewRepository = new JdbcViewRepository(this.dataSource, this.catalogName);
 
-        initialize();
+        initializeCatalog();
+        initializeFileIO(properties);
     }
 
-    private void initialize() {
+    private void initializeCatalog() {
         var initializer = new JdbcTableInitializer(dataSource);
         initializer.initialize();
         catalogRepository.registerCurrentCatalog();
     }
 
+    private void initializeFileIO(Map<String, String> properties) {
+        var ioImpl = properties.getOrDefault(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.hadoop.HadoopFileIO");
+        this.io = CatalogUtil.loadFileIO(ioImpl, properties, hadoopConfig);
+    }
+
     @Override
     public void setConf(Object conf) {
-
+        this.hadoopConfig = conf;
     }
 
     @Override
@@ -71,17 +88,25 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     protected ViewOperations newViewOps(TableIdentifier viewIdentifier) {
-        return null;
+        return new KasanariViewOperations(namespaceRepository, tableRepository, viewRepository, io, viewIdentifier, catalogName);
     }
 
     @Override
     public List<TableIdentifier> listViews(Namespace namespace) {
-        return List.of();
+        if (namespaceRepository.notExist(namespace)) {
+            throw new NoSuchNamespaceException(
+                    "Namespace `%s` does not exist in catalog `%s`",
+                    IcebergUtils.namespaceName(namespace),
+                    catalogName
+            );
+        }
+
+        return viewRepository.findByNamespace(namespace);
     }
 
     @Override
     public boolean dropView(TableIdentifier identifier) {
-        return false;
+        return viewRepository.delete(identifier);
     }
 
     @Override
@@ -91,16 +116,45 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     protected TableOperations newTableOps(TableIdentifier tableIdentifier) {
-        return null;
+        return new KasanariTableOperations(namespaceRepository, tableRepository, viewRepository, io, tableIdentifier, catalogName);
     }
 
     @Override
     public List<TableIdentifier> listTables(Namespace namespace) {
-        return List.of();
+        if (namespaceRepository.notExist(namespace)) {
+            throw new NoSuchNamespaceException(
+                    "Namespace `%s` does not exist in catalog `%s`",
+                    IcebergUtils.namespaceName(namespace),
+                    catalogName
+            );
+        }
+
+        return tableRepository.findByNamespace(namespace);
     }
 
     @Override
     public boolean dropTable(TableIdentifier identifier, boolean purge) {
+        var tableOperations = newTableOps(identifier);
+        var maybeCurrentTableMetadata = (TableMetadata) null;
+
+        if (purge) {
+            try {
+                maybeCurrentTableMetadata = tableOperations.current();
+            } catch (NotFoundException e) {
+                // todo: log warning
+            }
+        }
+
+        var deleted = tableRepository.delete(identifier);
+
+        if (deleted) {
+            if (purge && maybeCurrentTableMetadata != null) {
+                CatalogUtil.dropTableData(io, maybeCurrentTableMetadata);
+            }
+
+            return true;
+        }
+
         return false;
     }
 
@@ -111,22 +165,22 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     public void createNamespace(Namespace namespace, Map<String, String> metadata) {
-        namespaceRepository.createNamespace(namespace, metadata);
+        namespaceRepository.create(namespace, metadata);
     }
 
     @Override
     public List<Namespace> listNamespaces(Namespace namespace) throws NoSuchNamespaceException {
-        return namespaceRepository.listNamespaces(namespace);
+        return namespaceRepository.list(namespace);
     }
 
     @Override
     public Map<String, String> loadNamespaceMetadata(Namespace namespace) throws NoSuchNamespaceException {
-        return namespaceRepository.loadNamespaceMetadata(namespace);
+        return namespaceRepository.load(namespace);
     }
 
     @Override
     public boolean dropNamespace(Namespace namespace) throws NamespaceNotEmptyException {
-        return namespaceRepository.dropNamespace(namespace);
+        return namespaceRepository.delete(namespace);
     }
 
     @Override

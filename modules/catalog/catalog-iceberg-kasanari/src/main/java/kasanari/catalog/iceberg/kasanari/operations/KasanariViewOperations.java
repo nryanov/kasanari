@@ -44,7 +44,7 @@ public class KasanariViewOperations extends BaseViewOperations {
     @Override
     protected void doRefresh() {
         if (viewRepository.exists(viewIdentifier)) {
-            var view = viewRepository.loadView(viewIdentifier);
+            var view = viewRepository.load(viewIdentifier);
 
             if (view.metadataLocation() == null) {
                 throw new ValidationException("State of view `%s` is incorrect: metadata location is null", viewIdentifier);
@@ -75,7 +75,7 @@ public class KasanariViewOperations extends BaseViewOperations {
             if (isNewView) {
                 createView(newMetadataLocation);
             } else {
-                var existingView = viewRepository.loadView(viewIdentifier);
+                var existingView = viewRepository.load(viewIdentifier);
                 // check that current location didn't change yet
                 validateMetadataLocation(existingView, base);
                 updateView(existingView.metadataLocation(), newMetadataLocation);
