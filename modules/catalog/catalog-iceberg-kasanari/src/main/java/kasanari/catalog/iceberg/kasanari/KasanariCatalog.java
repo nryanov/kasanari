@@ -23,6 +23,7 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.NamespaceNotEmptyException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.hadoop.Configurable;
 import org.apache.iceberg.io.FileIO;
@@ -88,7 +89,13 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     protected String defaultWarehouseLocation(TableIdentifier tableIdentifier) {
-        return "";
+        var namespace = tableIdentifier.namespace();
+
+        if (namespace.isEmpty()) {
+            return String.join("/", warehouse, tableIdentifier.name());
+        } else {
+            return String.join("/", warehouse, String.join("/", namespace.levels()), tableIdentifier.name());
+        }
     }
 
     @Override
@@ -116,7 +123,30 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     public void renameView(TableIdentifier from, TableIdentifier to) {
+        if (from.equals(to)) {
+            return;
+        }
 
+        if (namespaceRepository.notExists(to.namespace())) {
+            throw new NoSuchNamespaceException("Cannot rename table because namespace `%s` does not exist", to.namespace());
+        }
+
+        if (viewRepository.notExists(from)) {
+            throw new NoSuchTableException("View `%s` does not exist", from);
+        }
+
+        if (tableRepository.exists(to)) {
+            throw new NoSuchTableException("Cannot rename table, because table `%s` is already exists", to);
+        }
+
+        if (viewRepository.exists(to)) {
+            throw new NoSuchTableException("Cannot rename table, because view `%s` is already exists", to);
+        }
+
+        var result = viewRepository.rename(from, to);
+        if (!result) {
+            throw new NoSuchTableException("View `%s` wasn't renamed because it does not exist", from);
+        }
     }
 
     @Override
@@ -165,7 +195,30 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     public void renameTable(TableIdentifier from, TableIdentifier to) {
+        if (from.equals(to)) {
+            return;
+        }
 
+        if (tableRepository.notExists(from)) {
+            throw new NoSuchTableException("Table `%s` does not exist", from);
+        }
+
+        if (namespaceRepository.notExists(to.namespace())) {
+            throw new NoSuchNamespaceException("Cannot rename table because namespace `%s` does not exist", to.namespace());
+        }
+
+        if (tableRepository.exists(to)) {
+            throw new NoSuchTableException("Cannot rename table, because table `%s` is already exists", to);
+        }
+
+        if (viewRepository.exists(to)) {
+            throw new NoSuchTableException("Cannot rename table, because view `%s` is already exists", to);
+        }
+
+        var result = tableRepository.rename(from, to);
+        if (!result) {
+            throw new NoSuchTableException("Table `%s` wasn't renamed because it does not exist", from);
+        }
     }
 
     @Override

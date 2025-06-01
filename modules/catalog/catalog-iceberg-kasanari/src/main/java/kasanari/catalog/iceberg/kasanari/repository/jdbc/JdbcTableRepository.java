@@ -130,4 +130,23 @@ public class JdbcTableRepository implements TableRepository {
             return affectedRows == 1;
         });
     }
+
+    @Override
+    public boolean rename(TableIdentifier from, TableIdentifier to) {
+        var namespaceNameFrom = IcebergUtils.namespaceName(from.namespace());
+        var namespaceNameTo = IcebergUtils.namespaceName(to.namespace());
+
+        return dataSource.getJdbi().inTransaction(tx -> {
+            var query = tx.createUpdate(JdbcQueries.RENAME_TABLE);
+            query.bind(0, namespaceNameTo);
+            query.bind(1, to.name());
+            query.bind(2, catalogName);
+            query.bind(3, namespaceNameFrom);
+            query.bind(4, from.name());
+
+            var affectedRows = query.execute();
+
+            return affectedRows == 1;
+        });
+    }
 }

@@ -14,10 +14,14 @@ import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.io.FileIO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
 public class KasanariTableOperations extends BaseMetastoreTableOperations {
+    private final static Logger logger = LoggerFactory.getLogger(KasanariTableOperations.class);
+
     private final NamespaceRepository namespaceRepository;
     private final TableRepository tableRepository;
     private final ViewRepository viewRepository;
@@ -84,17 +88,21 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
 
         try {
             if (isNewTable) {
+                logger.debug("Creating new table: {}", tableIdentifier);
                 createTable(newMetadataLocation);
             } else {
+                logger.debug("Updating table: {}", tableIdentifier);
                 var existingTable = tableRepository.load(tableIdentifier);
                 // check that current location didn't change yet
                 validateMetadataLocation(existingTable, base);
                 updateTable(existingTable.metadataLocation(), newMetadataLocation);
             }
         } catch (Exception e) {
+            logger.warn("Error happened while commiting to table `{}`: {}", tableIdentifier, e.getMessage());
             failure = true;
         } finally {
             if (failure) {
+                logger.warn("Deleting metadata file `{}` due to error for table `{}`", newMetadataLocation, tableIdentifier);
                 fileIO.deleteFile(newMetadataLocation);
             }
         }

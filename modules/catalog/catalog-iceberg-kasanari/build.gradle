@@ -4,6 +4,9 @@ dependencies {
     implementation libs.iceberg.api
     implementation libs.iceberg.common
 
+    implementation libs.hadoop3.client.api
+    implementation libs.hadoop3.client.runtime
+
     implementation libs.jdbi.core
     implementation libs.agroal.pool
 

@@ -135,7 +135,7 @@ public class JdbcQueries {
 
     public static String UPDATE_TABLE = """
             UPDATE kasanari_iceberg_tables SET metadata_location = ?, previous_metadata_location = ?
-            WHERE catalog_name = ? AND namespace_name = ? AND table_name = ? AND previous_metadata_location = ?
+            WHERE catalog_name = ? AND namespace_name = ? AND table_name = ? AND metadata_location = ?
             """;
 
     public static String CREATE_VIEW = """
@@ -145,7 +145,7 @@ public class JdbcQueries {
 
     public static String UPDATE_VIEW = """
             UPDATE kasanari_iceberg_views SET metadata_location = ?, previous_metadata_location = ?
-            WHERE catalog_name = ? AND namespace_name = ? AND view_name = ? AND previous_metadata_location = ?
+            WHERE catalog_name = ? AND namespace_name = ? AND view_name = ? AND metadata_location = ?
             """;
 
     public static String LIST_TABLES = """
@@ -168,5 +168,15 @@ public class JdbcQueries {
     public static String DELETE_VIEW = """
             DELETE FROM kasanari_iceberg_views
             WHERE  catalog_name = ? AND namespace_name = ? AND view_name = ?
+            """;
+
+    public static String RENAME_TABLE = """
+            UPDATE kasanari_iceberg_tables SET namespace_name = ?, table_name = ?
+            WHERE catalog_name = ? AND namespace_name = ? AND table_name = ?
+            """;
+
+    public static String RENAME_VIEW = """
+            UPDATE kasanari_iceberg_views SET namespace_name = ?, view_name = ?
+            WHERE catalog_name = ? AND namespace_name = ? AND view_name = ?
             """;
 }

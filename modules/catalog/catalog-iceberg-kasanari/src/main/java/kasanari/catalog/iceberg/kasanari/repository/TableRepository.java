@@ -22,4 +22,6 @@ public interface TableRepository {
     List<TableIdentifier> findByNamespace(Namespace namespace);
 
     boolean delete(TableIdentifier tableIdentifier);
+
+    boolean rename(TableIdentifier from, TableIdentifier to);
 }
