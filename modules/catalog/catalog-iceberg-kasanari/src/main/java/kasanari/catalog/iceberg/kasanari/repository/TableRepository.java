@@ -11,6 +11,10 @@ public interface TableRepository {
 
     boolean exists(TableIdentifier tableIdentifier);
 
+    default boolean notExists(TableIdentifier identifier) {
+        return !exists(identifier);
+    }
+
     boolean create(TableIdentifier tableIdentifier, String newMetadataLocation);
 
     boolean update(TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation);

@@ -12,18 +12,21 @@ public class JdbcCatalogRepository implements CatalogRepository {
     }
 
     @Override
-    public void registerCurrentCatalog() {
+    public void register() {
         dataSource.getJdbi().useTransaction(tx -> {
+            var registerCatalogQuery = tx.createUpdate(JdbcQueries.REGISTER_CATALOG);
+            registerCatalogQuery.bind(0, catalogName);
+            registerCatalogQuery.execute();
+        });
+    }
+
+    @Override
+    public boolean exists() {
+        return dataSource.getJdbi().inTransaction(tx -> {
             var checkExistenceQuery = tx.createQuery(JdbcQueries.CHECK_IF_CATALOG_EXISTS);
             checkExistenceQuery.bind(0, catalogName);
 
-            var exists = checkExistenceQuery.mapTo(Boolean.class);
-
-            if (!exists.first()) {
-                var registerCatalogQuery = tx.createUpdate(JdbcQueries.REGISTER_CATALOG);
-                registerCatalogQuery.bind(0, catalogName);
-                registerCatalogQuery.execute();
-            }
+            return checkExistenceQuery.mapTo(Boolean.class).first();
         });
     }
 }

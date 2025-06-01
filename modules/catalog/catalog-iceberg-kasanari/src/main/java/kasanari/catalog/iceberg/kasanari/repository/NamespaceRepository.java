@@ -23,7 +23,11 @@ public interface NamespaceRepository {
 
     boolean exists(Namespace namespace);
 
-    default boolean notExist(Namespace namespace) {
+    default boolean notExists(Namespace namespace) {
         return !exists(namespace);
     }
+
+    boolean linkedTablesExist(Namespace namespace);
+
+    boolean linkedViewsExist(Namespace namespace);
 }

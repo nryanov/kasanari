@@ -20,6 +20,7 @@ import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.NamespaceNotEmptyException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NotFoundException;
@@ -68,7 +69,11 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
     private void initializeCatalog() {
         var initializer = new JdbcTableInitializer(dataSource);
         initializer.initialize();
-        catalogRepository.registerCurrentCatalog();
+
+        // todo: change to upsert ?
+        if (catalogRepository.notExists()) {
+            catalogRepository.register();
+        }
     }
 
     private void initializeFileIO(Map<String, String> properties) {
@@ -93,7 +98,7 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     public List<TableIdentifier> listViews(Namespace namespace) {
-        if (namespaceRepository.notExist(namespace)) {
+        if (namespaceRepository.notExists(namespace)) {
             throw new NoSuchNamespaceException(
                     "Namespace `%s` does not exist in catalog `%s`",
                     IcebergUtils.namespaceName(namespace),
@@ -121,7 +126,7 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     public List<TableIdentifier> listTables(Namespace namespace) {
-        if (namespaceRepository.notExist(namespace)) {
+        if (namespaceRepository.notExists(namespace)) {
             throw new NoSuchNamespaceException(
                     "Namespace `%s` does not exist in catalog `%s`",
                     IcebergUtils.namespaceName(namespace),
@@ -165,6 +170,12 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     public void createNamespace(Namespace namespace, Map<String, String> metadata) {
+        var namespaceName = IcebergUtils.namespaceName(namespace);
+
+        if (namespaceRepository.exists(namespace)) {
+            throw new AlreadyExistsException(String.format("Namespace `%s` is already exists in catalog `%s`", namespaceName, catalogName));
+        }
+
         namespaceRepository.create(namespace, metadata);
     }
 
@@ -175,21 +186,49 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     public Map<String, String> loadNamespaceMetadata(Namespace namespace) throws NoSuchNamespaceException {
+        var namespaceName = IcebergUtils.namespaceName(namespace);
+
+        if (namespaceRepository.notExists(namespace)) {
+            throw new NoSuchNamespaceException(String.format("Namespace `%s` does not exist in catalog `%s`", namespaceName, catalogName));
+        }
+
         return namespaceRepository.load(namespace);
     }
 
     @Override
     public boolean dropNamespace(Namespace namespace) throws NamespaceNotEmptyException {
+        var namespaceName = IcebergUtils.namespaceName(namespace);
+
+        if (namespaceRepository.notExists(namespace)) {
+            return false;
+        }
+
+        if (namespaceRepository.linkedTablesExist(namespace) || namespaceRepository.linkedViewsExist(namespace)) {
+            throw new NamespaceNotEmptyException(String.format("Namespace `%s` in catalog `%s` cannot be dropped because it has linked entities", namespaceName, catalogName));
+        }
+
         return namespaceRepository.delete(namespace);
     }
 
     @Override
     public boolean setProperties(Namespace namespace, Map<String, String> properties) throws NoSuchNamespaceException {
+        var namespaceName = IcebergUtils.namespaceName(namespace);
+
+        if (namespaceRepository.notExists(namespace)) {
+            throw new NoSuchNamespaceException(String.format("Namespace `%s` does not exist in catalog `%s`", namespaceName, catalogName));
+        }
+
         return namespaceRepository.setProperties(namespace, properties);
     }
 
     @Override
     public boolean removeProperties(Namespace namespace, Set<String> properties) throws NoSuchNamespaceException {
+        var namespaceName = IcebergUtils.namespaceName(namespace);
+
+        if (namespaceRepository.notExists(namespace)) {
+            throw new NoSuchNamespaceException(String.format("Namespace `%s` does not exist in catalog `%s`", namespaceName, catalogName));
+        }
+
         return namespaceRepository.removeProperties(namespace, properties);
     }
 
