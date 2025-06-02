@@ -336,6 +336,7 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
         );
     }
 
+    // todo: multi-table tx?
     @Override
     public void commitTransaction(List<IcebergTable.Transaction> transactions) {
         var awaitingTransactions = new ArrayList<Transaction>();

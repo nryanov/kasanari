@@ -38,6 +38,10 @@ public record IcebergNamespace(
             return Namespace.of(levels);
         }
 
+        public String pretty() {
+            return String.join(".", levels);
+        }
+
         @Override
         public String toString() {
             return "Name{" +

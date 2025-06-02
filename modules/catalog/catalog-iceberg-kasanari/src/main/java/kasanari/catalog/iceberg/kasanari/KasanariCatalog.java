@@ -295,4 +295,9 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
     KasanariDataSource getDataSource() {
         return dataSource;
     }
+
+    @Override
+    public String toString() {
+        return catalogName;
+    }
 }
