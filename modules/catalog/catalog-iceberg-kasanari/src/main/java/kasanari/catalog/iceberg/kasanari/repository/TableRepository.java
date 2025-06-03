@@ -3,6 +3,7 @@ package kasanari.catalog.iceberg.kasanari.repository;
 import kasanari.catalog.iceberg.kasanari.repository.model.IcebergTableRecord;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.jdbi.v3.core.Handle;
 
 import java.util.List;
 
@@ -18,6 +19,8 @@ public interface TableRepository {
     boolean create(TableIdentifier tableIdentifier, String newMetadataLocation);
 
     boolean update(TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation);
+
+    boolean update(Handle tx, TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation);
 
     List<TableIdentifier> findByNamespace(Namespace namespace);
 

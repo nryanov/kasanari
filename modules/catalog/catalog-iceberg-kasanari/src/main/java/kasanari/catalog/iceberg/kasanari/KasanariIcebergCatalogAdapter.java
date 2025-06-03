@@ -2,9 +2,9 @@ package kasanari.catalog.iceberg.kasanari;
 
 import kasanari.catalog.iceberg.core.DefaultIcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.model.IcebergTable;
-import org.apache.iceberg.BaseTransaction;
+import kasanari.catalog.iceberg.kasanari.operations.KasanariTableOperations;
+import org.apache.iceberg.KasanariMultiTableTransaction;
 import org.apache.iceberg.KasanariTransactions;
-import org.apache.iceberg.Transaction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,25 +19,31 @@ public class KasanariIcebergCatalogAdapter extends DefaultIcebergCatalogAdapter 
 
     @Override
     public void commitTransaction(List<IcebergTable.Transaction> transactions) {
-        System.out.println("Commit");
-        var awaitingTransactions = new ArrayList<Transaction>();
+        var awaitingTransactions = new ArrayList<KasanariMultiTableTransaction>();
 
         transactions.forEach(tx -> {
             var tableIdentifier = tx.table().toIceberg();
             var loadedTable = asBaseTable(catalog.loadTable(tableIdentifier));
-            var openedTx = KasanariTransactions.newTransaction(tableIdentifier.toString(), loadedTable.operations());
+            var loadedTableOps = (KasanariTableOperations) loadedTable.operations();
+
+            var openedTx = KasanariTransactions.newTransaction(tableIdentifier.toString(), loadedTableOps);
             awaitingTransactions.add(openedTx);
 
             var updates = tx.changes().toIceberg(tableIdentifier);
-            var ops = (BaseTransaction.TransactionTable) openedTx.table();
+            var ops = (KasanariMultiTableTransaction.TransactionTable) openedTx.table();
 
             commitTableUpdates(updates, ops.operations());
         });
 
         catalog.getDataSource().getJdbi().useTransaction(tx -> {
+            // atomically commit all changes
+            awaitingTransactions.forEach(it -> {
+                it.commitSimpleTransaction(tx);
+            });
 
+            // cleanup after succeed
+            awaitingTransactions.forEach(KasanariMultiTableTransaction::cleanupAfterSimpleTransaction);
         });
-        awaitingTransactions.forEach(Transaction::commitTransaction);
     }
 
 }

@@ -6,6 +6,7 @@ import kasanari.catalog.iceberg.kasanari.utils.IcebergUtils;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.jdbi.v3.core.Handle;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,21 +82,28 @@ public class JdbcTableRepository implements TableRepository {
 
     @Override
     public boolean update(TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation) {
+        return dataSource.getJdbi().inTransaction(tx -> update0(tx, tableIdentifier, previousMetadataLocation, newMetadataLocation));
+    }
+
+    @Override
+    public boolean update(Handle tx, TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation) {
+        return update0(tx, tableIdentifier, previousMetadataLocation, newMetadataLocation);
+    }
+
+    private boolean update0(Handle tx, TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation) {
         var namespaceName = IcebergUtils.namespaceName(tableIdentifier.namespace());
 
-        return dataSource.getJdbi().inTransaction(tx -> {
-            var query = tx.createUpdate(JdbcQueries.UPDATE_TABLE);
-            query.bind(0, newMetadataLocation);
-            query.bind(1, previousMetadataLocation);
-            query.bind(2, catalogName);
-            query.bind(3, namespaceName);
-            query.bind(4, tableIdentifier.name());
-            query.bind(5, previousMetadataLocation);
+        var query = tx.createUpdate(JdbcQueries.UPDATE_TABLE);
+        query.bind(0, newMetadataLocation);
+        query.bind(1, previousMetadataLocation);
+        query.bind(2, catalogName);
+        query.bind(3, namespaceName);
+        query.bind(4, tableIdentifier.name());
+        query.bind(5, previousMetadataLocation);
 
-            var affectedRows = query.execute();
+        var affectedRows = query.execute();
 
-            return affectedRows == 1;
-        });
+        return affectedRows == 1;
     }
 
     @Override

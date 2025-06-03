@@ -1,5 +1,6 @@
 package org.apache.iceberg;
 
+import kasanari.catalog.iceberg.kasanari.operations.KasanariTableOperations;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.exceptions.CleanableFailure;
 import org.apache.iceberg.exceptions.CommitFailedException;
@@ -11,6 +12,7 @@ import org.apache.iceberg.metrics.LoggingMetricsReporter;
 import org.apache.iceberg.metrics.MetricsReporter;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
+import org.jdbi.v3.core.Handle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +35,7 @@ import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT;
 
+// copy of BaseTableTransaction but with a little bit different implementation of commitSimpleTransaction method
 public class KasanariMultiTableTransaction implements Transaction {
     private static final Logger logger = LoggerFactory.getLogger(KasanariMultiTableTransaction.class);
 
@@ -44,7 +47,7 @@ public class KasanariMultiTableTransaction implements Transaction {
     }
 
     private final String tableName;
-    private final TableOperations ops;
+    private final KasanariTableOperations ops;
     private final KasanariMultiTableTransaction.TransactionTable transactionTable;
     private final TableOperations transactionOps;
     private final List<PendingUpdate> updates;
@@ -57,13 +60,13 @@ public class KasanariMultiTableTransaction implements Transaction {
     private final MetricsReporter reporter;
 
     public KasanariMultiTableTransaction(
-            String tableName, TableOperations ops, KasanariMultiTableTransaction.TransactionType type, TableMetadata start) {
+            String tableName, KasanariTableOperations ops, KasanariMultiTableTransaction.TransactionType type, TableMetadata start) {
         this(tableName, ops, type, start, LoggingMetricsReporter.instance());
     }
 
     public KasanariMultiTableTransaction(
             String tableName,
-            TableOperations ops,
+            KasanariTableOperations ops,
             KasanariMultiTableTransaction.TransactionType type,
             TableMetadata start,
             MetricsReporter reporter) {
@@ -101,8 +104,10 @@ public class KasanariMultiTableTransaction implements Transaction {
     }
 
     private void checkLastOperationCommitted(String operation) {
-        Preconditions.checkState(
-                hasLastOpCommitted, "Cannot create new %s: last operation has not committed", operation);
+        if (!hasLastOpCommitted) {
+            throw new IllegalStateException(String.format("Cannot create new %s: last operation has not committed", operation));
+        }
+
         this.hasLastOpCommitted = false;
     }
 
@@ -247,7 +252,7 @@ public class KasanariMultiTableTransaction implements Transaction {
 
     @Override
     public ManageSnapshots manageSnapshots() {
-        SnapshotManager snapshotManager = new SnapshotManager(this);
+        var snapshotManager = new KasanariSnapshotManager(this);
         updates.add(snapshotManager);
         return snapshotManager;
     }
@@ -380,6 +385,79 @@ public class KasanariMultiTableTransaction implements Transaction {
                     .suppressFailureWhenFinished()
                     .onFailure((file, exc) -> logger.warn("Failed to delete uncommitted file: {}", file, exc))
                     .run(ops.io()::deleteFile);
+        }
+    }
+
+    public void commitSimpleTransaction(Handle tx) {
+        // if there were no changes, don't try to commit
+        if (base == current) {
+            return;
+        }
+
+        try {
+            Tasks.foreach(ops)
+                    .retry(base.propertyAsInt(COMMIT_NUM_RETRIES, COMMIT_NUM_RETRIES_DEFAULT))
+                    .exponentialBackoff(
+                            base.propertyAsInt(COMMIT_MIN_RETRY_WAIT_MS, COMMIT_MIN_RETRY_WAIT_MS_DEFAULT),
+                            base.propertyAsInt(COMMIT_MAX_RETRY_WAIT_MS, COMMIT_MAX_RETRY_WAIT_MS_DEFAULT),
+                            base.propertyAsInt(COMMIT_TOTAL_RETRY_TIME_MS, COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT),
+                            2.0 /* exponential */)
+                    .onlyRetryOn(CommitFailedException.class)
+                    .run(
+                            underlyingOps -> {
+                                applyUpdates(underlyingOps);
+                                underlyingOps.commit(tx, base, current);
+                            });
+
+        } catch (CommitStateUnknownException e) {
+            throw e;
+
+        } catch (KasanariMultiTableTransaction.PendingUpdateFailedException e) {
+            cleanUpOnCommitFailure();
+            throw e.wrapped();
+        } catch (RuntimeException e) {
+            if (!ops.requireStrictCleanup() || e instanceof CleanableFailure) {
+                cleanUpOnCommitFailure();
+            }
+
+            throw e;
+        }
+    }
+
+    public void cleanupAfterSimpleTransaction() {
+        Set<Long> startingSnapshots =
+                base.snapshots().stream().map(Snapshot::snapshotId).collect(Collectors.toSet());
+
+        try {
+            // clean up the data files that were deleted by each operation. first, get the list of
+            // committed manifests to ensure that no committed manifest is deleted.
+            // A manifest could be deleted in one successful operation commit, but reused in another
+            // successful commit of that operation if the whole transaction is retried.
+            Set<Long> newSnapshots = new HashSet<>();
+            for (Snapshot snapshot : current.snapshots()) {
+                if (!startingSnapshots.contains(snapshot.snapshotId())) {
+                    newSnapshots.add(snapshot.snapshotId());
+                }
+            }
+
+            Set<String> committedFiles = committedFiles(ops, newSnapshots);
+            if (committedFiles != null) {
+                // delete all of the files that were deleted in the most recent set of operation commits
+                Tasks.foreach(deletedFiles)
+                        .suppressFailureWhenFinished()
+                        .onFailure((file, exc) -> logger.warn("Failed to delete uncommitted file: {}", file, exc))
+                        .run(
+                                path -> {
+                                    if (!committedFiles.contains(path)) {
+                                        ops.io().deleteFile(path);
+                                    }
+                                });
+            } else {
+                logger.warn("Failed to load metadata for a committed snapshot, skipping clean-up");
+            }
+
+        } catch (RuntimeException e) {
+            logger.warn("Failed to load committed metadata, skipping clean-up", e);
         }
     }
 
