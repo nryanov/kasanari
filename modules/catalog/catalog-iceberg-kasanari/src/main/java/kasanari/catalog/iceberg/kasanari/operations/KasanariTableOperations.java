@@ -80,6 +80,11 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
     }
 
     @Override
+    public void commit(TableMetadata base, TableMetadata metadata) {
+        super.commit(base, metadata);
+    }
+
+    @Override
     protected void doCommit(TableMetadata base, TableMetadata metadata) {
         var isNewTable = base == null;
         var newMetadataLocation = writeNewMetadataIfRequired(isNewTable, metadata);

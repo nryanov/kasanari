@@ -356,7 +356,7 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
         awaitingTransactions.forEach(Transaction::commitTransaction);
     }
 
-    private TableMetadata commitTableUpdates(UpdateTableRequest updates, TableOperations ops) {
+    protected TableMetadata commitTableUpdates(UpdateTableRequest updates, TableOperations ops) {
         var isRetry = new AtomicBoolean(false);
         Tasks.foreach(ops)
                 .retry(COMMIT_NUM_RETRIES_DEFAULT) // todo: configure
@@ -396,11 +396,11 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
         return (SQLViewRepresentation) value;
     }
 
-    private BaseView asBaseView(View value) {
+    protected BaseView asBaseView(View value) {
         return (BaseView) value;
     }
 
-    private BaseTable asBaseTable(Table value) {
+    protected BaseTable asBaseTable(Table value) {
         return (BaseTable) value;
     }
 
