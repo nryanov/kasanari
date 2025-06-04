@@ -411,7 +411,6 @@ public class KasanariMultiTableTransaction implements Transaction {
 
         } catch (CommitStateUnknownException e) {
             throw e;
-
         } catch (KasanariMultiTableTransaction.PendingUpdateFailedException e) {
             cleanUpOnCommitFailure();
             throw e.wrapped();

@@ -35,12 +35,11 @@ public class KasanariIcebergCatalogAdapter extends DefaultIcebergCatalogAdapter 
             commitTableUpdates(updates, ops.operations());
         });
 
+        // todo: refactor it
+        // todo: check exceptional path
         catalog.getDataSource().getJdbi().useTransaction(tx -> {
             // atomically commit all changes
-            awaitingTransactions.forEach(it -> {
-                it.commitSimpleTransaction(tx);
-            });
-
+            awaitingTransactions.forEach(it -> it.commitSimpleTransaction(tx));
             // cleanup after succeed
             awaitingTransactions.forEach(KasanariMultiTableTransaction::cleanupAfterSimpleTransaction);
         });

@@ -13,5 +13,6 @@ public class KasanariIcebergCatalogFactory implements IcebergCatalogFactory {
         var catalog = new KasanariCatalog();
         catalog.initialize("kasanari", properties);
         return new LoggedIcebergCatalogAdapter(new KasanariIcebergCatalogAdapter(catalog));
+//        return new LoggedIcebergCatalogAdapter(new DefaultIcebergCatalogAdapter(catalog));
     }
 }
