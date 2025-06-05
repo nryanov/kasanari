@@ -9,15 +9,15 @@ import org.projectnessie.testing.nessie.NessieContainer;
 import java.util.Map;
 
 public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
-    private static final NessieContainer nessieContainer = new NessieContainer(ImmutableNessieConfig.builder().build());
+//    private static final NessieContainer nessieContainer = new NessieContainer(ImmutableNessieConfig.builder().build());
 
     @Override
     public IcebergCatalogAdapter setupCatalog() {
-        nessieContainer.start();
+//        nessieContainer.start();
 
         var factory = new NessieIcebergCatalogFactory();
         return factory.create(Map.of(
-                "uri", nessieContainer.getExternalNessieUri().toString(),
+                "uri", "http://localhost:19120/api/v2",
                 "warehouse", "file:///tmp/nessie-warehouse",
                 "ref", "main"
         ));
@@ -25,6 +25,6 @@ public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
     @Override
     public void close() {
-        nessieContainer.close();
+//        nessieContainer.close();
     }
 }

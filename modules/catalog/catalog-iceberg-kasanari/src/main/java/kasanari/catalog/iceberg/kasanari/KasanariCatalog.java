@@ -1,5 +1,6 @@
 package kasanari.catalog.iceberg.kasanari;
 
+import kasanari.catalog.iceberg.core.annotations.VisibleForTesting;
 import kasanari.catalog.iceberg.kasanari.operations.KasanariTableOperations;
 import kasanari.catalog.iceberg.kasanari.operations.KasanariViewOperations;
 import kasanari.catalog.iceberg.kasanari.repository.CatalogRepository;
@@ -291,13 +292,22 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
         dataSource.close();
     }
 
-    // for testing only
+    @Override
+    public String toString() {
+        return catalogName;
+    }
+
     KasanariDataSource getDataSource() {
         return dataSource;
     }
 
-    @Override
-    public String toString() {
-        return catalogName;
+    @VisibleForTesting
+    TableRepository getTableRepository() {
+        return tableRepository;
+    }
+
+    @VisibleForTesting
+    void setTableRepository(TableRepository tableRepository) {
+        this.tableRepository = tableRepository;
     }
 }

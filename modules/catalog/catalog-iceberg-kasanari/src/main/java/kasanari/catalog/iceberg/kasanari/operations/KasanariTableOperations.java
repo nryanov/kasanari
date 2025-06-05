@@ -6,6 +6,7 @@ import kasanari.catalog.iceberg.kasanari.repository.ViewRepository;
 import kasanari.catalog.iceberg.kasanari.repository.model.IcebergTableRecord;
 import kasanari.catalog.iceberg.kasanari.utils.IcebergUtils;
 import org.apache.iceberg.BaseMetastoreTableOperations;
+import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
@@ -14,6 +15,7 @@ import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.io.FileIO;
+import org.jdbi.v3.core.Handle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,6 +81,61 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
         }
     }
 
+
+    // multi table commit tx handler
+    public void commit(Handle tx, TableMetadata base, TableMetadata metadata) {
+        // if the metadata is already out of date, reject it
+        if (base != current()) {
+            if (base != null) {
+                throw new CommitFailedException("Cannot commit: stale table metadata");
+            } else {
+                // when current is non-null, the table exists. but when base is null, the commit is trying
+                // to create the table
+                throw new AlreadyExistsException("Table already exists: %s", tableName());
+            }
+        }
+        // if the metadata is not changed, return early
+        if (base == metadata) {
+            logger.info("Nothing to commit.");
+            return;
+        }
+
+        long start = System.currentTimeMillis();
+        doCommit(tx, base, metadata);
+        CatalogUtil.deleteRemovedMetadataFiles(io(), base, metadata);
+        requestRefresh();
+
+        logger.info("Successfully committed to table {} in {} ms", tableName(), System.currentTimeMillis() - start);
+    }
+
+    protected void doCommit(Handle tx, TableMetadata base, TableMetadata metadata) {
+        var isNewTable = base == null;
+        var newMetadataLocation = writeNewMetadataIfRequired(isNewTable, metadata);
+
+        var failure = false;
+
+        try {
+            if (isNewTable) {
+                throw new IllegalStateException("Only DMK operations supported for multi-table transactions");
+            } else {
+                logger.debug("Updating table: {}", tableIdentifier);
+                var existingTable = tableRepository.load(tableIdentifier);
+                // check that current location didn't change yet
+                validateMetadataLocation(existingTable, base);
+                updateTable(tx, existingTable.metadataLocation(), newMetadataLocation);
+            }
+        } catch (Exception e) {
+            logger.warn("Error happened while commiting to table `{}`: {}", tableIdentifier, e.getMessage());
+            failure = true;
+            throw e;
+        } finally {
+            if (failure) {
+                logger.warn("Deleting metadata file `{}` due to error for table `{}`", newMetadataLocation, tableIdentifier);
+                fileIO.deleteFile(newMetadataLocation);
+            }
+        }
+    }
+
     @Override
     protected void doCommit(TableMetadata base, TableMetadata metadata) {
         var isNewTable = base == null;
@@ -100,6 +157,7 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
         } catch (Exception e) {
             logger.warn("Error happened while commiting to table `{}`: {}", tableIdentifier, e.getMessage());
             failure = true;
+            throw e;
         } finally {
             if (failure) {
                 logger.warn("Deleting metadata file `{}` due to error for table `{}`", newMetadataLocation, tableIdentifier);
@@ -152,6 +210,18 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
             throw new CommitFailedException(
                     "Table `%s` wasn't created in catalog `%s`",
                     tableIdentifier,
+                    catalogName
+            );
+        }
+    }
+
+    private void updateTable(Handle tx, String previousMetadataLocation, String newMetadataLocation) {
+        var result = tableRepository.update(tx, tableIdentifier, previousMetadataLocation, newMetadataLocation);
+
+        if (!result) {
+            throw new CommitFailedException(
+                    "Table `%s` wasn't updated in catalog `%s`",
+                    tableIdentifier.toString(),
                     catalogName
             );
         }
