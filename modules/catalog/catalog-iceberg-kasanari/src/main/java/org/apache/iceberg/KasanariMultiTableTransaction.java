@@ -39,7 +39,7 @@ import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFA
 public class KasanariMultiTableTransaction implements Transaction {
     private static final Logger logger = LoggerFactory.getLogger(KasanariMultiTableTransaction.class);
 
-    enum TransactionType {
+    public enum TransactionType {
         CREATE_TABLE,
         REPLACE_TABLE,
         CREATE_OR_REPLACE_TABLE,
@@ -418,7 +418,6 @@ public class KasanariMultiTableTransaction implements Transaction {
             if (!ops.requireStrictCleanup() || e instanceof CleanableFailure) {
                 cleanUpOnCommitFailure();
             }
-
             throw e;
         }
     }

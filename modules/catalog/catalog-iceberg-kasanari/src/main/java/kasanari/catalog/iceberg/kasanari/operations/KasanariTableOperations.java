@@ -127,6 +127,7 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
         } catch (Exception e) {
             logger.warn("Error happened while commiting to table `{}`: {}", tableIdentifier, e.getMessage());
             failure = true;
+            throw e;
         } finally {
             if (failure) {
                 logger.warn("Deleting metadata file `{}` due to error for table `{}`", newMetadataLocation, tableIdentifier);
@@ -156,6 +157,7 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
         } catch (Exception e) {
             logger.warn("Error happened while commiting to table `{}`: {}", tableIdentifier, e.getMessage());
             failure = true;
+            throw e;
         } finally {
             if (failure) {
                 logger.warn("Deleting metadata file `{}` due to error for table `{}`", newMetadataLocation, tableIdentifier);

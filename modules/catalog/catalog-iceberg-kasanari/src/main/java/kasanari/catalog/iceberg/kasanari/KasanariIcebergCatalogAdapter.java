@@ -11,14 +11,31 @@ import java.util.List;
 
 public class KasanariIcebergCatalogAdapter extends DefaultIcebergCatalogAdapter {
     private final KasanariCatalog catalog;
+    private final boolean enableMultiTAbleTransaction;
 
     public KasanariIcebergCatalogAdapter(KasanariCatalog catalog) {
+        this(catalog, true);
+    }
+
+    public KasanariIcebergCatalogAdapter(
+            KasanariCatalog catalog,
+            boolean enableMultiTAbleTransaction
+    ) {
         super(catalog);
         this.catalog = catalog;
+        this.enableMultiTAbleTransaction = enableMultiTAbleTransaction;
     }
 
     @Override
     public void commitTransaction(List<IcebergTable.Transaction> transactions) {
+        if (enableMultiTAbleTransaction) {
+            commitMultiTableTransaction(transactions);
+        } else {
+            super.commitTransaction(transactions);
+        }
+    }
+
+    private void commitMultiTableTransaction(List<IcebergTable.Transaction> transactions) {
         var awaitingTransactions = new ArrayList<KasanariMultiTableTransaction>();
 
         transactions.forEach(tx -> {
@@ -35,8 +52,6 @@ public class KasanariIcebergCatalogAdapter extends DefaultIcebergCatalogAdapter 
             commitTableUpdates(updates, ops.operations());
         });
 
-        // todo: refactor it
-        // todo: check exceptional path
         catalog.getDataSource().getJdbi().useTransaction(tx -> {
             // atomically commit all changes
             awaitingTransactions.forEach(it -> it.commitSimpleTransaction(tx));
