@@ -6,3 +6,9 @@ compile:
 
 deps:
 	./gradlew :modules:catalog:catalog-iceberg-kasanari:dependencies
+
+make iceberg:
+	./gradlew :modules:api:api-iceberg:openApiGenerate
+
+make paimon:
+	./gradlew :modules:api:api-paimon:openApiGenerate
