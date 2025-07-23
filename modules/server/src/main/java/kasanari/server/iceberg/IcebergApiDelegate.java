@@ -1,14 +1,42 @@
 package kasanari.server.iceberg;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.NotFoundException;
 import kasanari.api.iceberg.IcebergApi;
 import kasanari.api.iceberg.dto.*;
+import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
+import kasanari.server.iceberg.mapper.RestMapper;
+
+import java.util.Map;
 
 @ApplicationScoped
 public class IcebergApiDelegate implements IcebergApi {
+    private final Map<String, IcebergCatalogAdapter> catalogs;
+    private final RestMapper restMapper;
+
+    public IcebergApiDelegate(RestMapper restMapper) {
+        this.catalogs = Map.of();
+        this.restMapper = restMapper;
+    }
+
     @Override
     public void cancelPlanning(String prefix, String namespace, String table, String planId) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
 
+    @Override
+    public IcebergPlanTableScanResultDto planTableScan(String prefix, String namespace, String table, IcebergPlanTableScanRequestDto icebergPlanTableScanRequestDto) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public IcebergFetchPlanningResultDto fetchPlanningResult(String prefix, String namespace, String table, String planId) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public IcebergFetchScanTasksResultDto fetchScanTasks(String prefix, String namespace, String table, IcebergFetchScanTasksRequestDto icebergFetchScanTasksRequestDto) {
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
@@ -44,16 +72,6 @@ public class IcebergApiDelegate implements IcebergApi {
     @Override
     public void dropView(String prefix, String namespace, String view) {
 
-    }
-
-    @Override
-    public IcebergFetchPlanningResultDto fetchPlanningResult(String prefix, String namespace, String table, String planId) {
-        return null;
-    }
-
-    @Override
-    public IcebergFetchScanTasksResultDto fetchScanTasks(String prefix, String namespace, String table, IcebergFetchScanTasksRequestDto icebergFetchScanTasksRequestDto) {
-        return null;
     }
 
     @Override
@@ -107,11 +125,6 @@ public class IcebergApiDelegate implements IcebergApi {
     }
 
     @Override
-    public IcebergPlanTableScanResultDto planTableScan(String prefix, String namespace, String table, IcebergPlanTableScanRequestDto icebergPlanTableScanRequestDto) {
-        return null;
-    }
-
-    @Override
     public IcebergLoadTableResultDto registerTable(String prefix, String namespace, IcebergRegisterTableRequestDto icebergRegisterTableRequestDto) {
         return null;
     }
@@ -148,11 +161,30 @@ public class IcebergApiDelegate implements IcebergApi {
 
     @Override
     public IcebergCommitTableResponseDto updateTable(String prefix, String namespace, String table, IcebergCommitTableRequestDto icebergCommitTableRequestDto) {
+        var catalog = resolveCatalog(prefix);
+
+//        catalog.updateTable()
+
         return null;
     }
 
     @Override
     public void viewExists(String prefix, String namespace, String view) {
+        var catalog = resolveCatalog(prefix);
+        var exists = catalog.viewExists(restMapper.namespaceName(namespace), restMapper.viewName(view));
 
+        if (!exists) {
+            throw new NotFoundException(String.format("View %s does not exist in namespace %s", view, namespace));
+        }
+    }
+
+    private IcebergCatalogAdapter resolveCatalog(String prefix) {
+        var maybeCatalog = catalogs.get(prefix);
+
+        if (maybeCatalog == null) {
+            throw new NotFoundException(String.format("Catalog with name %s not found", prefix));
+        }
+
+        return maybeCatalog;
     }
 }

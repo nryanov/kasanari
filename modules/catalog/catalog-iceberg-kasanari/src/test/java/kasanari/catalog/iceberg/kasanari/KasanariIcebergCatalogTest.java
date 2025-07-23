@@ -143,7 +143,7 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
             }
         });
 
-        var namespaceName = new IcebergNamespace.Name("ns_multi_table_tx2");
+        var namespaceName = new IcebergNamespace.Name("ns_multi_table_tx3");
         var namespace = new IcebergNamespace(namespaceName, Map.of());
         catalog.createNamespace(namespace);
 

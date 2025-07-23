@@ -2653,33 +2653,29 @@ components:
           additionalProperties:
             type: string
 
-    BaseUpdate:
+    TableUpdate:
       discriminator:
         propertyName: action
         mapping:
-          assign-uuid: '#/components/schemas/AssignUUIDUpdate'
-          upgrade-format-version: '#/components/schemas/UpgradeFormatVersionUpdate'
-          add-schema: '#/components/schemas/AddSchemaUpdate'
-          set-current-schema: '#/components/schemas/SetCurrentSchemaUpdate'
-          add-spec: '#/components/schemas/AddPartitionSpecUpdate'
-          set-default-spec: '#/components/schemas/SetDefaultSpecUpdate'
-          add-sort-order: '#/components/schemas/AddSortOrderUpdate'
-          set-default-sort-order: '#/components/schemas/SetDefaultSortOrderUpdate'
-          add-snapshot: '#/components/schemas/AddSnapshotUpdate'
-          set-snapshot-ref: '#/components/schemas/SetSnapshotRefUpdate'
-          remove-snapshots: '#/components/schemas/RemoveSnapshotsUpdate'
-          remove-snapshot-ref: '#/components/schemas/RemoveSnapshotRefUpdate'
-          set-location: '#/components/schemas/SetLocationUpdate'
-          set-properties: '#/components/schemas/SetPropertiesUpdate'
-          remove-properties: '#/components/schemas/RemovePropertiesUpdate'
-          add-view-version: '#/components/schemas/AddViewVersionUpdate'
-          set-current-view-version: '#/components/schemas/SetCurrentViewVersionUpdate'
-          set-statistics: '#/components/schemas/SetStatisticsUpdate'
-          remove-statistics: '#/components/schemas/RemoveStatisticsUpdate'
-          set-partition-statistics: '#/components/schemas/SetPartitionStatisticsUpdate'
-          remove-partition-statistics: '#/components/schemas/RemovePartitionStatisticsUpdate'
-          remove-partition-specs: '#/components/schemas/RemovePartitionSpecsUpdate'
-          enable-row-lineage: '#/components/schemas/EnableRowLineageUpdate'
+          assign-uuid: '#/components/schemas/AssignTableUUIDUpdate'
+          upgrade-format-version: '#/components/schemas/UpgradeTableFormatVersionUpdate'
+          add-schema: '#/components/schemas/AddTableSchemaUpdate'
+          set-current-schema: '#/components/schemas/SetTableCurrentSchemaUpdate'
+          add-spec: '#/components/schemas/AddTablePartitionSpecUpdate'
+          set-default-spec: '#/components/schemas/SetTableDefaultSpecUpdate'
+          add-sort-order: '#/components/schemas/AddTableSortOrderUpdate'
+          set-default-sort-order: '#/components/schemas/SetTableDefaultSortOrderUpdate'
+          add-snapshot: '#/components/schemas/AddTableSnapshotUpdate'
+          set-snapshot-ref: '#/components/schemas/SetTableSnapshotRefUpdate'
+          remove-snapshots: '#/components/schemas/RemoveTableSnapshotsUpdate'
+          remove-snapshot-ref: '#/components/schemas/RemoveTableSnapshotRefUpdate'
+          set-location: '#/components/schemas/SetTableLocationUpdate'
+          set-properties: '#/components/schemas/SetTablePropertiesUpdate'
+          remove-properties: '#/components/schemas/RemoveTablePropertiesUpdate'
+          set-statistics: '#/components/schemas/SetTableStatisticsUpdate'
+          remove-statistics: '#/components/schemas/RemoveTableStatisticsUpdate'
+          remove-partition-specs: '#/components/schemas/RemoveTablePartitionSpecsUpdate'
+          enable-row-lineage: '#/components/schemas/EnableTableRowLineageUpdate'
       type: object
       required:
         - action
@@ -2687,10 +2683,10 @@ components:
         action:
           type: string
 
-    AssignUUIDUpdate:
-      description: Assigning a UUID to a table/view should only be done when creating the table/view. It is not safe to re-assign the UUID if a table/view already has a UUID assigned
+    AssignTableUUIDUpdate:
+      description: Assigning a UUID to a table should only be done when creating the table. It is not safe to re-assign the UUID if a table already has a UUID assigned
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - uuid
       properties:
@@ -2700,9 +2696,9 @@ components:
         uuid:
           type: string
 
-    UpgradeFormatVersionUpdate:
+    UpgradeTableFormatVersionUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - format-version
       properties:
@@ -2712,9 +2708,9 @@ components:
         format-version:
           type: integer
 
-    AddSchemaUpdate:
+    AddTableSchemaUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - schema
       properties:
@@ -2733,9 +2729,9 @@ components:
             The highest assigned column ID for the table. This is used to ensure columns are always
             assigned an unused ID when evolving schemas. When omitted, it will be computed on the server side.
 
-    SetCurrentSchemaUpdate:
+    SetTableCurrentSchemaUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - schema-id
       properties:
@@ -2746,9 +2742,9 @@ components:
           type: integer
           description: Schema ID to set as current, or -1 to set last added schema
 
-    AddPartitionSpecUpdate:
+    AddTablePartitionSpecUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - spec
       properties:
@@ -2758,9 +2754,9 @@ components:
         spec:
           $ref: '#/components/schemas/PartitionSpec'
 
-    SetDefaultSpecUpdate:
+    SetTableDefaultSpecUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - spec-id
       properties:
@@ -2771,9 +2767,9 @@ components:
           type: integer
           description: Partition spec ID to set as the default, or -1 to set last added spec
 
-    AddSortOrderUpdate:
+    AddTableSortOrderUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - sort-order
       properties:
@@ -2783,9 +2779,9 @@ components:
         sort-order:
           $ref: '#/components/schemas/SortOrder'
 
-    SetDefaultSortOrderUpdate:
+    SetTableDefaultSortOrderUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - sort-order-id
       properties:
@@ -2796,9 +2792,9 @@ components:
           type: integer
           description: Sort order ID to set as the default, or -1 to set last added sort order
 
-    AddSnapshotUpdate:
+    AddTableSnapshotUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - snapshot
       properties:
@@ -2808,9 +2804,9 @@ components:
         snapshot:
           $ref: '#/components/schemas/Snapshot'
 
-    SetSnapshotRefUpdate:
+    SetTableSnapshotRefUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
         - $ref: '#/components/schemas/SnapshotReference'
       required:
         - ref-name
@@ -2821,9 +2817,9 @@ components:
         ref-name:
           type: string
 
-    RemoveSnapshotsUpdate:
+    RemoveTableSnapshotsUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - snapshot-ids
       properties:
@@ -2836,9 +2832,9 @@ components:
             type: integer
             format: int64
 
-    RemoveSnapshotRefUpdate:
+    RemoveTableSnapshotRefUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - ref-name
       properties:
@@ -2848,9 +2844,9 @@ components:
         ref-name:
           type: string
 
-    SetLocationUpdate:
+    SetTableLocationUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - location
       properties:
@@ -2860,9 +2856,9 @@ components:
         location:
           type: string
 
-    SetPropertiesUpdate:
+    SetTablePropertiesUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - updates
       properties:
@@ -2874,9 +2870,9 @@ components:
           additionalProperties:
             type: string
 
-    RemovePropertiesUpdate:
+    RemoveTablePropertiesUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - removals
       properties:
@@ -2888,34 +2884,9 @@ components:
           items:
             type: string
 
-    AddViewVersionUpdate:
+    SetTableStatisticsUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
-      required:
-        - view-version
-      properties:
-        action:
-          type: string
-          const: "add-view-version"
-        view-version:
-          $ref: '#/components/schemas/ViewVersion'
-
-    SetCurrentViewVersionUpdate:
-      allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
-      required:
-        - view-version-id
-      properties:
-        action:
-          type: string
-          const: "set-current-view-version"
-        view-version-id:
-          type: integer
-          description: The view version id to set as current, or -1 to set last added view version id
-
-    SetStatisticsUpdate:
-      allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - statistics
       properties:
@@ -2932,9 +2903,9 @@ components:
         statistics:
           $ref: '#/components/schemas/StatisticsFile'
 
-    RemoveStatisticsUpdate:
+    RemoveTableStatisticsUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - snapshot-id
       properties:
@@ -2945,9 +2916,9 @@ components:
           type: integer
           format: int64
 
-    SetPartitionStatisticsUpdate:
+    SetTablePartitionStatisticsUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - partition-statistics
       properties:
@@ -2957,9 +2928,9 @@ components:
         partition-statistics:
           $ref: '#/components/schemas/PartitionStatisticsFile'
 
-    RemovePartitionStatisticsUpdate:
+    RemoveTablePartitionStatisticsUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - snapshot-id
       properties:
@@ -2970,9 +2941,9 @@ components:
           type: integer
           format: int64
 
-    RemovePartitionSpecsUpdate:
+    RemoveTablePartitionSpecsUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       required:
         - spec-ids
       properties:
@@ -2985,46 +2956,210 @@ components:
             type: integer
 
     # Disabling Row Lineage is Forbidden
-    EnableRowLineageUpdate:
+    EnableTableRowLineageUpdate:
       allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
+        - $ref: '#/components/schemas/TableUpdate'
       properties:
         action:
           type: string
           const: "enable-row-lineage"
 
-    TableUpdate:
-      anyOf:
-        - $ref: '#/components/schemas/AssignUUIDUpdate'
-        - $ref: '#/components/schemas/UpgradeFormatVersionUpdate'
-        - $ref: '#/components/schemas/AddSchemaUpdate'
-        - $ref: '#/components/schemas/SetCurrentSchemaUpdate'
-        - $ref: '#/components/schemas/AddPartitionSpecUpdate'
-        - $ref: '#/components/schemas/SetDefaultSpecUpdate'
-        - $ref: '#/components/schemas/AddSortOrderUpdate'
-        - $ref: '#/components/schemas/SetDefaultSortOrderUpdate'
-        - $ref: '#/components/schemas/AddSnapshotUpdate'
-        - $ref: '#/components/schemas/SetSnapshotRefUpdate'
-        - $ref: '#/components/schemas/RemoveSnapshotsUpdate'
-        - $ref: '#/components/schemas/RemoveSnapshotRefUpdate'
-        - $ref: '#/components/schemas/SetLocationUpdate'
-        - $ref: '#/components/schemas/SetPropertiesUpdate'
-        - $ref: '#/components/schemas/RemovePropertiesUpdate'
-        - $ref: '#/components/schemas/SetStatisticsUpdate'
-        - $ref: '#/components/schemas/RemoveStatisticsUpdate'
-        - $ref: '#/components/schemas/RemovePartitionSpecsUpdate'
-        - $ref: '#/components/schemas/EnableRowLineageUpdate'
-
     ViewUpdate:
-      anyOf:
-        - $ref: '#/components/schemas/AssignUUIDUpdate'
-        - $ref: '#/components/schemas/UpgradeFormatVersionUpdate'
-        - $ref: '#/components/schemas/AddSchemaUpdate'
-        - $ref: '#/components/schemas/SetLocationUpdate'
-        - $ref: '#/components/schemas/SetPropertiesUpdate'
-        - $ref: '#/components/schemas/RemovePropertiesUpdate'
-        - $ref: '#/components/schemas/AddViewVersionUpdate'
-        - $ref: '#/components/schemas/SetCurrentViewVersionUpdate'
+      discriminator:
+        propertyName: action
+        mapping:
+          assign-uuid: '#/components/schemas/AssignViewUUIDUpdate'
+          upgrade-format-version: '#/components/schemas/UpgradeViewFormatVersionUpdate'
+          add-schema: '#/components/schemas/AddViewSchemaUpdate'
+          set-location: '#/components/schemas/SetViewLocationUpdate'
+          set-properties: '#/components/schemas/SetViewPropertiesUpdate'
+          remove-properties: '#/components/schemas/RemoveViewPropertiesUpdate'
+          add-view-version: '#/components/schemas/AddViewVersionUpdate'
+          set-current-view-version: '#/components/schemas/SetCurrentViewVersionUpdate'
+      type: object
+      required:
+        - action
+      properties:
+        action:
+          type: string
+
+    AssignViewUUIDUpdate:
+      description: Assigning a UUID to a view should only be done when creating the view. It is not safe to re-assign the UUID if a view already has a UUID assigned
+      allOf:
+        - $ref: '#/components/schemas/ViewUpdate'
+      required:
+        - uuid
+      properties:
+        action:
+          type: string
+          const: "assign-uuid"
+        uuid:
+          type: string
+
+    UpgradeViewFormatVersionUpdate:
+      allOf:
+        - $ref: '#/components/schemas/ViewUpdate'
+      required:
+        - format-version
+      properties:
+        action:
+          type: string
+          const: "upgrade-format-version"
+        format-version:
+          type: integer
+
+    AddViewSchemaUpdate:
+      allOf:
+        - $ref: '#/components/schemas/ViewUpdate'
+      required:
+        - schema
+      properties:
+        action:
+          type: string
+          const: "add-schema"
+        schema:
+          $ref: '#/components/schemas/Schema'
+        last-column-id:
+          type: integer
+          deprecated: true
+          description:
+            This optional field is **DEPRECATED for REMOVAL** since it more safe to handle this internally,
+            and shouldn't be exposed to the clients.
+
+            The highest assigned column ID for the view. This is used to ensure columns are always
+            assigned an unused ID when evolving schemas. When omitted, it will be computed on the server side.
+
+    SetViewLocationUpdate:
+      allOf:
+        - $ref: '#/components/schemas/ViewUpdate'
+      required:
+        - location
+      properties:
+        action:
+          type: string
+          const: "set-location"
+        location:
+          type: string
+
+    SetViewPropertiesUpdate:
+      allOf:
+        - $ref: '#/components/schemas/ViewUpdate'
+      required:
+        - updates
+      properties:
+        action:
+          type: string
+          const: "set-properties"
+        updates:
+          type: object
+          additionalProperties:
+            type: string
+
+    RemoveViewPropertiesUpdate:
+      allOf:
+        - $ref: '#/components/schemas/ViewUpdate'
+      required:
+        - removals
+      properties:
+        action:
+          type: string
+          const: "remove-properties"
+        removals:
+          type: array
+          items:
+            type: string
+
+    AddViewVersionUpdate:
+      allOf:
+        - $ref: '#/components/schemas/ViewUpdate'
+      required:
+        - view-version
+      properties:
+        action:
+          type: string
+          const: "add-view-version"
+        view-version:
+          $ref: '#/components/schemas/ViewVersion'
+
+    SetCurrentViewVersionUpdate:
+      allOf:
+        - $ref: '#/components/schemas/ViewUpdate'
+      required:
+        - view-version-id
+      properties:
+        action:
+          type: string
+          const: "set-current-view-version"
+        view-version-id:
+          type: integer
+          description: The view version id to set as current, or -1 to set last added view version id
+
+#    BaseUpdate:
+#      discriminator:
+#        propertyName: action
+#        mapping:
+#          assign-uuid: '#/components/schemas/AssignUUIDUpdate'
+#          upgrade-format-version: '#/components/schemas/UpgradeFormatVersionUpdate'
+#          add-schema: '#/components/schemas/AddSchemaUpdate'
+#          set-current-schema: '#/components/schemas/SetCurrentSchemaUpdate'
+#          add-spec: '#/components/schemas/AddPartitionSpecUpdate'
+#          set-default-spec: '#/components/schemas/SetDefaultSpecUpdate'
+#          add-sort-order: '#/components/schemas/AddSortOrderUpdate'
+#          set-default-sort-order: '#/components/schemas/SetDefaultSortOrderUpdate'
+#          add-snapshot: '#/components/schemas/AddSnapshotUpdate'
+#          set-snapshot-ref: '#/components/schemas/SetSnapshotRefUpdate'
+#          remove-snapshots: '#/components/schemas/RemoveSnapshotsUpdate'
+#          remove-snapshot-ref: '#/components/schemas/RemoveSnapshotRefUpdate'
+#          set-location: '#/components/schemas/SetLocationUpdate'
+#          set-properties: '#/components/schemas/SetPropertiesUpdate'
+#          remove-properties: '#/components/schemas/RemovePropertiesUpdate'
+#          add-view-version: '#/components/schemas/AddViewVersionUpdate'
+#          set-current-view-version: '#/components/schemas/SetCurrentViewVersionUpdate'
+#          set-statistics: '#/components/schemas/SetStatisticsUpdate'
+#          remove-statistics: '#/components/schemas/RemoveStatisticsUpdate'
+#          set-partition-statistics: '#/components/schemas/SetPartitionStatisticsUpdate'
+#          remove-partition-statistics: '#/components/schemas/RemovePartitionStatisticsUpdate'
+#          remove-partition-specs: '#/components/schemas/RemovePartitionSpecsUpdate'
+#          enable-row-lineage: '#/components/schemas/EnableRowLineageUpdate'
+#      type: object
+#      required:
+#        - action
+#      properties:
+#        action:
+#          type: string
+
+#    TableUpdate:
+#      anyOf:
+#        - $ref: '#/components/schemas/AssignUUIDUpdate'
+#        - $ref: '#/components/schemas/UpgradeFormatVersionUpdate'
+#        - $ref: '#/components/schemas/AddSchemaUpdate'
+#        - $ref: '#/components/schemas/SetCurrentSchemaUpdate'
+#        - $ref: '#/components/schemas/AddPartitionSpecUpdate'
+#        - $ref: '#/components/schemas/SetDefaultSpecUpdate'
+#        - $ref: '#/components/schemas/AddSortOrderUpdate'
+#        - $ref: '#/components/schemas/SetDefaultSortOrderUpdate'
+#        - $ref: '#/components/schemas/AddSnapshotUpdate'
+#        - $ref: '#/components/schemas/SetSnapshotRefUpdate'
+#        - $ref: '#/components/schemas/RemoveSnapshotsUpdate'
+#        - $ref: '#/components/schemas/RemoveSnapshotRefUpdate'
+#        - $ref: '#/components/schemas/SetLocationUpdate'
+#        - $ref: '#/components/schemas/SetPropertiesUpdate'
+#        - $ref: '#/components/schemas/RemovePropertiesUpdate'
+#        - $ref: '#/components/schemas/SetStatisticsUpdate'
+#        - $ref: '#/components/schemas/RemoveStatisticsUpdate'
+#        - $ref: '#/components/schemas/RemovePartitionSpecsUpdate'
+#        - $ref: '#/components/schemas/EnableRowLineageUpdate'
+
+#    ViewUpdate:
+#      anyOf:
+#        - $ref: '#/components/schemas/AssignUUIDUpdate'
+#        - $ref: '#/components/schemas/UpgradeFormatVersionUpdate'
+#        - $ref: '#/components/schemas/AddSchemaUpdate'
+#        - $ref: '#/components/schemas/SetLocationUpdate'
+#        - $ref: '#/components/schemas/SetPropertiesUpdate'
+#        - $ref: '#/components/schemas/RemovePropertiesUpdate'
+#        - $ref: '#/components/schemas/AddViewVersionUpdate'
+#        - $ref: '#/components/schemas/SetCurrentViewVersionUpdate'
 
     TableRequirement:
       type: object

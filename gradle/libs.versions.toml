@@ -8,6 +8,7 @@ hive = { strictly = "2.3.9" }
 slfj4 = "2.0.17"
 jdbi = "3.49.4"
 agroal = "2.7.1"
+asm="9.7.1"
 # test dependencies
 junit = "5.12.2"
 junit-platform = "1.12.2"
@@ -40,6 +41,8 @@ agroal-pool = { group = "io.agroal", name = "agroal-pool", version.ref = "agroal
 
 slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slfj4" }
 logback = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
+
+asm = { group = "org.ow2.asm", name = "asm", version.ref = "asm" }
 
 # test dependencies
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit" }
