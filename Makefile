@@ -7,8 +7,8 @@ compile:
 deps:
 	./gradlew :modules:catalog:catalog-iceberg-kasanari:dependencies
 
-make iceberg:
+iceberg:
 	./gradlew :modules:api:api-iceberg:openApiGenerate
 
-make paimon:
+paimon:
 	./gradlew :modules:api:api-paimon:openApiGenerate
