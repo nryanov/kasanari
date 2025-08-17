@@ -1,57 +1,71 @@
 package kasanari.catalog.iceberg.core;
 
-import kasanari.catalog.iceberg.core.model.IcebergNamespace;
-import kasanari.catalog.iceberg.core.model.IcebergTable;
-import kasanari.catalog.iceberg.core.model.IcebergValues;
-import kasanari.catalog.iceberg.core.model.IcebergView;
 import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.rest.requests.CreateTableRequest;
+import org.apache.iceberg.rest.requests.CreateViewRequest;
+import org.apache.iceberg.rest.requests.UpdateTableRequest;
+import org.apache.iceberg.rest.responses.CreateNamespaceResponse;
+import org.apache.iceberg.rest.responses.GetNamespaceResponse;
+import org.apache.iceberg.rest.responses.ListNamespacesResponse;
+import org.apache.iceberg.rest.responses.ListTablesResponse;
+import org.apache.iceberg.rest.responses.LoadTableResponse;
+import org.apache.iceberg.rest.responses.LoadViewResponse;
+import org.apache.iceberg.rest.responses.UpdateNamespacePropertiesResponse;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface IcebergCatalogAdapter {
-    void createNamespace(IcebergNamespace namespace);
+    CreateNamespaceResponse createNamespace(Namespace namespace, Map<String, String> properties);
 
-    void dropNamespace(IcebergNamespace.Name namespace);
+    default CreateNamespaceResponse createNamespace(Namespace namespace) {
+        return createNamespace(namespace, Map.of());
+    }
 
-     IcebergNamespace loadNamespaceMetadata(IcebergNamespace.Name namespace);
+    void dropNamespace(Namespace namespace);
 
-    boolean namespaceExists(IcebergNamespace.Name namespace);
+    GetNamespaceResponse loadNamespaceMetadata(Namespace namespace);
 
-    IcebergNamespace.Listing listNamespaces(IcebergNamespace.Listing.Filter filter);
+    boolean namespaceExists(Namespace namespace);
 
-    IcebergNamespace updateNamespace(IcebergNamespace.Name namespace, IcebergNamespace.Update rq);
+    ListNamespacesResponse listNamespaces(String pageToken, Integer pageSize, String parent);
 
-    IcebergView.Metadata createView(IcebergView.CreateRequest createRq);
+    UpdateNamespacePropertiesResponse updateNamespace(Namespace namespace, Map<String, String> updates, Set<String> removals);
 
-    boolean viewExists(IcebergNamespace.Name namespace, IcebergView.Name view);
+    LoadViewResponse createView(Namespace namespace, CreateViewRequest rq);
 
-    IcebergView.Metadata loadView(IcebergView view);
+    boolean viewExists(TableIdentifier view);
 
-    void renameView(IcebergView from, IcebergView to);
+    LoadViewResponse loadView(TableIdentifier view);
 
-    IcebergView.Listing listViews(IcebergNamespace.Name namespace, IcebergView.Listing.Filter filter);
+    void renameView(TableIdentifier from, TableIdentifier to);
 
-    void dropView(IcebergView view);
+    ListTablesResponse listViews(Namespace namespace, String pageToken, Integer pageSize);
 
-    IcebergView.Metadata replaceView(IcebergView view, IcebergView.UpdateRequest rq);
+    void dropView(TableIdentifier view);
 
-    boolean tableExists(IcebergNamespace.Name namespace, IcebergTable.Name name);
+    LoadViewResponse replaceView(TableIdentifier view, UpdateTableRequest rq);
 
-    void dropTable(IcebergTable table, boolean purge);
+    boolean tableExists(TableIdentifier table);
 
-    IcebergTable.Listing listTables(IcebergNamespace.Name namespace, IcebergTable.Listing.Filter filter);
+    void dropTable(TableIdentifier table, boolean purge);
 
-    IcebergTable.LoadedTable createTable(IcebergTable.CreateRequest rq);
+    ListTablesResponse listTables(Namespace namespace, String pageToken, Integer pageSize);
 
-    void renameTable(IcebergTable from, IcebergTable to);
+    LoadTableResponse createTable(Namespace namespace, CreateTableRequest rq);
 
-    IcebergTable.LoadedTable registerTable(IcebergTable table, IcebergValues.Location location);
+    void renameTable(TableIdentifier from, TableIdentifier to);
 
-    IcebergTable.Commit updateTable(IcebergTable table, IcebergTable.UpdateRequest rq);
+    LoadTableResponse registerTable(TableIdentifier table, String location);
 
-    IcebergTable.LoadedTable loadTable(IcebergTable table);
+    LoadTableResponse updateTable(TableIdentifier table, UpdateTableRequest rq);
 
-    void commitTransaction(List<IcebergTable.Transaction> transactions);
+    LoadTableResponse loadTable(TableIdentifier table);
+
+    void commitTransaction(List<UpdateTableRequest> transactions);
 
     Catalog delegate();
 }

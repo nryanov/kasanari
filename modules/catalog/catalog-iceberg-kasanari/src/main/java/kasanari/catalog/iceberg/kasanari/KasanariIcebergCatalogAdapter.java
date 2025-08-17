@@ -1,17 +1,17 @@
 package kasanari.catalog.iceberg.kasanari;
 
 import kasanari.catalog.iceberg.core.DefaultIcebergCatalogAdapter;
-import kasanari.catalog.iceberg.core.model.IcebergTable;
 import kasanari.catalog.iceberg.kasanari.operations.KasanariTableOperations;
 import org.apache.iceberg.KasanariMultiTableTransaction;
 import org.apache.iceberg.KasanariTransactions;
+import org.apache.iceberg.rest.requests.UpdateTableRequest;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class KasanariIcebergCatalogAdapter extends DefaultIcebergCatalogAdapter {
     private final KasanariCatalog catalog;
-    private final boolean enableMultiTAbleTransaction;
+    private final boolean enableMultiTableTransaction;
 
     public KasanariIcebergCatalogAdapter(KasanariCatalog catalog) {
         this(catalog, true);
@@ -23,33 +23,32 @@ public class KasanariIcebergCatalogAdapter extends DefaultIcebergCatalogAdapter 
     ) {
         super(catalog);
         this.catalog = catalog;
-        this.enableMultiTAbleTransaction = enableMultiTAbleTransaction;
+        this.enableMultiTableTransaction = enableMultiTAbleTransaction;
     }
 
     @Override
-    public void commitTransaction(List<IcebergTable.Transaction> transactions) {
-        if (enableMultiTAbleTransaction) {
+    public void commitTransaction(List<UpdateTableRequest> transactions) {
+        if (enableMultiTableTransaction) {
             commitMultiTableTransaction(transactions);
         } else {
             super.commitTransaction(transactions);
         }
     }
 
-    private void commitMultiTableTransaction(List<IcebergTable.Transaction> transactions) {
+    private void commitMultiTableTransaction(List<UpdateTableRequest> transactions) {
         var awaitingTransactions = new ArrayList<KasanariMultiTableTransaction>();
 
         transactions.forEach(tx -> {
-            var tableIdentifier = tx.table().toIceberg();
+            var tableIdentifier = tx.identifier();
             var loadedTable = asBaseTable(catalog.loadTable(tableIdentifier));
             var loadedTableOps = (KasanariTableOperations) loadedTable.operations();
 
             var openedTx = KasanariTransactions.newTransaction(tableIdentifier.toString(), loadedTableOps);
             awaitingTransactions.add(openedTx);
 
-            var updates = tx.changes().toIceberg(tableIdentifier);
             var ops = (KasanariMultiTableTransaction.TransactionTable) openedTx.table();
 
-            commitTableUpdates(updates, ops.operations());
+            commitTableUpdates(tx, ops.operations());
         });
 
         catalog.getDataSource().getJdbi().useTransaction(tx -> {

@@ -1,15 +1,26 @@
 package kasanari.catalog.iceberg.core;
 
-import kasanari.catalog.iceberg.core.model.IcebergNamespace;
-import kasanari.catalog.iceberg.core.model.IcebergTable;
-import kasanari.catalog.iceberg.core.model.IcebergValues;
-import kasanari.catalog.iceberg.core.model.IcebergView;
+import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.rest.requests.CreateTableRequest;
+import org.apache.iceberg.rest.requests.CreateViewRequest;
+import org.apache.iceberg.rest.requests.UpdateTableRequest;
+import org.apache.iceberg.rest.responses.CreateNamespaceResponse;
+import org.apache.iceberg.rest.responses.GetNamespaceResponse;
+import org.apache.iceberg.rest.responses.ListNamespacesResponse;
+import org.apache.iceberg.rest.responses.ListTablesResponse;
+import org.apache.iceberg.rest.responses.LoadTableResponse;
+import org.apache.iceberg.rest.responses.LoadViewResponse;
+import org.apache.iceberg.rest.responses.UpdateNamespacePropertiesResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     private final static Logger logger = LoggerFactory.getLogger("IcebergCatalogAdapter");
@@ -22,60 +33,61 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public void createNamespace(IcebergNamespace namespace) {
+    public CreateNamespaceResponse createNamespace(Namespace namespace, Map<String, String> properties) {
         try {
-            logger.info("Attempt to create namespace `{}`", namespace.name().pretty());
-            delegate.createNamespace(namespace);
-            logger.info("Successfully created namespace `{}`", namespace.name().pretty());
+            logger.info("Attempt to create namespace `{}`", namespace);
+            var rs = delegate.createNamespace(namespace, properties);
+            logger.info("Successfully created namespace `{}`", namespace);
+            return rs;
         } catch (Exception e) {
-            logger.error("Error happened while creating namespace `{}`: {}", namespace.name().pretty(), e.getMessage());
+            logger.error("Error happened while creating namespace `{}`: {}", namespace, e.getMessage());
             throw e;
         }
     }
 
     @Override
-    public void dropNamespace(IcebergNamespace.Name namespace) {
+    public void dropNamespace(Namespace namespace) {
         try {
-            logger.info("Attempt to drop namespace `{}`", namespace.pretty());
+            logger.info("Attempt to drop namespace `{}`", namespace);
             delegate.dropNamespace(namespace);
-            logger.info("Successfully dropped namespace `{}`", namespace.pretty());
+            logger.info("Successfully dropped namespace `{}`", namespace);
         } catch (Exception e) {
-            logger.error("Error happened while dropping namespace `{}`: {}", namespace.pretty(), e.getMessage());
+            logger.error("Error happened while dropping namespace `{}`: {}", namespace, e.getMessage());
             throw e;
         }
     }
 
     @Override
-    public IcebergNamespace loadNamespaceMetadata(IcebergNamespace.Name namespace) {
+    public GetNamespaceResponse loadNamespaceMetadata(Namespace namespace) {
         try {
-            logger.info("Attempt to load namespace `{}`", namespace.pretty());
+            logger.info("Attempt to load namespace `{}`", namespace);
             var metadata = delegate.loadNamespaceMetadata(namespace);
-            logger.info("Successfully loaded namespace `{}`", namespace.pretty());
+            logger.info("Successfully loaded namespace `{}`", namespace);
             return metadata;
         } catch (Exception e) {
-            logger.error("Error happened while loading namespace `{}`: {}", namespace.pretty(), e.getMessage());
+            logger.error("Error happened while loading namespace `{}`: {}", namespace, e.getMessage());
             throw e;
         }
     }
 
     @Override
-    public boolean namespaceExists(IcebergNamespace.Name namespace) {
+    public boolean namespaceExists(Namespace namespace) {
         try {
-            logger.info("Attempt to check if namespace `{}` exists", namespace.pretty());
+            logger.info("Attempt to check if namespace `{}` exists", namespace);
             var exists = delegate.namespaceExists(namespace);
-            logger.info("Successfully check existence of namespace `{}`", namespace.pretty());
+            logger.info("Successfully check existence of namespace `{}`", namespace);
             return exists;
         } catch (Exception e) {
-            logger.error("Error happened while checking existence of namespace `{}`: {}", namespace.pretty(), e.getMessage());
+            logger.error("Error happened while checking existence of namespace `{}`: {}", namespace, e.getMessage());
             throw e;
         }
     }
 
     @Override
-    public IcebergNamespace.Listing listNamespaces(IcebergNamespace.Listing.Filter filter) {
+    public ListNamespacesResponse listNamespaces(String pageToken, Integer pageSize, String parent) {
         try {
             logger.info("Attempt to list namespaces");
-            var result = delegate.listNamespaces(filter);
+            var result = delegate.listNamespaces(pageToken, pageSize, parent);
             logger.info("Successfully listed namespaces");
             return result;
         } catch (Exception e) {
@@ -85,25 +97,25 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public IcebergNamespace updateNamespace(IcebergNamespace.Name namespace, IcebergNamespace.Update rq) {
+    public UpdateNamespacePropertiesResponse updateNamespace(Namespace namespace, Map<String, String> updates, Set<String> removals) {
         try {
-            logger.info("Attempt to update namespace `{}`", namespace.pretty());
-            var result = delegate.updateNamespace(namespace, rq);
-            logger.info("Successfully updated namespace `{}`", namespace.pretty());
+            logger.info("Attempt to update namespace `{}`", namespace);
+            var result = delegate.updateNamespace(namespace, updates, removals);
+            logger.info("Successfully updated namespace `{}`", namespace);
             return result;
         } catch (Exception e) {
-            logger.error("Error happened while updating namespace `{}`: {}", namespace.pretty(), e.getMessage());
+            logger.error("Error happened while updating namespace `{}`: {}", namespace, e.getMessage());
             throw e;
         }
     }
 
     @Override
-    public IcebergView.Metadata createView(IcebergView.CreateRequest createRq) {
-        var viewName = namespaceName(createRq.namespace()) + createRq.name().value();
+    public LoadViewResponse createView(Namespace namespace, CreateViewRequest rq) {
+        var viewName = namespace.toString() + "." + rq.name();
 
         try {
             logger.info("Attempt to create view `{}`", viewName);
-            var result = delegate.createView(createRq);
+            var result = delegate.createView(namespace, rq);
             logger.info("Successfully created view `{}`", viewName);
             return result;
         } catch (Exception e) {
@@ -113,12 +125,12 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public boolean viewExists(IcebergNamespace.Name namespace, IcebergView.Name view) {
-        var viewName = namespaceName(namespace) + view.value();
+    public boolean viewExists(TableIdentifier view) {
+        var viewName = view.toString();
 
         try {
             logger.info("Attempt to check if view `{}` exists", viewName);
-            var exists = delegate.viewExists(namespace, view);
+            var exists = delegate.viewExists(view);
             logger.info("Successfully checked that view `{}` exists", viewName);
             return exists;
         } catch (Exception e) {
@@ -128,8 +140,8 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public IcebergView.Metadata loadView(IcebergView view) {
-        var viewName = namespaceName(view.namespace()) + view.name().value();
+    public LoadViewResponse loadView(TableIdentifier view) {
+        var viewName = view.toString();
 
         try {
             logger.info("Attempt to load view `{}`", viewName);
@@ -143,9 +155,9 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public void renameView(IcebergView from, IcebergView to) {
-        var fromViewName = namespaceName(from.namespace()) + from.name().value();
-        var toViewName = namespaceName(to.namespace()) + to.name().value();
+    public void renameView(TableIdentifier from, TableIdentifier to) {
+        var fromViewName = from.toString();
+        var toViewName = to.toString();
 
         try {
             logger.info("Attempt to rename view from `{}` to `{}`", fromViewName, toViewName);
@@ -158,12 +170,12 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public IcebergView.Listing listViews(IcebergNamespace.Name namespace, IcebergView.Listing.Filter filter) {
-        var namespaceName = namespace.pretty();
+    public ListTablesResponse listViews(Namespace namespace, String pageToken, Integer pageSize) {
+        var namespaceName = namespace.toString();
 
         try {
             logger.info("Attempt to list views from namespace `{}`", namespaceName);
-            var result = delegate.listViews(namespace, filter);
+            var result = delegate.listViews(namespace, pageToken, pageSize);
             logger.info("Successfully listed views from namespace `{}`", namespaceName);
             return result;
         } catch (Exception e) {
@@ -173,8 +185,8 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public void dropView(IcebergView view) {
-        var viewName = namespaceName(view.namespace()) + view.name().value();
+    public void dropView(TableIdentifier view) {
+        var viewName = view.toString();
 
         try {
             logger.info("Attempt to drop view `{}`", viewName);
@@ -187,8 +199,8 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public IcebergView.Metadata replaceView(IcebergView view, IcebergView.UpdateRequest rq) {
-        var viewName = namespaceName(view.namespace()) + view.name().value();
+    public LoadViewResponse replaceView(TableIdentifier view, UpdateTableRequest rq) {
+        var viewName = view.toString();
 
         try {
             logger.info("Attempt to replace view `{}`", viewName);
@@ -202,12 +214,12 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public boolean tableExists(IcebergNamespace.Name namespace, IcebergTable.Name name) {
-        var tableName = namespaceName(namespace) + name.value();
+    public boolean tableExists(TableIdentifier table) {
+        var tableName = table.toString();
 
         try {
             logger.info("Attempt to check if table exists `{}`", tableName);
-            var result = delegate.tableExists(namespace, name);
+            var result = delegate.tableExists(table);
             logger.info("Successfully checked existence of table `{}`", tableName);
             return result;
         } catch (Exception e) {
@@ -217,8 +229,8 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public void dropTable(IcebergTable table, boolean purge) {
-        var tableName = namespaceName(table.namespace()) + table.name().value();
+    public void dropTable(TableIdentifier table, boolean purge) {
+        var tableName = table.toString();
 
         try {
             logger.info("Attempt to drop table `{}`", tableName);
@@ -231,12 +243,12 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public IcebergTable.Listing listTables(IcebergNamespace.Name namespace, IcebergTable.Listing.Filter filter) {
-        var namespaceName = namespaceName(namespace);
+    public ListTablesResponse listTables(Namespace namespace, String pageToken, Integer pageSize) {
+        var namespaceName = namespace.toString();
 
         try {
             logger.info("Attempt to list tables in namespace `{}`", namespaceName);
-            var result = delegate.listTables(namespace, filter);
+            var result = delegate.listTables(namespace, pageToken, pageSize);
             logger.info("Successfully listed tables in namespace `{}`", namespaceName);
             return result;
         } catch (Exception e) {
@@ -246,12 +258,12 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public IcebergTable.LoadedTable createTable(IcebergTable.CreateRequest rq) {
-        var tableName = namespaceName(rq.namespace()) + rq.name().value();
+    public LoadTableResponse createTable(Namespace namespace, CreateTableRequest rq) {
+        var tableName = namespace.toString() + "." + rq.name();
 
         try {
             logger.info("Attempt to create table `{}`", tableName);
-            var result = delegate.createTable(rq);
+            var result = delegate.createTable(namespace, rq);
             logger.info("Successfully created table `{}`", tableName);
             return result;
         } catch (Exception e) {
@@ -261,9 +273,9 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public void renameTable(IcebergTable from, IcebergTable to) {
-        var tableNameFrom = namespaceName(from.namespace()) + from.name().value();
-        var tableNameTo = namespaceName(to.namespace()) + to.name().value();
+    public void renameTable(TableIdentifier from, TableIdentifier to) {
+        var tableNameFrom = from.toString();
+        var tableNameTo = to.toString();
 
         try {
             logger.info("Attempt to rename table from `{}` to `{}`", tableNameFrom, tableNameTo);
@@ -276,8 +288,8 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public IcebergTable.LoadedTable registerTable(IcebergTable table, IcebergValues.Location location) {
-        var tableName = namespaceName(table.namespace()) + table.name().value();
+    public LoadTableResponse registerTable(TableIdentifier table, String location) {
+        var tableName = table.toString();
 
         try {
             logger.info("Attempt to register table `{}`", tableName);
@@ -291,8 +303,8 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public IcebergTable.Commit updateTable(IcebergTable table, IcebergTable.UpdateRequest rq) {
-        var tableName = namespaceName(table.namespace()) + table.name().value();
+    public LoadTableResponse updateTable(TableIdentifier table, UpdateTableRequest rq) {
+        var tableName = table.toString();
 
         try {
             logger.info("Attempt to update table `{}`", tableName);
@@ -306,8 +318,8 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public IcebergTable.LoadedTable loadTable(IcebergTable table) {
-        var tableName = namespaceName(table.namespace()) + table.name().value();
+    public LoadTableResponse loadTable(TableIdentifier table) {
+        var tableName = table.toString();
 
         try {
             logger.info("Attempt to load table `{}`", tableName);
@@ -321,7 +333,7 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
-    public void commitTransaction(List<IcebergTable.Transaction> transactions) {
+    public void commitTransaction(List<UpdateTableRequest> transactions) {
         try {
             logger.info("Attempt to commit transactions");
             delegate.commitTransaction(transactions);
@@ -335,13 +347,5 @@ public class LoggedIcebergCatalogAdapter implements IcebergCatalogAdapter {
     @Override
     public Catalog delegate() {
         return delegate.delegate();
-    }
-
-    private String namespaceName(IcebergNamespace.Name name) {
-        if (name.levels().length == 0) {
-            return "";
-        }
-
-        return name.pretty() + ".";
     }
 }

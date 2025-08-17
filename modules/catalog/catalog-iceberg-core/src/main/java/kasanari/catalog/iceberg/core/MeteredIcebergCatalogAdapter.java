@@ -1,121 +1,131 @@
 package kasanari.catalog.iceberg.core;
 
-import kasanari.catalog.iceberg.core.model.IcebergNamespace;
-import kasanari.catalog.iceberg.core.model.IcebergTable;
-import kasanari.catalog.iceberg.core.model.IcebergValues;
-import kasanari.catalog.iceberg.core.model.IcebergView;
 import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.rest.requests.CreateTableRequest;
+import org.apache.iceberg.rest.requests.CreateViewRequest;
+import org.apache.iceberg.rest.requests.UpdateTableRequest;
+import org.apache.iceberg.rest.responses.CreateNamespaceResponse;
+import org.apache.iceberg.rest.responses.GetNamespaceResponse;
+import org.apache.iceberg.rest.responses.ListNamespacesResponse;
+import org.apache.iceberg.rest.responses.ListTablesResponse;
+import org.apache.iceberg.rest.responses.LoadTableResponse;
+import org.apache.iceberg.rest.responses.LoadViewResponse;
+import org.apache.iceberg.rest.responses.UpdateNamespacePropertiesResponse;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class MeteredIcebergCatalogAdapter implements IcebergCatalogAdapter {
     @Override
-    public void createNamespace(IcebergNamespace namespace) {
-
-    }
-
-    @Override
-    public void dropNamespace(IcebergNamespace.Name namespace) {
-
-    }
-
-    @Override
-    public IcebergNamespace loadNamespaceMetadata(IcebergNamespace.Name namespace) {
+    public CreateNamespaceResponse createNamespace(Namespace namespace, Map<String, String> properties) {
         return null;
     }
 
     @Override
-    public boolean namespaceExists(IcebergNamespace.Name namespace) {
+    public void dropNamespace(Namespace namespace) {
+
+    }
+
+    @Override
+    public GetNamespaceResponse loadNamespaceMetadata(Namespace namespace) {
+        return null;
+    }
+
+    @Override
+    public boolean namespaceExists(Namespace namespace) {
         return false;
     }
 
     @Override
-    public IcebergNamespace.Listing listNamespaces(IcebergNamespace.Listing.Filter filter) {
+    public ListNamespacesResponse listNamespaces(String pageToken, Integer pageSize, String parent) {
         return null;
     }
 
     @Override
-    public IcebergNamespace updateNamespace(IcebergNamespace.Name namespace, IcebergNamespace.Update rq) {
+    public UpdateNamespacePropertiesResponse updateNamespace(Namespace namespace, Map<String, String> updates, Set<String> removals) {
         return null;
     }
 
     @Override
-    public IcebergView.Metadata createView(IcebergView.CreateRequest createRq) {
+    public LoadViewResponse createView(Namespace namespace, CreateViewRequest rq) {
         return null;
     }
 
     @Override
-    public boolean viewExists(IcebergNamespace.Name namespace, IcebergView.Name view) {
+    public boolean viewExists(TableIdentifier view) {
         return false;
     }
 
     @Override
-    public IcebergView.Metadata loadView(IcebergView view) {
+    public LoadViewResponse loadView(TableIdentifier view) {
         return null;
     }
 
     @Override
-    public void renameView(IcebergView from, IcebergView to) {
+    public void renameView(TableIdentifier from, TableIdentifier to) {
 
     }
 
     @Override
-    public IcebergView.Listing listViews(IcebergNamespace.Name namespace, IcebergView.Listing.Filter filter) {
+    public ListTablesResponse listViews(Namespace namespace, String pageToken, Integer pageSize) {
         return null;
     }
 
     @Override
-    public void dropView(IcebergView view) {
+    public void dropView(TableIdentifier view) {
 
     }
 
     @Override
-    public IcebergView.Metadata replaceView(IcebergView view, IcebergView.UpdateRequest rq) {
+    public LoadViewResponse replaceView(TableIdentifier view, UpdateTableRequest rq) {
         return null;
     }
 
     @Override
-    public boolean tableExists(IcebergNamespace.Name namespace, IcebergTable.Name name) {
+    public boolean tableExists(TableIdentifier table) {
         return false;
     }
 
     @Override
-    public void dropTable(IcebergTable table, boolean purge) {
+    public void dropTable(TableIdentifier table, boolean purge) {
 
     }
 
     @Override
-    public IcebergTable.Listing listTables(IcebergNamespace.Name namespace, IcebergTable.Listing.Filter filter) {
+    public ListTablesResponse listTables(Namespace namespace, String pageToken, Integer pageSize) {
         return null;
     }
 
     @Override
-    public IcebergTable.LoadedTable createTable(IcebergTable.CreateRequest rq) {
+    public LoadTableResponse createTable(Namespace namespace, CreateTableRequest rq) {
         return null;
     }
 
     @Override
-    public void renameTable(IcebergTable from, IcebergTable to) {
+    public void renameTable(TableIdentifier from, TableIdentifier to) {
 
     }
 
     @Override
-    public IcebergTable.LoadedTable registerTable(IcebergTable table, IcebergValues.Location location) {
+    public LoadTableResponse registerTable(TableIdentifier table, String location) {
         return null;
     }
 
     @Override
-    public IcebergTable.Commit updateTable(IcebergTable table, IcebergTable.UpdateRequest rq) {
+    public LoadTableResponse updateTable(TableIdentifier table, UpdateTableRequest rq) {
         return null;
     }
 
     @Override
-    public IcebergTable.LoadedTable loadTable(IcebergTable table) {
+    public LoadTableResponse loadTable(TableIdentifier table) {
         return null;
     }
 
     @Override
-    public void commitTransaction(List<IcebergTable.Transaction> transactions) {
+    public void commitTransaction(List<UpdateTableRequest> transactions) {
 
     }
 
