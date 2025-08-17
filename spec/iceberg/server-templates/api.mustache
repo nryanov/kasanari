@@ -1,0 +1,75 @@
+{{!
+src: src: https://github.com/OpenAPITools/openapi-generator/blob/v7.14.0/modules/openapi-generator/src/main/resources/JavaJaxRS/resteasy/api.mustache
+Modified template with removed swagger annotations & some not used imports
+}}
+package {{package}};
+
+import {{package}}.{{classname}}Service;
+
+{{#imports}}import {{import}};
+{{/imports}}
+
+import java.util.Map;
+import java.util.List;
+
+import java.io.InputStream;
+
+import {{javaxPackage}}.ws.rs.Consumes;
+import {{javaxPackage}}.ws.rs.Produces;
+import {{javaxPackage}}.ws.rs.DELETE;
+import {{javaxPackage}}.ws.rs.GET;
+import {{javaxPackage}}.ws.rs.HEAD;
+import {{javaxPackage}}.ws.rs.PATCH;
+import {{javaxPackage}}.ws.rs.POST;
+import {{javaxPackage}}.ws.rs.PUT;
+import {{javaxPackage}}.ws.rs.Path;
+import {{javaxPackage}}.ws.rs.DefaultValue;
+import {{javaxPackage}}.ws.rs.PathParam;
+import {{javaxPackage}}.ws.rs.HeaderParam;
+import {{javaxPackage}}.ws.rs.QueryParam;
+import {{javaxPackage}}.ws.rs.FormParam;
+import {{javaxPackage}}.ws.rs.core.Response;
+import {{javaxPackage}}.ws.rs.core.Context;
+import {{javaxPackage}}.ws.rs.core.SecurityContext;
+import {{javaxPackage}}.inject.Inject;
+
+{{#useBeanValidation}}
+    import {{javaxPackage}}.validation.constraints.*;
+    import {{javaxPackage}}.validation.Valid;
+{{/useBeanValidation}}
+{{#operations}}{{#operation}}{{#isMultipart}}import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+{{/isMultipart}}{{/operation}}{{/operations}}
+@Path("{{commonPath}}")
+{{#hasConsumes}}@Consumes({ {{#consumes}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/consumes}} }){{/hasConsumes}}
+{{#hasProduces}}@Produces({ {{#produces}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/produces}} }){{/hasProduces}}
+{{>generatedAnnotation}}
+
+{{#operations}}
+    public class {{classname}}  {
+
+    private final {{classname}}Service service;
+
+    @Inject
+    public {{classname}}({{classname}}Service service) {
+        this.service = service;
+    }
+
+    {{#operation}}
+        /**
+        * {{^notes}}{{{summary}}}{{/notes}}{{notes}}
+        *
+        * Response type: {@code {{{returnBaseType}}}}.
+        *{{#allParams}} @param {{paramName}} {{#required}}Required -{{/required}} {{description}}
+        *{{/allParams}}{{#responses}}
+        * @return {{{code}}} - {{{message}}}{{/responses}}
+        */
+        @{{httpMethod}}
+        {{#subresourceOperation}}@Path("{{{path}}}"){{/subresourceOperation}}
+        {{#hasConsumes}}@Consumes({ {{#consumes}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/consumes}} }){{/hasConsumes}}
+        {{#hasProduces}}@Produces({ {{#produces}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/produces}} }){{/hasProduces}}
+        public Response {{nickname}}({{#isMultipart}}MultipartFormDataInput input,{{/isMultipart}}{{#allParams}}{{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{^isMultipart}}{{>formParams}},{{/isMultipart}}{{#isMultipart}}{{^isFormParam}},{{/isFormParam}}{{/isMultipart}}{{/allParams}}@Context SecurityContext securityContext){
+            return service.{{nickname}}({{#isMultipart}}input,{{/isMultipart}}{{#allParams}}{{^isMultipart}}{{paramName}},{{/isMultipart}}{{#isMultipart}}{{^isFormParam}}{{paramName}},{{/isFormParam}}{{/isMultipart}}{{/allParams}}securityContext);
+        }
+    {{/operation}}
+    }
+{{/operations}}

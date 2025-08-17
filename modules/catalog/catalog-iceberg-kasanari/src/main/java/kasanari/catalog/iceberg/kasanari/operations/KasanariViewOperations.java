@@ -82,6 +82,7 @@ public class KasanariViewOperations extends BaseViewOperations {
             }
         } catch (Exception e) {
             failure = true;
+            // todo: log & throw error
         } finally {
             if (failure) {
                 fileIO.deleteFile(newMetadataLocation);
