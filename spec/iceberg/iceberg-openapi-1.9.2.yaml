@@ -424,6 +424,15 @@ paths:
               examples:
                 NoSuchNamespaceExample:
                   $ref: '#/components/examples/NoSuchNamespaceError'
+        409:
+          description: Not Empty - Namespace to delete is not empty.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IcebergErrorResponse'
+              examples:
+                NamespaceNotEmptyExample:
+                  $ref: '#/components/examples/NamespaceNotEmptyError'
         419:
           $ref: '#/components/responses/AuthenticationTimeoutResponse'
         503:
@@ -951,7 +960,6 @@ paths:
           schema:
             type: string
             enum: [ all, refs ]
-            x-enum-varnames: ["all", "refs"]
       responses:
         200:
           $ref: '#/components/responses/LoadTableResponse'
@@ -1864,7 +1872,6 @@ components:
         enum:
           - vended-credentials
           - remote-signing
-        x-enum-varnames: ["vended_credentials", "remote_signing"]
       style: simple
       explode: false
       example: "vended-credentials,remote-signing"
@@ -2213,7 +2220,6 @@ components:
         type:
           $ref: '#/components/schemas/ExpressionType'
           enum: ["and", "or"]
-          x-enum-varnames: ["and", "or"]
         left:
           $ref: '#/components/schemas/Expression'
         right:
@@ -2241,7 +2247,6 @@ components:
         type:
           $ref: '#/components/schemas/ExpressionType'
           enum: ["is-null", "not-null", "is-nan", "not-nan"]
-          x-enum-varnames: ["is_null", "not_null", "is_nan", "not_nan"]
         term:
           $ref: '#/components/schemas/Term'
         value:
@@ -2257,7 +2262,6 @@ components:
         type:
           $ref: '#/components/schemas/ExpressionType'
           enum: ["lt", "lt-eq", "gt", "gt-eq", "eq", "not-eq", "starts-with", "not-starts-with"]
-          x-enum-varnames: ["lt", "lt_eq", "gt", "gt_eq", "eq", "not_eq", "starts_with", "not_starts_with"]
         term:
           $ref: '#/components/schemas/Term'
         value:
@@ -2273,7 +2277,6 @@ components:
         type:
           $ref: '#/components/schemas/ExpressionType'
           enum: ["in", "not-in"]
-          x-enum-varnames: ["in", "not_in"]
         term:
           $ref: '#/components/schemas/Term'
         values:
@@ -2349,12 +2352,10 @@ components:
     SortDirection:
       type: string
       enum: ["asc", "desc"]
-      x-enum-varnames: ["asc", "desc"]
 
     NullOrder:
       type: string
       enum: ["nulls-first", "nulls-last"]
-      x-enum-varnames: ["nulls_first", "nulls_last"]
 
     SortField:
       type: object
@@ -2418,7 +2419,6 @@ components:
             operation:
               type: string
               enum: ["append", "replace", "overwrite", "delete"]
-              x-enum-varnames: ["append", "replace", "overwrite", "delete"]
           additionalProperties:
             type: string
         schema-id:
@@ -2433,7 +2433,6 @@ components:
         type:
           type: string
           enum: ["tag", "branch"]
-          x-enum-varnames: ["tag", "branch"]
         snapshot-id:
           type: integer
           format: int64
@@ -2652,36 +2651,6 @@ components:
           type: object
           additionalProperties:
             type: string
-
-    TableUpdate:
-      discriminator:
-        propertyName: action
-        mapping:
-          assign-uuid: '#/components/schemas/AssignTableUUIDUpdate'
-          upgrade-format-version: '#/components/schemas/UpgradeTableFormatVersionUpdate'
-          add-schema: '#/components/schemas/AddTableSchemaUpdate'
-          set-current-schema: '#/components/schemas/SetTableCurrentSchemaUpdate'
-          add-spec: '#/components/schemas/AddTablePartitionSpecUpdate'
-          set-default-spec: '#/components/schemas/SetTableDefaultSpecUpdate'
-          add-sort-order: '#/components/schemas/AddTableSortOrderUpdate'
-          set-default-sort-order: '#/components/schemas/SetTableDefaultSortOrderUpdate'
-          add-snapshot: '#/components/schemas/AddTableSnapshotUpdate'
-          set-snapshot-ref: '#/components/schemas/SetTableSnapshotRefUpdate'
-          remove-snapshots: '#/components/schemas/RemoveTableSnapshotsUpdate'
-          remove-snapshot-ref: '#/components/schemas/RemoveTableSnapshotRefUpdate'
-          set-location: '#/components/schemas/SetTableLocationUpdate'
-          set-properties: '#/components/schemas/SetTablePropertiesUpdate'
-          remove-properties: '#/components/schemas/RemoveTablePropertiesUpdate'
-          set-statistics: '#/components/schemas/SetTableStatisticsUpdate'
-          remove-statistics: '#/components/schemas/RemoveTableStatisticsUpdate'
-          remove-partition-specs: '#/components/schemas/RemoveTablePartitionSpecsUpdate'
-          enable-row-lineage: '#/components/schemas/EnableTableRowLineageUpdate'
-      type: object
-      required:
-        - action
-      properties:
-        action:
-          type: string
 
     AssignTableUUIDUpdate:
       description: Assigning a UUID to a table should only be done when creating the table. It is not safe to re-assign the UUID if a table already has a UUID assigned
@@ -2964,25 +2933,6 @@ components:
           type: string
           const: "enable-row-lineage"
 
-    ViewUpdate:
-      discriminator:
-        propertyName: action
-        mapping:
-          assign-uuid: '#/components/schemas/AssignViewUUIDUpdate'
-          upgrade-format-version: '#/components/schemas/UpgradeViewFormatVersionUpdate'
-          add-schema: '#/components/schemas/AddViewSchemaUpdate'
-          set-location: '#/components/schemas/SetViewLocationUpdate'
-          set-properties: '#/components/schemas/SetViewPropertiesUpdate'
-          remove-properties: '#/components/schemas/RemoveViewPropertiesUpdate'
-          add-view-version: '#/components/schemas/AddViewVersionUpdate'
-          set-current-view-version: '#/components/schemas/SetCurrentViewVersionUpdate'
-      type: object
-      required:
-        - action
-      properties:
-        action:
-          type: string
-
     AssignViewUUIDUpdate:
       description: Assigning a UUID to a view should only be done when creating the view. It is not safe to re-assign the UUID if a view already has a UUID assigned
       allOf:
@@ -3094,72 +3044,54 @@ components:
           type: integer
           description: The view version id to set as current, or -1 to set last added view version id
 
-#    BaseUpdate:
-#      discriminator:
-#        propertyName: action
-#        mapping:
-#          assign-uuid: '#/components/schemas/AssignUUIDUpdate'
-#          upgrade-format-version: '#/components/schemas/UpgradeFormatVersionUpdate'
-#          add-schema: '#/components/schemas/AddSchemaUpdate'
-#          set-current-schema: '#/components/schemas/SetCurrentSchemaUpdate'
-#          add-spec: '#/components/schemas/AddPartitionSpecUpdate'
-#          set-default-spec: '#/components/schemas/SetDefaultSpecUpdate'
-#          add-sort-order: '#/components/schemas/AddSortOrderUpdate'
-#          set-default-sort-order: '#/components/schemas/SetDefaultSortOrderUpdate'
-#          add-snapshot: '#/components/schemas/AddSnapshotUpdate'
-#          set-snapshot-ref: '#/components/schemas/SetSnapshotRefUpdate'
-#          remove-snapshots: '#/components/schemas/RemoveSnapshotsUpdate'
-#          remove-snapshot-ref: '#/components/schemas/RemoveSnapshotRefUpdate'
-#          set-location: '#/components/schemas/SetLocationUpdate'
-#          set-properties: '#/components/schemas/SetPropertiesUpdate'
-#          remove-properties: '#/components/schemas/RemovePropertiesUpdate'
-#          add-view-version: '#/components/schemas/AddViewVersionUpdate'
-#          set-current-view-version: '#/components/schemas/SetCurrentViewVersionUpdate'
-#          set-statistics: '#/components/schemas/SetStatisticsUpdate'
-#          remove-statistics: '#/components/schemas/RemoveStatisticsUpdate'
-#          set-partition-statistics: '#/components/schemas/SetPartitionStatisticsUpdate'
-#          remove-partition-statistics: '#/components/schemas/RemovePartitionStatisticsUpdate'
-#          remove-partition-specs: '#/components/schemas/RemovePartitionSpecsUpdate'
-#          enable-row-lineage: '#/components/schemas/EnableRowLineageUpdate'
-#      type: object
-#      required:
-#        - action
-#      properties:
-#        action:
-#          type: string
+    TableUpdate:
+      discriminator:
+        propertyName: action
+        mapping:
+          assign-uuid: '#/components/schemas/AssignTableUUIDUpdate'
+          upgrade-format-version: '#/components/schemas/UpgradeTableFormatVersionUpdate'
+          add-schema: '#/components/schemas/AddTableSchemaUpdate'
+          set-current-schema: '#/components/schemas/SetTableCurrentSchemaUpdate'
+          add-spec: '#/components/schemas/AddTablePartitionSpecUpdate'
+          set-default-spec: '#/components/schemas/SetTableDefaultSpecUpdate'
+          add-sort-order: '#/components/schemas/AddTableSortOrderUpdate'
+          set-default-sort-order: '#/components/schemas/SetTableDefaultSortOrderUpdate'
+          add-snapshot: '#/components/schemas/AddTableSnapshotUpdate'
+          set-snapshot-ref: '#/components/schemas/SetTableSnapshotRefUpdate'
+          remove-snapshots: '#/components/schemas/RemoveTableSnapshotsUpdate'
+          remove-snapshot-ref: '#/components/schemas/RemoveTableSnapshotRefUpdate'
+          set-location: '#/components/schemas/SetTableLocationUpdate'
+          set-properties: '#/components/schemas/SetTablePropertiesUpdate'
+          remove-properties: '#/components/schemas/RemoveTablePropertiesUpdate'
+          set-statistics: '#/components/schemas/SetTableStatisticsUpdate'
+          remove-statistics: '#/components/schemas/RemoveTableStatisticsUpdate'
+          remove-partition-specs: '#/components/schemas/RemoveTablePartitionSpecsUpdate'
+          enable-row-lineage: '#/components/schemas/EnableTableRowLineageUpdate'
+      type: object
+      required:
+        - action
+      properties:
+        action:
+          type: string
 
-#    TableUpdate:
-#      anyOf:
-#        - $ref: '#/components/schemas/AssignUUIDUpdate'
-#        - $ref: '#/components/schemas/UpgradeFormatVersionUpdate'
-#        - $ref: '#/components/schemas/AddSchemaUpdate'
-#        - $ref: '#/components/schemas/SetCurrentSchemaUpdate'
-#        - $ref: '#/components/schemas/AddPartitionSpecUpdate'
-#        - $ref: '#/components/schemas/SetDefaultSpecUpdate'
-#        - $ref: '#/components/schemas/AddSortOrderUpdate'
-#        - $ref: '#/components/schemas/SetDefaultSortOrderUpdate'
-#        - $ref: '#/components/schemas/AddSnapshotUpdate'
-#        - $ref: '#/components/schemas/SetSnapshotRefUpdate'
-#        - $ref: '#/components/schemas/RemoveSnapshotsUpdate'
-#        - $ref: '#/components/schemas/RemoveSnapshotRefUpdate'
-#        - $ref: '#/components/schemas/SetLocationUpdate'
-#        - $ref: '#/components/schemas/SetPropertiesUpdate'
-#        - $ref: '#/components/schemas/RemovePropertiesUpdate'
-#        - $ref: '#/components/schemas/SetStatisticsUpdate'
-#        - $ref: '#/components/schemas/RemoveStatisticsUpdate'
-#        - $ref: '#/components/schemas/RemovePartitionSpecsUpdate'
-#        - $ref: '#/components/schemas/EnableRowLineageUpdate'
-
-#    ViewUpdate:
-#      anyOf:
-#        - $ref: '#/components/schemas/AssignUUIDUpdate'
-#        - $ref: '#/components/schemas/UpgradeFormatVersionUpdate'
-#        - $ref: '#/components/schemas/AddSchemaUpdate'
-#        - $ref: '#/components/schemas/SetLocationUpdate'
-#        - $ref: '#/components/schemas/SetPropertiesUpdate'
-#        - $ref: '#/components/schemas/RemovePropertiesUpdate'
-#        - $ref: '#/components/schemas/AddViewVersionUpdate'
-#        - $ref: '#/components/schemas/SetCurrentViewVersionUpdate'
+    ViewUpdate:
+      discriminator:
+        propertyName: action
+        mapping:
+          assign-uuid: '#/components/schemas/AssignViewUUIDUpdate'
+          upgrade-format-version: '#/components/schemas/UpgradeViewFormatVersionUpdate'
+          add-schema: '#/components/schemas/AddViewSchemaUpdate'
+          set-location: '#/components/schemas/SetViewLocationUpdate'
+          set-properties: '#/components/schemas/SetViewPropertiesUpdate'
+          remove-properties: '#/components/schemas/RemoveViewPropertiesUpdate'
+          add-view-version: '#/components/schemas/AddViewVersionUpdate'
+          set-current-view-version: '#/components/schemas/SetCurrentViewVersionUpdate'
+      type: object
+      required:
+        - action
+      properties:
+        action:
+          type: string
 
     TableRequirement:
       type: object
@@ -3482,13 +3414,11 @@ components:
         status:
           $ref: '#/components/schemas/PlanStatus'
           enum: ["submitted", "cancelled"]
-          x-enum-varnames: ["submitted", "cancelled"]
 
     PlanStatus:
       description: Status of a server-side planning operation
       type: string
       enum: ["completed", "submitted", "cancelled", "failed"]
-      x-enum-varnames: ["completed", "submitted", "cancelled", "failed"]
 
     FetchPlanningResult:
       type: object
@@ -3606,6 +3536,10 @@ components:
           type: string
         metadata-location:
           type: string
+        overwrite:
+          description: Whether to overwrite table metadata if the table already exists
+          type: boolean
+          default: false
 
     CreateViewRequest:
       type: object
@@ -3694,7 +3628,6 @@ components:
           type: string
           enum:
             - client_credentials
-          x-enum-varnames: ["client_credentials"]
         scope:
           type: string
         client_id:
@@ -3927,7 +3860,6 @@ components:
             - unauthorized_client
             - unsupported_grant_type
             - invalid_scope
-          x-enum-varnames: ["invalid_request", "invalid_client", "invalid_grant", "unauthorized_client", "unsupported_grant_type", "invalid_scope"]
         error_description:
           type: string
         error_uri:
@@ -3953,7 +3885,6 @@ components:
             - bearer
             - mac
             - N_A
-          x-enum-varnames: ["bearer", "mac", "n_a"]
           description:
             Access token type for client credentials or token exchange
 
@@ -4314,7 +4245,6 @@ components:
         - orc
         - parquet
         - puffin
-      x-enum-varnames: ["avro", "orc", "parquet", "puffin"]
 
     ContentFile:
       discriminator:
@@ -4862,7 +4792,7 @@ components:
       value: "accounting%1Ftax"
 
     NamespaceAsPathVariable:
-      summary: A single part namespace, as represented in a path paremeter
+      summary: A single part namespace, as represented in a path parameter
       value: "accounting"
 
     NamespaceAlreadyExistsError:
@@ -4925,6 +4855,16 @@ components:
         }
       }
 
+    NamespaceNotEmptyError:
+      summary: The requested namespace is not empty
+      value: {
+        "error": {
+          "message": "The given namespace is not empty",
+          "type": "NamespaceNotEmptyException",
+          "code": 409
+        }
+      }
+
     RenameTableSameNamespace:
       summary: Rename a table in the same namespace
       value: {
@@ -4983,7 +4923,16 @@ components:
     OAuth2:
       type: oauth2
       description:
-        This scheme is used for OAuth2 authorization. For unauthorized requests, services should return an appropriate 401 or 403 response. Implementations must not return altered success (200) responses when a request is unauthenticated or unauthorized. If a separate authorization server is used, substitute the tokenUrl with the full token path of the external authorization server, and use the resulting token to access the resources defined in the spec.
+        This scheme is used for OAuth2 authorization.
+
+
+        For unauthorized requests, services should return an appropriate 401 or
+        403 response. Implementations must not return altered success (200)
+        responses when a request is unauthenticated or unauthorized.
+
+        If a separate authorization server is used, substitute the tokenUrl with
+        the full token path of the external authorization server, and use the
+        resulting token to access the resources defined in the spec.
       flows:
         clientCredentials:
           tokenUrl: /v1/oauth/tokens

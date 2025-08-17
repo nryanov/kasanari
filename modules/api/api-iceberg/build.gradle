@@ -5,53 +5,55 @@ plugins {
 }
 
 dependencies {
-    implementation enforcedPlatform(libs.quarkus.bom)
-
-    implementation libs.quarkus.jackson
-    implementation libs.quarkus.openapi
-
     implementation libs.iceberg.api
     implementation libs.iceberg.core
     implementation libs.iceberg.common
+
+    implementation(libs.jakarta.annotation.api)
+    implementation(libs.jakarta.inject.api)
+    implementation(libs.jakarta.ws.rs.api)
 }
 
 openApiValidate {
     inputSpec.set("$projectDir/src/main/resources/openapi/openapi.yaml")
 }
 
-// https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-spec.md
+var rootDir = rootProject.layout.projectDirectory
+var specsDir = rootDir.dir("spec")
+var icebergSpecDir = specsDir.dir("iceberg")
+var templatesDir = icebergSpecDir.dir("server-templates")
+var generatedDir = project.layout.buildDirectory.dir("generated")
+var generatedOpenApiSrcDir = project.layout.buildDirectory.dir("generated/src/main/java")
+
+// https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-resteasy.md
 // https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-gradle-plugin
 openApiGenerate {
-    generatorName.set("jaxrs-spec")
-    inputSpec.set("$projectDir/src/main/resources/openapi/openapi.yaml")
-    outputDir.set("$buildDir/generated")
+    inputSpec = icebergSpecDir.file("kasanari-catalog-service.yaml").asFile.absolutePath
+    generatorName = "jaxrs-resteasy"
+    outputDir = generatedDir.get().asFile.absolutePath
+    ignoreFileOverride = specsDir.file(".openapi-generator-ignore").asFile.absolutePath
+    removeOperationIdPrefix = true
+    // https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator/src/main/resources/JavaJaxRS/resteasy
+    templateDir = templatesDir.asFile.absolutePath
 
-//    globalProperties.put("apiDocs", "false")
-//    globalProperties.put("models", "false")
-//    globalProperties.put("apis", "CatalogApi,ConfigurationApi")
-//    globalProperties.put("modelTests", "false")
+    globalProperties.put("apiDocs", "false")
+    globalProperties.put("models", "false")
+    globalProperties.put("apis", "CatalogApi,ConfigurationApi")
+    globalProperties.put("modelTests", "false")
 
-    additionalProperties.put("supportAsync", "false")
-    additionalProperties.put("useMutiny", "false")
-    additionalProperties.put("useMicroProfileOpenAPIAnnotations", "true")
-    additionalProperties.put("useBeanValidation", "false")
-    additionalProperties.put("hideGenerationTimestamp", "true")
-    additionalProperties.put("library", "quarkus")
+    serverVariables.put("basePath", "api/catalog")
+
+    configOptions.put("resourceName", "catalog")
+    configOptions.put("useTags", "true")
+    configOptions.put("useBeanValidation", "false")
+    configOptions.put("sourceFolder", "src/main/java")
+    configOptions.put("useJakartaEe", "true")
+    configOptions.put("hideGenerationTimestamp", "true")
+
+    additionalProperties.put("apiNamePrefix", "IcebergRest")
+    additionalProperties.put("apiNameSuffix", "")
+    additionalProperties.put("apiPackage", "kasanari.catalog.iceberg.api")
     additionalProperties.put("dateLibrary", "java8")
-    additionalProperties.put("interfaceOnly", "true")
-    additionalProperties.put("returnResponse", "false")
-    additionalProperties.put("useOneOfInterfaces", "false")
-    additionalProperties.put("generateBuilders", "true")
-    additionalProperties.put("generatePom", "false")
-    additionalProperties.put("apiPackage", "kasanari.api.iceberg")
-    additionalProperties.put("modelPackage", "kasanari.api.iceberg.dto")
-    additionalProperties.put("modelNamePrefix", "Iceberg")
-    additionalProperties.put("modelNameSuffix", "Dto")
-    additionalProperties.put("generateApiTests", "false")
-    additionalProperties.put("useJakartaEe", "true")
-    additionalProperties.put("generateConstructorWithAllArgs", "true")
-    additionalProperties.put("generateJsonCreator", "false")
-    additionalProperties.put("cleanupOutput", "true")
 
     var modelNameMap = new HashMap<String, String>()
     modelNameMap.put("CatalogConfig", "org.apache.iceberg.rest.responses.ConfigResponse")
@@ -60,8 +62,9 @@ openApiGenerate {
     modelNameMap.put("CommitTableResponse", "org.apache.iceberg.rest.responses.LoadTableResponse")
     modelNameMap.put("CommitViewRequest", "org.apache.iceberg.rest.requests.UpdateTableRequest")
     modelNameMap.put("CommitTableRequest", "org.apache.iceberg.rest.requests.UpdateTableRequest")
+    modelNameMap.put("IcebergErrorResponse", "org.apache.iceberg.rest.responses.ErrorResponse")
 
-//    modelNameMappings = modelNameMap
+    modelNameMappings = modelNameMap
 
     var importMap = new HashMap<String, String>()
     importMap.put("CatalogConfig", "org.apache.iceberg.rest.responses.ConfigResponse")
@@ -90,55 +93,22 @@ openApiGenerate {
     importMap.put("CommitViewRequest", "org.apache.iceberg.rest.requests.UpdateTableRequest")
     importMap.put("CommitTableRequest", "org.apache.iceberg.rest.requests.UpdateTableRequest")
 
-//    importMappings = importMap
+    importMappings = importMap
 }
 
 sourceSets {
     main {
         java {
-            srcDir "${buildDir}/generated/src/gen/java"
+            srcDir(generatedOpenApiSrcDir)
         }
     }
 }
 
-//tasks.openApiGenerate {
-//    doLast {
-//        delete(
-//                files("${buildDir}/generated/src/gen/java/kasanari/api/RestApplication.java"),
-//                files("${buildDir}/generated/src/gen/java/kasanari/api/RestResourceRoot.java")
-//        )
-//
-//        copy {
-//            from "$buildDir/generated/src/gen/java/kasanari/api/iceberg"
-//            into "$buildDir/generated/src/gen/java/kasanari/api/iceberg"
-//
-//            include "*.java"
-//
-//            // add path root
-//            filter { String line ->
-//                line.startsWith("@Path(\"/v1") ? line.replace("@Path(\"/v1", "@Path(\"/iceberg/v1") : line
-//            }
-//
-//            // remove all tags
-//            filter { String line ->
-//                line.trim().startsWith("@org.eclipse.microprofile.openapi.annotations.tags.Tag") ? null : line
-//            }
-//
-//            // add global tag
-//            filter { String line ->
-//                line.contains("interface") ? "@org.eclipse.microprofile.openapi.annotations.tags.Tag(name=\"Iceberg API\")\n" + line : line
-//            }
-//
-//            filter { String line -> line.replace("V1Api", "IcebergApi") }
-//
-//            rename("(.+)", "IcebergApi.java")
-//        }
-//
-//        delete(fileTree("$buildDir/generated/src/gen/java/kasanari/api/iceberg").matching {
-//            include "V1Api.java"
-//        })
-//    }
-//}
+tasks.openApiGenerate {
+    doLast {
+        delete(files("${buildDir}/generated/src/main/java/kasanari/catalog/iceberg/api/impl"),)
+    }
+}
 
 tasks.compileJava {
     dependsOn(tasks.openApiGenerate)

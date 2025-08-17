@@ -93,6 +93,7 @@ tasks.openApiGenerate {
     }
 }
 
-tasks.compileJava {
-    dependsOn(tasks.openApiGenerate)
-}
+// TODO
+//tasks.compileJava {
+//    dependsOn(tasks.openApiGenerate)
+//}

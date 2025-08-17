@@ -1,6 +1,7 @@
 [versions]
 openapi-generator = "7.14.0"
 quarkus = "3.15.1"
+swagger = "1.6.16"
 jandex = "1.0.0"
 iceberg = "1.7.1"
 hadoop3 = "3.4.1"
@@ -8,7 +9,11 @@ hive = { strictly = "2.3.9" }
 slfj4 = "2.0.17"
 jdbi = "3.49.4"
 agroal = "2.7.1"
-asm="9.7.1"
+asm = "9.7.1"
+
+jakarta-ws-rs-api = "4.0.0"
+jakarta-inject-api = "2.0.1"
+jakarta-annotations-api = "3.0.0"
 # test dependencies
 junit = "5.12.2"
 junit-platform = "1.12.2"
@@ -22,6 +27,11 @@ jdbc-postgresql = "42.7.5"
 quarkus-bom = { group = "io.quarkus.platform", name = "quarkus-bom", version.ref = "quarkus" }
 quarkus-jackson = { group = "io.quarkus", name = "quarkus-rest-jackson" }
 quarkus-openapi = { group = "io.quarkus", name = "quarkus-smallrye-openapi" }
+
+# openapi generation
+jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version = "jakarta-annotations-api" }
+jakarta-inject-api = { module = "jakarta.inject:jakarta.inject-api", version = "jakarta-inject-api" }
+jakarta-ws-rs-api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version = "jakarta-ws-rs-api" }
 
 iceberg-core = { group = "org.apache.iceberg", name = "iceberg-core", version.ref = "iceberg" }
 iceberg-api = { group = "org.apache.iceberg", name = "iceberg-api", version.ref = "iceberg" }
