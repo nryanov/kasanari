@@ -19,6 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -100,10 +102,10 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void successfullyLoadNamespace() {
         var namespace = Namespace.of("ns5");
-        catalog.createNamespace(namespace, Map.of("prop1", "value"));
+        catalog.createNamespace(namespace, new HashMap<>(Map.of("prop1", "value")));
         var loadedNamespace = catalog.loadNamespaceMetadata(namespace);
 
-        var expectedProps = Map.of("prop1", "value");
+        var expectedProps = new HashMap<>(Map.of("prop1", "value"));
 
         assertEquals(expectedProps, loadedNamespace.properties());
         assertEquals(namespace, loadedNamespace.namespace());
@@ -112,14 +114,14 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void successfullyUpdateNamespaceProperties() {
         var namespace = Namespace.of("ns6");
-        var properties = Map.of(
+        var properties = new HashMap<>(Map.of(
                 "property1", "value1",
                 "property2", "value2",
                 "property3", "value3"
-        );
+        ));
         catalog.createNamespace(namespace, properties);
 
-        catalog.updateNamespace(namespace, Map.of("property4", "value4"), Set.of("property2"));
+        catalog.updateNamespace(namespace, new HashMap<>(Map.of("property4", "value4")), new HashSet<>(Set.of("property2")));
 
         var loadedNamespace = catalog.loadNamespaceMetadata(namespace);
         var expectedProperties = Map.of(
@@ -197,6 +199,7 @@ public abstract class IcebergCatalogAdapterTest {
                                                         .build()
                                         )
                                 )
+                                .defaultNamespace(namespace)
                                 .build()
                 )
                 .build();
@@ -210,7 +213,7 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void successfullyDropView() {
         var namespace = Namespace.of("ns_view4");
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest("view");
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
         var view = TableIdentifier.of(namespace, "view");
 
         catalog.createNamespace(namespace);
@@ -224,7 +227,7 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void returnNonEmptyListOfViews() {
         var namespace = Namespace.of("ns_view5");
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest("view");
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
         var view = TableIdentifier.of(namespace, "view");
 
         catalog.createNamespace(namespace);
@@ -239,7 +242,7 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void successfullyRenameView() {
         var namespace = Namespace.of("ns_view6");
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest("view");
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
         var view = TableIdentifier.of(namespace, "view");
         var newViewName = TableIdentifier.of(namespace, "renamed_view");
 
@@ -256,7 +259,7 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void successfullyLoadView() {
         var namespace = Namespace.of("ns_view7");
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest("view");
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
         var view = TableIdentifier.of(namespace, "view");
 
         catalog.createNamespace(namespace);
@@ -285,7 +288,7 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void successfullyReplaceView() {
         var namespace = Namespace.of("ns_view8");
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest("view");
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
         var view = TableIdentifier.of(namespace, "view");
 
         catalog.createNamespace(namespace);
@@ -471,11 +474,7 @@ public abstract class IcebergCatalogAdapterTest {
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
-                .setProperties(
-                        Map.of(
-                                "custom-property", "value"
-                        )
-                )
+                .setProperties(new HashMap<>(Map.of("custom-property", "value")))
                 .build();
 
         var tableMetadata = catalog.createTable(namespace, rq);
@@ -483,14 +482,8 @@ public abstract class IcebergCatalogAdapterTest {
         var updateRq = UpdateTableRequest
                 .create(
                         table,
-                        List.of(
-                                new UpdateRequirement.AssertTableUUID(tableMetadata.tableMetadata().uuid())
-                        ),
-                        List.of(
-                                new MetadataUpdate.SetProperties(
-                                        Map.of("custom-property", "updated-value")
-                                )
-                        )
+                        List.of(new UpdateRequirement.AssertTableUUID(tableMetadata.tableMetadata().uuid())),
+                        List.of(new MetadataUpdate.SetProperties(new HashMap<>(Map.of("custom-property", "updated-value"))))
                 );
 
         catalog.updateTable(table, updateRq);
@@ -544,7 +537,7 @@ public abstract class IcebergCatalogAdapterTest {
                 UpdateTableRequest
                         .create(table,
                                 List.of(new UpdateRequirement.AssertTableUUID(createdTable.tableMetadata().uuid())),
-                                List.of(new MetadataUpdate.SetProperties(Map.of("transaction-property", "value")))
+                                List.of(new MetadataUpdate.SetProperties(new HashMap<>(Map.of("transaction-property", "value"))))
                         )
         );
 

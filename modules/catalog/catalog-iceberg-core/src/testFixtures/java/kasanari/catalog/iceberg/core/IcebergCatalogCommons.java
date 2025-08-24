@@ -3,6 +3,7 @@ package kasanari.catalog.iceberg.core;
 
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SchemaParser;
+import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.rest.requests.CreateViewRequest;
 import org.apache.iceberg.rest.requests.ImmutableCreateViewRequest;
 import org.apache.iceberg.view.ImmutableSQLViewRepresentation;
@@ -28,7 +29,7 @@ public class IcebergCatalogCommons {
 
     public static final Schema DEFAULT_SCHEMA = SchemaParser.fromJson(DEFAULT_SCHEMA_JSON);
 
-    public static CreateViewRequest defaultCreateViewRequest(String name) {
+    public static CreateViewRequest defaultCreateViewRequest(Namespace namespace, String name) {
         return ImmutableCreateViewRequest
                 .builder()
                 .name(name)
@@ -50,6 +51,7 @@ public class IcebergCatalogCommons {
                                                         .build()
                                         )
                                 )
+                                .defaultNamespace(namespace)
                                 .build()
                 )
                 .build();

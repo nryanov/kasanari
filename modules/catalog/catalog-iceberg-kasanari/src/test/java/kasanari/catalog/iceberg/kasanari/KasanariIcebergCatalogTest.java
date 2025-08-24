@@ -75,8 +75,6 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
         var tableOne = TableIdentifier.of(namespace, "table_1");
         var tableTwo = TableIdentifier.of(namespace, "table_2");
 
-        catalog.createNamespace(namespace);
-
         var createTableOneRq = CreateTableRequest
                 .builder()
                 .withName("table_1")
@@ -142,8 +140,6 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
         var namespace = Namespace.of("ns_multi_table_tx2");
         var tableOne = TableIdentifier.of(namespace, "table_1");
         var tableTwo = TableIdentifier.of(namespace, "table_2");
-
-        catalog.createNamespace(namespace);
 
         var createTableOneRq = CreateTableRequest
                 .builder()
@@ -216,8 +212,6 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
         var tableOne = TableIdentifier.of(namespace, "table_1");
         var tableTwo = TableIdentifier.of(namespace, "table_2");
 
-        catalog.createNamespace(namespace);
-
         var createTableOneRq = CreateTableRequest
                 .builder()
                 .withName("table_1")
@@ -236,10 +230,10 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
                 .withPartitionSpec(PartitionSpec.unpartitioned())
                 .build();
 
-        catalog.createNamespace(namespace);
+        kasanariCatalog.createNamespace(namespace);
 
-        var createdTableOne = catalog.createTable(namespace, createTableOneRq);
-        var createdTableTwo = catalog.createTable(namespace, createTableTwoRq);
+        var createdTableOne = defaultCatalog.createTable(namespace, createTableOneRq);
+        var createdTableTwo = defaultCatalog.createTable(namespace, createTableTwoRq);
 
         var transaction = List.of(
                 UpdateTableRequest
@@ -255,13 +249,13 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
         );
 
         try {
-            catalog.commitTransaction(transaction);
+            defaultCatalog.commitTransaction(transaction);
         } catch (Exception e) {
             // ignore error
         }
 
-        var loadedTableOne = catalog.loadTable(tableOne);
-        var loadedTableTwo = catalog.loadTable(tableTwo);
+        var loadedTableOne = defaultCatalog.loadTable(tableOne);
+        var loadedTableTwo = defaultCatalog.loadTable(tableTwo);
 
         // first table changes were committed
         assertEquals("table_one_property", loadedTableOne.tableMetadata().properties().get("transaction-property"));
