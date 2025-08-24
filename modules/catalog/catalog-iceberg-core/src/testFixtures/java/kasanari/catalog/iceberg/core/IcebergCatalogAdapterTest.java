@@ -543,14 +543,8 @@ public abstract class IcebergCatalogAdapterTest {
         var transaction = List.of(
                 UpdateTableRequest
                         .create(table,
-                                List.of(
-                                        new UpdateRequirement.AssertTableUUID(createdTable.tableMetadata().uuid())
-                                ),
-                                List.of(
-                                        new MetadataUpdate.SetProperties(
-                                                Map.of("transaction-property", "value")
-                                        )
-                                )
+                                List.of(new UpdateRequirement.AssertTableUUID(createdTable.tableMetadata().uuid())),
+                                List.of(new MetadataUpdate.SetProperties(Map.of("transaction-property", "value")))
                         )
         );
 
