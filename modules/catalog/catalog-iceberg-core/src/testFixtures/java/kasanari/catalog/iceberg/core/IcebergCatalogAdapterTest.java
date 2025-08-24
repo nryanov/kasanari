@@ -1,7 +1,11 @@
 package kasanari.catalog.iceberg.core;
 
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.rest.requests.ImmutableCreateViewRequest;
+import org.apache.iceberg.view.ImmutableSQLViewRepresentation;
+import org.apache.iceberg.view.ImmutableViewVersion;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -160,20 +164,63 @@ public abstract class IcebergCatalogAdapterTest {
 
         assertTrue(result.identifiers().isEmpty());
     }
-//
-//    @Test
-//    public void successfullyCreateView() {
-//        var namespaceName = new IcebergNamespace.Name("ns_view3");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var viewName = new IcebergView.Name("view");
-//        var view = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
-//        catalog.createView(view);
-//
-//        var result = catalog.viewExists(namespaceName, view.name());
-//        assertTrue(result);
-//    }
+
+    @Test
+    public void successfullyCreateView() {
+        var namespace = Namespace.of("ns_view3");
+        catalog.createNamespace(namespace);
+
+        var view = TableIdentifier.of(namespace, "view");
+        var rq = ImmutableCreateViewRequest
+                .builder()
+                .name("view")
+                .location("location")
+                .schema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .viewVersion(
+                        ImmutableViewVersion
+                                .builder()
+                                .versionId(1)
+                                .timestampMillis(1)
+                                .schemaId(1)
+                                .putAllSummary(Map.of())
+                                .addAllRepresentations(
+                                        List.of(
+                                                ImmutableSQLViewRepresentation
+                                                        .builder()
+                                                        .dialect("sql")
+                                                        .sql("select * from table")
+                                                        .build()
+                                        )
+                                )
+                                .build()
+                )
+                .build();
+        catalog.createView(namespace, rq);
+
+        var result = catalog.viewExists(view);
+        assertTrue(result);
+    }
+
+
+    /*
+        public static IcebergView.CreateRequest defaultCreateViewRequest(
+            IcebergNamespace.Name namespaceName,
+            IcebergView.Name viewName
+    ) {
+        return new IcebergView.CreateRequest(
+                new IcebergView.Metadata.Version(
+                        Optional.empty(),
+                        namespaceName
+                ),
+                Map.of()
+        );
+    }
+     */
+
+
+
+
+
 //
 //    @Test
 //    public void successfullyDropView() {
