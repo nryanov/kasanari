@@ -58,7 +58,7 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
     @Override
     public CreateNamespaceResponse createNamespace(Namespace namespace, Map<String, String> properties) {
         isNamespaceMethodAllowed("createNamespace");
-        namespaceCatalog.createNamespace(namespace);
+        namespaceCatalog.createNamespace(namespace, properties);
 
         return CreateNamespaceResponse
                 .builder()

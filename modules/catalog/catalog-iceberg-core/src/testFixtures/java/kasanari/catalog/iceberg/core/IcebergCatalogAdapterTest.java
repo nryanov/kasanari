@@ -1,17 +1,28 @@
 package kasanari.catalog.iceberg.core;
 
+import org.apache.iceberg.MetadataUpdate;
+import org.apache.iceberg.NullOrder;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.SortDirection;
+import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.UpdateRequirement;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.rest.requests.CreateTableRequest;
+import org.apache.iceberg.rest.requests.ImmutableCreateViewRequest;
+import org.apache.iceberg.rest.requests.UpdateTableRequest;
+import org.apache.iceberg.view.ImmutableSQLViewRepresentation;
+import org.apache.iceberg.view.ImmutableViewVersion;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -91,10 +102,10 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void successfullyLoadNamespace() {
         var namespace = Namespace.of("ns5");
-        catalog.createNamespace(namespace, Map.of("prop1", "value"));
+        catalog.createNamespace(namespace, new HashMap<>(Map.of("prop1", "value")));
         var loadedNamespace = catalog.loadNamespaceMetadata(namespace);
 
-        var expectedProps = Map.of("prop1", "value");
+        var expectedProps = new HashMap<>(Map.of("prop1", "value"));
 
         assertEquals(expectedProps, loadedNamespace.properties());
         assertEquals(namespace, loadedNamespace.namespace());
@@ -103,14 +114,14 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void successfullyUpdateNamespaceProperties() {
         var namespace = Namespace.of("ns6");
-        var properties = Map.of(
+        var properties = new HashMap<>(Map.of(
                 "property1", "value1",
                 "property2", "value2",
                 "property3", "value3"
-        );
+        ));
         catalog.createNamespace(namespace, properties);
 
-        catalog.updateNamespace(namespace, Map.of("property4", "value4"), Set.of("property2"));
+        catalog.updateNamespace(namespace, new HashMap<>(Map.of("property4", "value4")), new HashSet<>(Set.of("property2")));
 
         var loadedNamespace = catalog.loadNamespaceMetadata(namespace);
         var expectedProperties = Map.of(
@@ -160,444 +171,380 @@ public abstract class IcebergCatalogAdapterTest {
 
         assertTrue(result.identifiers().isEmpty());
     }
-//
-//    @Test
-//    public void successfullyCreateView() {
-//        var namespaceName = new IcebergNamespace.Name("ns_view3");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var viewName = new IcebergView.Name("view");
-//        var view = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
-//        catalog.createView(view);
-//
-//        var result = catalog.viewExists(namespaceName, view.name());
-//        assertTrue(result);
-//    }
-//
-//    @Test
-//    public void successfullyDropView() {
-//        var namespaceName = new IcebergNamespace.Name("ns_view4");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var viewName = new IcebergView.Name("view");
-//        var view = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
-//        catalog.createView(view);
-//
-//        assertTrue(catalog.viewExists(namespaceName, view.name()));
-//
-//        catalog.dropView(new IcebergView(namespaceName, view.name()));
-//
-//        var resultAfterDelete = catalog.viewExists(namespaceName, view.name());
-//        assertFalse(resultAfterDelete);
-//    }
-//
-//    @Test
-//    public void returnNonEmptyListOfViews() {
-//        var namespaceName = new IcebergNamespace.Name("ns_view5");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var viewName = new IcebergView.Name("view");
-//        var view = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
-//        catalog.createView(view);
-//
-//        var filter = new IcebergView.Listing.Filter();
-//        var result = catalog.listViews(namespaceName, filter);
-//
-//        var expectedView = new IcebergView(namespaceName, viewName);
-//        assertEquals(List.of(expectedView), result.views());
-//    }
-//
-//    @Test
-//    public void successfullyRenameView() {
-//        var namespaceName = new IcebergNamespace.Name("ns_view6");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var viewName = new IcebergView.Name("view");
-//        var view = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
-//        catalog.createView(view);
-//
-//        var newViewName = new IcebergView.Name("renamed_view");
-//
-//        var oldView = new IcebergView(namespaceName, viewName);
-//        var newView = new IcebergView(namespaceName, newViewName);
-//
-//        catalog.renameView(oldView, newView);
-//
-//        assertFalse(catalog.viewExists(namespaceName, oldView.name()));
-//        assertTrue(catalog.viewExists(namespaceName, newView.name()));
-//    }
-//
-//    @Test
-//    public void successfullyLoadView() {
-//        var namespaceName = new IcebergNamespace.Name("ns_view7");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var viewName = new IcebergView.Name("view");
-//        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
-//        catalog.createView(rq);
-//
-//        var view = new IcebergView(namespaceName, viewName);
-//        var result = catalog.loadView(view);
-//
-//        assertEquals(new IcebergValues.VersionId(1), result.currentVersionId());
-//        assertEquals(new IcebergValues.Location("location"), result.location());
-//        assertEquals(new IcebergValues.FormatVersion(1), result.formatVersion());
-//
-//        assertEquals(1, result.versions().size());
-//        assertEquals(1, result.versionLog().size());
-//
-//        var resultVersion = result.versions().get(0);
-//
-//        assertEquals(1, resultVersion.representations().size());
-//
-//        var resultVersionRepresentation = resultVersion.representations().get(0);
-//
-//        assertEquals(new IcebergView.Metadata.Version.Representation(
-//                new IcebergView.Metadata.Version.Representation.Type("sql"),
-//                new IcebergView.Metadata.Version.Representation.Sql("select * from table"),
-//                new IcebergView.Metadata.Version.Representation.Dialect("sql")
-//        ), resultVersionRepresentation);
-//
-//        var resultVersionLog = result.versionLog().get(0);
-//
-//        assertEquals(new IcebergValues.VersionId(1), resultVersionLog.versionId());
-//
-//        assertEquals(1, result.schemas().size());
-//    }
-//
-//    @Test
-//    public void successfullyReplaceView() {
-//        var namespaceName = new IcebergNamespace.Name("ns_view8");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var viewName = new IcebergView.Name("view");
-//        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespaceName, viewName);
-//        var metadata = catalog.createView(rq);
-//
-//        var view = new IcebergView(namespaceName, viewName);
-//        var updateRq = new IcebergView.UpdateRequest(
-//                List.of(new IcebergView.UpdateRequest.Requirement.AssertViewUUID(metadata.uuid())),
-//                List.of(new IcebergView.UpdateRequest.Update.SetLocationUpdate(new IcebergValues.Location("newLocation")))
-//        );
-//
-//        catalog.replaceView(view, updateRq);
-//
-//        var result = catalog.loadView(view);
-//
-//        assertEquals(new IcebergValues.Location("newLocation"), result.location());
-//    }
-//
-//    // todo: add tests for each view#Requirement & view#Update
-//    // todo: add tests for each table#Requirement & table#Update
-//    // todo: add tests for each table#Transform
-//
-//    @Test
-//    public void returnFalseIfTableDoesNotExist() {
-//        var namespaceName = new IcebergNamespace.Name("ns_table1");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var tableName = new IcebergTable.Name("table");
-//        var result = catalog.tableExists(namespaceName, tableName);
-//
-//        assertFalse(result);
-//    }
-//
-//    @Test
-//    public void returnEmptyTableListing() {
-//        var namespaceName = new IcebergNamespace.Name("ns_table2");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var filter = new IcebergTable.Listing.Filter();
-//        var result = catalog.listTables(namespaceName, filter);
-//
-//        assertTrue(result.tables().isEmpty());
-//    }
-//
-//    @Test
-//    public void successfullyCreateUnpartitionedAndUnsortedTable() {
-//        var namespaceName = new IcebergNamespace.Name("ns_table3");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var tableName = new IcebergTable.Name("table");
-//        var rq = new IcebergTable.CreateRequest(
-//                namespaceName,
-//                tableName,
-//                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
-//                new IcebergValues.Location("location"),
-//                new IcebergTable.PartitionSpecification.Unpartitioned(),
-//                new IcebergTable.SortSpecification.Unsorted(),
-//                Map.of()
-//        );
-//
-//        catalog.createTable(rq);
-//        var result = catalog.tableExists(namespaceName, tableName);
-//        assertTrue(result);
-//    }
-//
-//    @Test
-//    public void successfullyCreatePartitionedTable() {
-//        var namespaceName = new IcebergNamespace.Name("ns_table4");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var tableName = new IcebergTable.Name("table");
-//        var rq = new IcebergTable.CreateRequest(
-//                namespaceName,
-//                tableName,
-//                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
-//                new IcebergValues.Location("location"),
-//                new IcebergTable.PartitionSpecification.Partitioned(
-//                        Optional.of(new IcebergTable.PartitionSpecification.Id(1)),
-//                        List.of(
-//                                new IcebergTable.PartitionSpecification.Partitioned.Field(
-//                                        Optional.of(new IcebergValues.ColumnId(1)),
-//                                        new IcebergValues.SourceId(1),
-//                                        new IcebergTable.PartitionSpecification.Partitioned.Field.Name("id"),
-//                                        new IcebergTable.Transform.Bucket(16)
-//                                )
-//                        )
-//                ),
-//                new IcebergTable.SortSpecification.Unsorted(),
-//                Map.of()
-//        );
-//
-//        catalog.createTable(rq);
-//        var result = catalog.tableExists(namespaceName, tableName);
-//        assertTrue(result);
-//    }
-//
-//    @Test
-//    public void successfullyCreateSortedTable() {
-//        var namespaceName = new IcebergNamespace.Name("ns_table5");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var tableName = new IcebergTable.Name("table");
-//        var rq = new IcebergTable.CreateRequest(
-//                namespaceName,
-//                tableName,
-//                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
-//                new IcebergValues.Location("location"),
-//                new IcebergTable.PartitionSpecification.Unpartitioned(),
-//                new IcebergTable.SortSpecification.Sorted(
-//                        new IcebergTable.SortSpecification.Id(1),
-//                        List.of(
-//                                new IcebergTable.SortSpecification.Sorted.Field(
-//                                        new IcebergValues.SourceId(1),
-//                                        new IcebergTable.Transform.Truncate(3),
-//                                        IcebergTable.SortSpecification.Sorted.Direction.ASC,
-//                                        IcebergTable.SortSpecification.Sorted.NullOrder.NULLS_FIRST
-//                                )
-//                        )
-//                ),
-//                Map.of()
-//        );
-//
-//        catalog.createTable(rq);
-//        var result = catalog.tableExists(namespaceName, tableName);
-//        assertTrue(result);
-//    }
-//
-//    @Test
-//    public void successfullyDropTable() {
-//        var namespaceName = new IcebergNamespace.Name("ns_table6");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var tableName = new IcebergTable.Name("table");
-//        var rq = new IcebergTable.CreateRequest(
-//                namespaceName,
-//                tableName,
-//                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
-//                new IcebergValues.Location("location"),
-//                new IcebergTable.PartitionSpecification.Unpartitioned(),
-//                new IcebergTable.SortSpecification.Unsorted(),
-//                Map.of()
-//        );
-//
-//        catalog.createTable(rq);
-//        assertTrue(catalog.tableExists(namespaceName, tableName));
-//
-//        var table = new IcebergTable(namespaceName, tableName);
-//        catalog.dropTable(table, true);
-//
-//        var result = catalog.tableExists(namespaceName, tableName);
-//        assertFalse(result);
-//    }
-//
-//    @Test
-//    public void successfullyRenameTable() {
-//        var namespaceName = new IcebergNamespace.Name("ns_table7");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var tableName = new IcebergTable.Name("table");
-//        var rq = new IcebergTable.CreateRequest(
-//                namespaceName,
-//                tableName,
-//                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
-//                new IcebergValues.Location("location"),
-//                new IcebergTable.PartitionSpecification.Unpartitioned(),
-//                new IcebergTable.SortSpecification.Unsorted(),
-//                Map.of()
-//        );
-//
-//        catalog.createTable(rq);
-//        assertTrue(catalog.tableExists(namespaceName, tableName));
-//
-//        var newTableName = new IcebergTable.Name("newTable");
-//        var oldTable = new IcebergTable(namespaceName, tableName);
-//        var newTable = new IcebergTable(namespaceName, newTableName);
-//        catalog.renameTable(oldTable, newTable);
-//
-//        assertFalse(catalog.tableExists(namespaceName, oldTable.name()));
-//        assertTrue(catalog.tableExists(namespaceName, newTable.name()));
-//    }
-//
-//    @Test
-//    public void successfullyUpdateTable() {
-//        var namespaceName = new IcebergNamespace.Name("ns_table8");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var tableName = new IcebergTable.Name("table");
-//        var rq = new IcebergTable.CreateRequest(
-//                namespaceName,
-//                tableName,
-//                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
-//                new IcebergValues.Location("location"),
-//                new IcebergTable.PartitionSpecification.Unpartitioned(),
-//                new IcebergTable.SortSpecification.Unsorted(),
-//                Map.of(
-//                        "custom-property", "value"
-//                )
-//        );
-//
-//        var createdTableMetadata = catalog.createTable(rq);
-//
-//        var update = new IcebergTable.UpdateRequest(
-//                List.of(
-//                        new IcebergTable.UpdateRequest.Requirement.AssertTableUuid(createdTableMetadata.metadata().uuid())
-//                ),
-//                List.of(
-//                        new IcebergTable.UpdateRequest.Update.SetPropertiesUpdate(
-//                                Map.of("custom-property", "updated-value")
-//                        )
-//                )
-//        );
-//
-//        var table = new IcebergTable(namespaceName, tableName);
-//        var commit = catalog.updateTable(table, update);
-//        var updatedTable = catalog.loadTable(table);
-//
-//        assertNotEquals(createdTableMetadata.metadata().lastUpdated(), commit.metadata().lastUpdated());
-//        assertEquals("value", createdTableMetadata.metadata().properties().get("custom-property"));
-//        assertEquals("updated-value", updatedTable.metadata().properties().get("custom-property"));
-//    }
-//
-//    @Test
-//    public void successfullyLoadTable() {
-//        var namespaceName = new IcebergNamespace.Name("ns_table9");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var tableName = new IcebergTable.Name("table");
-//        var rq = new IcebergTable.CreateRequest(
-//                namespaceName,
-//                tableName,
-//                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
-//                new IcebergValues.Location("location"),
-//                new IcebergTable.PartitionSpecification.Unpartitioned(),
-//                new IcebergTable.SortSpecification.Unsorted(),
-//                Map.of()
-//        );
-//
-//        var createdTable = catalog.createTable(rq);
-//        var table = new IcebergTable(namespaceName, tableName);
-//        var loadedTable = catalog.loadTable(table);
-//
-//        assertEquals(createdTable.metadata().uuid(), loadedTable.metadata().uuid());
-//    }
-//
-//    @Test
-//    @Disabled() // todo: fix it
-//    public void successfullyRegisterTable() {
-//        var namespaceName = new IcebergNamespace.Name("ns_table10");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var tableName = new IcebergTable.Name("table");
-//        var registeredTableName = new IcebergTable.Name("registered-table");
-//
-//        var location = new IcebergValues.Location("location");
-//
-//        var rq = new IcebergTable.CreateRequest(
-//                namespaceName,
-//                tableName,
-//                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
-//                location,
-//                new IcebergTable.PartitionSpecification.Unpartitioned(),
-//                new IcebergTable.SortSpecification.Unsorted(),
-//                Map.of()
-//        );
-//
-//        catalog.createTable(rq);
-//
-//        var table = new IcebergTable(namespaceName, registeredTableName);
-//        var registeredTable = catalog.registerTable(table, location);
-//    }
-//
-//    @Test
-//    public void successfullyCommitTransaction() {
-//        var namespaceName = new IcebergNamespace.Name("ns_tx1");
-//        var namespace = new IcebergNamespace(namespaceName, Map.of());
-//        catalog.createNamespace(namespace);
-//
-//        var tableName = new IcebergTable.Name("table");
-//        var location = new IcebergValues.Location("location");
-//
-//        var rq = new IcebergTable.CreateRequest(
-//                namespaceName,
-//                tableName,
-//                new IcebergValues.Schema(IcebergCatalogCommons.DEFAULT_SCHEMA),
-//                location,
-//                new IcebergTable.PartitionSpecification.Unpartitioned(),
-//                new IcebergTable.SortSpecification.Unsorted(),
-//                Map.of()
-//        );
-//
-//        var table = new IcebergTable(namespaceName, tableName);
-//        var createdTable = catalog.createTable(rq);
-//
-//        var transaction = List.of(
-//                new IcebergTable.Transaction(
-//                        table,
-//                        new IcebergTable.UpdateRequest(
-//                                List.of(
-//                                        new IcebergTable.UpdateRequest.Requirement.AssertTableUuid(createdTable.metadata().uuid())
-//                                ),
-//                                List.of(
-//                                        new IcebergTable.UpdateRequest.Update.SetPropertiesUpdate(
-//                                                Map.of("transaction-property", "value")
-//                                        )
-//                                )
-//                        )
-//                )
-//        );
-//
-//        catalog.commitTransaction(transaction);
-//
-//        var loadedTable = catalog.loadTable(table);
-//
-//        assertEquals("value", loadedTable.metadata().properties().get("transaction-property"));
-//    }
+
+    @Test
+    public void successfullyCreateView() {
+        var namespace = Namespace.of("ns_view3");
+        catalog.createNamespace(namespace);
+
+        var view = TableIdentifier.of(namespace, "view");
+        var rq = ImmutableCreateViewRequest
+                .builder()
+                .name("view")
+                .location("location")
+                .schema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .viewVersion(
+                        ImmutableViewVersion
+                                .builder()
+                                .versionId(1)
+                                .timestampMillis(1)
+                                .schemaId(1)
+                                .putAllSummary(Map.of())
+                                .addAllRepresentations(
+                                        List.of(
+                                                ImmutableSQLViewRepresentation
+                                                        .builder()
+                                                        .dialect("sql")
+                                                        .sql("select * from table")
+                                                        .build()
+                                        )
+                                )
+                                .defaultNamespace(namespace)
+                                .build()
+                )
+                .build();
+        catalog.createView(namespace, rq);
+
+        var result = catalog.viewExists(view);
+        assertTrue(result);
+    }
+
+
+    @Test
+    public void successfullyDropView() {
+        var namespace = Namespace.of("ns_view4");
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
+        var view = TableIdentifier.of(namespace, "view");
+
+        catalog.createNamespace(namespace);
+        catalog.createView(namespace, rq);
+
+        assertTrue(catalog.viewExists(view));
+        catalog.dropView(view);
+        assertFalse(catalog.viewExists(view));
+    }
+
+    @Test
+    public void returnNonEmptyListOfViews() {
+        var namespace = Namespace.of("ns_view5");
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
+        var view = TableIdentifier.of(namespace, "view");
+
+        catalog.createNamespace(namespace);
+        catalog.createView(namespace, rq);
+
+        var result = catalog.listViews(namespace, null, 10);
+
+        var expectedViews = List.of(view);
+        assertEquals(expectedViews, result.identifiers());
+    }
+
+    @Test
+    public void successfullyRenameView() {
+        var namespace = Namespace.of("ns_view6");
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
+        var view = TableIdentifier.of(namespace, "view");
+        var newViewName = TableIdentifier.of(namespace, "renamed_view");
+
+        catalog.createNamespace(namespace);
+        catalog.createView(namespace, rq);
+
+
+        catalog.renameView(view, newViewName);
+
+        assertFalse(catalog.viewExists(view));
+        assertTrue(catalog.viewExists(newViewName));
+    }
+
+    @Test
+    public void successfullyLoadView() {
+        var namespace = Namespace.of("ns_view7");
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
+        var view = TableIdentifier.of(namespace, "view");
+
+        catalog.createNamespace(namespace);
+        catalog.createView(namespace, rq);
+
+        var result = catalog.loadView(view);
+
+        assertEquals(1, result.metadata().currentVersionId());
+        assertEquals("location", result.metadata().location());
+        assertEquals(1, result.metadata().formatVersion());
+
+        assertEquals(1, result.metadata().versions().size());
+        assertEquals(1, result.metadata().history().size());
+
+        var resultVersion = result.metadata().currentVersion();
+
+        assertEquals(1, resultVersion.representations().size());
+
+        var resultVersionRepresentation = (ImmutableSQLViewRepresentation) resultVersion.representations().get(0);
+
+        assertEquals("sql", resultVersionRepresentation.type());
+        assertEquals("select * from table", resultVersionRepresentation.sql());
+        assertEquals("spark", resultVersionRepresentation.dialect());
+    }
+
+    @Test
+    public void successfullyReplaceView() {
+        var namespace = Namespace.of("ns_view8");
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
+        var view = TableIdentifier.of(namespace, "view");
+
+        catalog.createNamespace(namespace);
+        var createdView = catalog.createView(namespace, rq);
+
+        var updateRq = UpdateTableRequest
+                .create(
+                        view,
+                        List.of(
+                                new UpdateRequirement.AssertViewUUID(createdView.metadata().uuid())
+                        ),
+                        List.of(
+                                new MetadataUpdate.SetLocation("newLocation")
+                        )
+                );
+
+        catalog.replaceView(view, updateRq);
+
+        var result = catalog.loadView(view);
+
+        assertEquals("newLocation", result.metadata().location());
+    }
+
+
+    @Test
+    public void returnFalseIfTableDoesNotExist() {
+        var namespace = Namespace.of("ns_table1");
+        var table = TableIdentifier.of(namespace, "table");
+
+        catalog.createNamespace(namespace);
+
+        assertFalse(catalog.tableExists(table));
+    }
+
+    @Test
+    public void returnEmptyTableListing() {
+        var namespace = Namespace.of("ns_table2");
+
+        catalog.createNamespace(namespace);
+
+        var result = catalog.listTables(namespace, null, 10);
+
+        assertTrue(result.identifiers().isEmpty());
+    }
+
+    @Test
+    public void successfullyCreateUnpartitionedAndUnsortedTable() {
+        var namespace = Namespace.of("ns_table3");
+        var table = TableIdentifier.of(namespace, "table");
+
+        catalog.createNamespace(namespace);
+
+        var rq = CreateTableRequest
+                .builder()
+                .withName("table")
+                .withLocation("location")
+                .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .withWriteOrder(SortOrder.unsorted())
+                .withPartitionSpec(PartitionSpec.unpartitioned())
+                .build();
+
+        catalog.createTable(namespace, rq);
+
+        assertTrue(catalog.tableExists(table));
+    }
+
+    @Test
+    public void successfullyCreatePartitionedTable() {
+        var namespace = Namespace.of("ns_table4");
+        var table = TableIdentifier.of(namespace, "table");
+
+        catalog.createNamespace(namespace);
+
+        var rq = CreateTableRequest
+                .builder()
+                .withName("table")
+                .withLocation("location")
+                .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .withWriteOrder(SortOrder.unsorted())
+                .withPartitionSpec(
+                        PartitionSpec
+                                .builderFor(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                                .withSpecId(1)
+                                .bucket("id", 16)
+                                .build()
+                )
+                .build();
+
+        catalog.createTable(namespace, rq);
+
+        assertTrue(catalog.tableExists(table));
+    }
+
+    @Test
+    public void successfullyCreateSortedTable() {
+        var namespace = Namespace.of("ns_table5");
+        var table = TableIdentifier.of(namespace, "table");
+
+        catalog.createNamespace(namespace);
+
+        var rq = CreateTableRequest
+                .builder()
+                .withName("table")
+                .withLocation("location")
+                .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .withPartitionSpec(PartitionSpec.unpartitioned())
+                .withWriteOrder(SortOrder
+                        .builderFor(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                        .withOrderId(1)
+                        .sortBy("id", SortDirection.ASC, NullOrder.NULLS_FIRST)
+                        .build()
+                )
+                .build();
+
+        catalog.createTable(namespace, rq);
+
+        assertTrue(catalog.tableExists(table));
+    }
+
+    @Test
+    public void successfullyDropTable() {
+        var namespace = Namespace.of("ns_table6");
+        var table = TableIdentifier.of(namespace, "table");
+
+        catalog.createNamespace(namespace);
+
+        var rq = CreateTableRequest
+                .builder()
+                .withName("table")
+                .withLocation("location")
+                .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .withWriteOrder(SortOrder.unsorted())
+                .withPartitionSpec(PartitionSpec.unpartitioned())
+                .build();
+
+        catalog.createTable(namespace, rq);
+
+        assertTrue(catalog.tableExists(table));
+
+        catalog.dropTable(table, true);
+
+        assertFalse(catalog.tableExists(table));
+    }
+
+    @Test
+    public void successfullyRenameTable() {
+        var namespace = Namespace.of("ns_table7");
+        var table = TableIdentifier.of(namespace, "table");
+        var newTable = TableIdentifier.of(namespace, "newTable");
+
+        catalog.createNamespace(namespace);
+
+        var rq = CreateTableRequest
+                .builder()
+                .withName("table")
+                .withLocation("location")
+                .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .withWriteOrder(SortOrder.unsorted())
+                .withPartitionSpec(PartitionSpec.unpartitioned())
+                .build();
+
+        catalog.createTable(namespace, rq);
+
+        assertTrue(catalog.tableExists(table));
+
+        catalog.renameTable(table, newTable);
+
+        assertFalse(catalog.tableExists(table));
+        assertTrue(catalog.tableExists(newTable));
+    }
+
+    @Test
+    public void successfullyUpdateTable() {
+        var namespace = Namespace.of("ns_table8");
+        var table = TableIdentifier.of(namespace, "table");
+
+        catalog.createNamespace(namespace);
+
+        var rq = CreateTableRequest
+                .builder()
+                .withName("table")
+                .withLocation("location")
+                .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .withWriteOrder(SortOrder.unsorted())
+                .withPartitionSpec(PartitionSpec.unpartitioned())
+                .setProperties(new HashMap<>(Map.of("custom-property", "value")))
+                .build();
+
+        var tableMetadata = catalog.createTable(namespace, rq);
+
+        var updateRq = UpdateTableRequest
+                .create(
+                        table,
+                        List.of(new UpdateRequirement.AssertTableUUID(tableMetadata.tableMetadata().uuid())),
+                        List.of(new MetadataUpdate.SetProperties(new HashMap<>(Map.of("custom-property", "updated-value"))))
+                );
+
+        catalog.updateTable(table, updateRq);
+        var updatedTable = catalog.loadTable(table);
+
+        assertNotEquals(tableMetadata.tableMetadata().lastUpdatedMillis(), updatedTable.tableMetadata().lastUpdatedMillis());
+        assertEquals("value", tableMetadata.tableMetadata().properties().get("custom-property"));
+        assertEquals("updated-value", updatedTable.tableMetadata().properties().get("custom-property"));
+    }
+
+    @Test
+    public void successfullyLoadTable() {
+        var namespace = Namespace.of("ns_table9");
+        var table = TableIdentifier.of(namespace, "table");
+
+        catalog.createNamespace(namespace);
+
+        var rq = CreateTableRequest
+                .builder()
+                .withName("table")
+                .withLocation("location")
+                .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .withWriteOrder(SortOrder.unsorted())
+                .withPartitionSpec(PartitionSpec.unpartitioned())
+                .build();
+
+        var createdTable = catalog.createTable(namespace, rq);
+        var loadedTable = catalog.loadTable(table);
+
+        assertEquals(createdTable.tableMetadata().uuid(), loadedTable.tableMetadata().uuid());
+    }
+
+
+    @Test
+    public void successfullyCommitTransaction() {
+        var namespace = Namespace.of("ns_tx1");
+        var table = TableIdentifier.of(namespace, "table");
+        var rq = CreateTableRequest
+                .builder()
+                .withName("table")
+                .withLocation("location")
+                .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .withWriteOrder(SortOrder.unsorted())
+                .withPartitionSpec(PartitionSpec.unpartitioned())
+                .build();
+
+        catalog.createNamespace(namespace);
+        var createdTable = catalog.createTable(namespace, rq);
+
+        var transaction = List.of(
+                UpdateTableRequest
+                        .create(table,
+                                List.of(new UpdateRequirement.AssertTableUUID(createdTable.tableMetadata().uuid())),
+                                List.of(new MetadataUpdate.SetProperties(new HashMap<>(Map.of("transaction-property", "value"))))
+                        )
+        );
+
+        catalog.commitTransaction(transaction);
+
+        var loadedTable = catalog.loadTable(table);
+
+        assertEquals("value", loadedTable.tableMetadata().properties().get("transaction-property"));
+    }
 }

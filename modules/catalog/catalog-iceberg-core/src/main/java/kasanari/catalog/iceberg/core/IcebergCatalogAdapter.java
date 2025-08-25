@@ -14,6 +14,7 @@ import org.apache.iceberg.rest.responses.LoadTableResponse;
 import org.apache.iceberg.rest.responses.LoadViewResponse;
 import org.apache.iceberg.rest.responses.UpdateNamespacePropertiesResponse;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,7 +23,7 @@ public interface IcebergCatalogAdapter {
     CreateNamespaceResponse createNamespace(Namespace namespace, Map<String, String> properties);
 
     default CreateNamespaceResponse createNamespace(Namespace namespace) {
-        return createNamespace(namespace, Map.of());
+        return createNamespace(namespace, new HashMap<>());
     }
 
     void dropNamespace(Namespace namespace);
