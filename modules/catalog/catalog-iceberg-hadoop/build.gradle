@@ -1,8 +1,6 @@
 dependencies {
     implementation project(':modules:catalog:catalog-iceberg-core')
-
-    implementation libs.hadoop3.client.api
-    implementation libs.hadoop3.client.runtime
+    implementation project(':modules:catalog:catalog-iceberg-common')
 
     testImplementation testFixtures(project(':modules:catalog:catalog-iceberg-core'))
 }

@@ -14,6 +14,7 @@ public class HadoopIcebergCatalogFactory implements IcebergCatalogFactory {
         var catalog = new HadoopCatalog(
                 new Configuration(), properties.get("warehouse")
         );
+        catalog.initialize("hadoop", properties);
         return new DefaultIcebergCatalogAdapter(catalog);
     }
 }

@@ -9,7 +9,7 @@ pluginManagement {
 }
 
 // change it
-rootProject.name='kasanari'
+rootProject.name = 'kasanari'
 
 include(
         'modules:api',
@@ -19,6 +19,7 @@ include(
 
         'modules:catalog',
         'modules:catalog:catalog-iceberg-core',
+        'modules:catalog:catalog-iceberg-common',
         'modules:catalog:catalog-iceberg-hadoop',
         'modules:catalog:catalog-iceberg-inmemory',
         'modules:catalog:catalog-iceberg-hive',
@@ -42,6 +43,7 @@ findProject(':modules:api:api-paimon')?.name = 'api-paimon'
 findProject(':modules:server')?.name = 'server'
 findProject(':modules:catalog')?.name = 'catalog'
 findProject(':modules:catalog:catalog-iceberg-core')?.name = 'catalog-iceberg-core'
+findProject(':modules:catalog:catalog-iceberg-common')?.name = 'catalog-iceberg-common'
 findProject(':modules:catalog:catalog-iceberg-hadoop')?.name = 'catalog-iceberg-hadoop'
 findProject(':modules:catalog:catalog-iceberg-inmemory')?.name = 'catalog-iceberg-inmemory'
 findProject(':modules:catalog:catalog-iceberg-hive')?.name = 'catalog-iceberg-hive'
@@ -55,4 +57,3 @@ findProject(':modules:catalog:catalog-paimon-hive')?.name = 'catalog-paimon-hive
 findProject(':modules:catalog:catalog-paimon-rest')?.name = 'catalog-paimon-rest'
 findProject(':modules:catalog:catalog-paimon-filesystem')?.name = 'catalog-paimon-filesystem'
 findProject(':modules:catalog:catalog-paimon-core')?.name = 'catalog-paimon-core'
-
