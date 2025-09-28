@@ -1,33 +1,25 @@
 dependencies {
     implementation project(':modules:catalog:catalog-iceberg-core')
+    implementation project(':modules:catalog:catalog-iceberg-common')
 
-    implementation libs.hadoop3.client.api
-    implementation libs.hadoop3.client.runtime
-
+    testImplementation libs.testcontainers.minio
     testImplementation testFixtures(project(':modules:catalog:catalog-iceberg-core'))
-}
 
-project.ext.extraJvmArgs = [
-        "--add-opens", "java.base/java.io=ALL-UNNAMED",
-        "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED",
-        "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
-        "--add-opens", "java.base/java.lang=ALL-UNNAMED",
-        "--add-opens", "java.base/java.math=ALL-UNNAMED",
-        "--add-opens", "java.base/java.net=ALL-UNNAMED",
-        "--add-opens", "java.base/java.nio=ALL-UNNAMED",
-        "--add-opens", "java.base/java.text=ALL-UNNAMED",
-        "--add-opens", "java.base/java.time=ALL-UNNAMED",
-        "--add-opens", "java.base/java.util.concurrent.atomic=ALL-UNNAMED",
-        "--add-opens", "java.base/java.util.concurrent=ALL-UNNAMED",
-        "--add-opens", "java.base/java.util.regex=ALL-UNNAMED",
-        "--add-opens", "java.base/java.util=ALL-UNNAMED",
-        "--add-opens", "java.base/jdk.internal.ref=ALL-UNNAMED",
-        "--add-opens", "java.base/jdk.internal.reflect=ALL-UNNAMED",
-        "--add-opens", "java.sql/java.sql=ALL-UNNAMED",
-        "--add-opens", "java.base/sun.util.calendar=ALL-UNNAMED",
-        "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED",
-        "--add-opens", "java.base/sun.nio.cs=ALL-UNNAMED",
-        "--add-opens", "java.base/sun.security.action=ALL-UNNAMED",
-        "--add-opens", "java.base/sun.util.calendar=ALL-UNNAMED",
-        "-Djava.security.manager=allow"
-]
+    implementation(libs.hadoop3.common) {
+        exclude group: "org.slf4j", module: "slf4j-reload4j"
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "ch.qos.reload4j", module: "reload4j"
+        exclude group: "log4j", module: "log4j"
+        exclude group: "org.apache.zookeeper", module: "zookeeper"
+        exclude group: "org.apache.hadoop.thirdparty", module: "hadoop-shaded-protobuf_3_25"
+        exclude group: "com.github.pjfanning", module: "jersey-json"
+        exclude group: "com.sun.jersey", module: "jersey-core"
+        exclude group: "com.sun.jersey", module: "jersey-server"
+        exclude group: "com.sun.jersey", module: "jersey-servlet"
+        exclude group: "com.sun.jersey", module: "jersey-servlet"
+        exclude group: "io.dropwizard.metrics", module: "metrics-core"
+    }
+    implementation(libs.hadoop3.aws) {
+        exclude group: "software.amazon.awssdk", module: "bundle"
+    }
+}
