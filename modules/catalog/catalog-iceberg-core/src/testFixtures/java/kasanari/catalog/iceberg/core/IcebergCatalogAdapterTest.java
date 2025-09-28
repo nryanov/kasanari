@@ -335,6 +335,25 @@ public abstract class IcebergCatalogAdapterTest {
     }
 
     @Test
+    public void successfullyCreateUnpartitionedAndUnsortedTableWithoutNamespace() {
+        var namespace = Namespace.empty();
+        var table = TableIdentifier.of(namespace, "table");
+
+        var rq = CreateTableRequest
+                .builder()
+                .withName("table")
+                .withLocation("s3a://warehouse/table")
+                .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .withWriteOrder(SortOrder.unsorted())
+                .withPartitionSpec(PartitionSpec.unpartitioned())
+                .build();
+
+        catalog.createTable(namespace, rq);
+
+        assertTrue(catalog.tableExists(table));
+    }
+
+    @Test
     public void successfullyCreateUnpartitionedAndUnsortedTable() {
         var namespace = Namespace.of("ns_table3");
         var table = TableIdentifier.of(namespace, "table");

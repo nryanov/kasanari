@@ -23,3 +23,12 @@ services:
 
       tail -f /dev/null
       "
+
+  catalog-storage:
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres

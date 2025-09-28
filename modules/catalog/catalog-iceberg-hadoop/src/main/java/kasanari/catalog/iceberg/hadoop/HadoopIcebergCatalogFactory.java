@@ -11,10 +11,10 @@ import java.util.Map;
 public class HadoopIcebergCatalogFactory implements IcebergCatalogFactory {
     @Override
     public IcebergCatalogAdapter create(Map<String, String> properties) {
-        var catalog = new HadoopCatalog(
-                new Configuration(), properties.get("warehouse")
-        );
-        catalog.initialize("hadoop", properties);
+        var hadoopConfiguration = new Configuration();
+        properties.forEach(hadoopConfiguration::set);
+
+        var catalog = new HadoopCatalog(hadoopConfiguration, properties.get("warehouse"));
         return new DefaultIcebergCatalogAdapter(catalog);
     }
 }

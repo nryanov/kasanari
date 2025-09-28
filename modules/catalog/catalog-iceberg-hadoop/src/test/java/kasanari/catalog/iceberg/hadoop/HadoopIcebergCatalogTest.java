@@ -5,23 +5,29 @@ import kasanari.catalog.iceberg.core.IcebergCatalogAdapterTest;
 
 import java.util.Map;
 
-import org.apache.hadoop.fs.s3a.S3AFileSystem;
+import org.apache.hadoop.fs.s3a.Constants;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIO;
+import org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider;
+import org.apache.iceberg.aws.s3.S3FileIOProperties;
+import org.apache.hadoop.fs.s3a.S3AFileSystem;
 // SimpleAWSCredentialsProvider
 
 public class HadoopIcebergCatalogTest extends IcebergCatalogAdapterTest {
     @Override
     public IcebergCatalogAdapter setupCatalog() {
-        S3AFileSystem a = null;
-
         var factory = new HadoopIcebergCatalogFactory();
         return factory.create(Map.of(
-                "io-impl", "org.apache.iceberg.aws.s3.S3FileIO",
-                "warehouse", "s3a://warehouse",
-                "s3.endpoint", "http://localhost:9001",
-                "s3.access-key-id", "admin",
-                "s3.secret-access-key", "password",
-                "s3.path-style-access", "true"
+                CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO",
+                CatalogProperties.WAREHOUSE_LOCATION, "s3a://warehouse",
+                Constants.ENDPOINT, "http://localhost:9000",
+                Constants.ACCESS_KEY, "admin",
+                Constants.SECRET_KEY, "password",
+                Constants.PATH_STYLE_ACCESS, "true",
+                Constants.SECURE_CONNECTIONS, "false",
+//                "fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem",
+//                Constants.AWS_CREDENTIALS_PROVIDER, "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider",
+                Constants.AWS_REGION, "none"
         ));
     }
 }
