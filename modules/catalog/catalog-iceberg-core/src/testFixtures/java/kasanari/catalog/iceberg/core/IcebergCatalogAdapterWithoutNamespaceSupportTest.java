@@ -20,15 +20,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public abstract class IcebergCatalogAdapterTest {
+public abstract class IcebergCatalogAdapterWithoutNamespaceSupportTest {
     protected IcebergCatalogAdapter catalog;
 
     @BeforeAll
@@ -51,110 +52,8 @@ public abstract class IcebergCatalogAdapterTest {
     public void reset() {}
 
     @Test
-    public void returnEmptyNamespaceList() {
-        var result = catalog.listNamespaces(String.valueOf(Integer.MAX_VALUE - 15), 10, null);
-
-        assertTrue(result.namespaces().isEmpty());
-    }
-
-    @Test
-    public void returnFalseIfNamespaceDoesNotExist() {
-        var namespaceName = Namespace.of("ns1");
-        var result = catalog.namespaceExists(namespaceName);
-
-        assertFalse(result);
-    }
-
-    @Test
-    public void successfullyCreateNamespace() {
-        var namespace = Namespace.of("ns2");
-        catalog.createNamespace(namespace);
-        var result = catalog.namespaceExists(namespace);
-
-        assertTrue(result);
-    }
-
-    @Test
-    public void successfullyDeleteExistingNamespace() {
-        var namespace = Namespace.of("ns3");
-        catalog.createNamespace(namespace);
-        var result = catalog.namespaceExists(namespace);
-
-        assertTrue(result);
-
-        catalog.dropNamespace(namespace);
-
-        var resultAfterDeleting = catalog.namespaceExists(namespace);
-
-        assertFalse(resultAfterDeleting);
-    }
-
-    @Test
-    public void returnNonEmptyNamespaceList() {
-        var namespace = Namespace.of("ns4");
-        catalog.createNamespace(namespace);
-
-        var result = catalog.listNamespaces(null, 10, null);
-
-        assertFalse(result.namespaces().isEmpty());
-    }
-
-    @Test
-    public void successfullyLoadNamespace() {
-        var namespace = Namespace.of("ns5");
-        catalog.createNamespace(namespace, new HashMap<>(Map.of("prop1", "value")));
-        var loadedNamespace = catalog.loadNamespaceMetadata(namespace);
-
-        var expectedProps = new HashMap<>(Map.of("prop1", "value"));
-
-        assertEquals(expectedProps, loadedNamespace.properties());
-        assertEquals(namespace, loadedNamespace.namespace());
-    }
-
-    @Test
-    public void successfullyUpdateNamespaceProperties() {
-        var namespace = Namespace.of("ns6");
-        var properties = new HashMap<>(Map.of(
-                "property1", "value1",
-                "property2", "value2",
-                "property3", "value3"
-        ));
-        catalog.createNamespace(namespace, properties);
-
-        catalog.updateNamespace(namespace, new HashMap<>(Map.of("property4", "value4")), new HashSet<>(Set.of("property2")));
-
-        var loadedNamespace = catalog.loadNamespaceMetadata(namespace);
-        var expectedProperties = Map.of(
-                "property1", "value1",
-                "property3", "value3",
-                "property4", "value4"
-        );
-
-        assertEquals(expectedProperties, loadedNamespace.properties());
-    }
-
-    @Test
-    public void correctlyPaginateNamespaceListing() {
-        var namespaceParent = Namespace.of("ns7");
-        var namespace1 = Namespace.of("ns7", "1");
-        var namespace2 = Namespace.of("ns7", "2");
-
-        catalog.createNamespace(namespaceParent);
-        catalog.createNamespace(namespace1);
-        catalog.createNamespace(namespace2);
-
-        var page1 = catalog.listNamespaces(null, 1, "ns7");
-
-        assertEquals(List.of(namespace1), page1.namespaces());
-
-        var page2 = catalog.listNamespaces(page1.nextPageToken(), 1, "ns7");
-        assertEquals(List.of(namespace2), page2.namespaces());
-    }
-
-    @Test
     public void returnFalseIfViewDoesNotExist() {
-        var namespace = Namespace.of("ns_view1");
-        catalog.createNamespace(namespace);
+        var namespace = Namespace.empty();
 
         var view = TableIdentifier.of(namespace, "view");
         var result = catalog.viewExists(view);
@@ -164,9 +63,7 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void returnEmptyViewListing() {
-        var namespace = Namespace.of("ns_view2");
-        catalog.createNamespace(namespace);
-
+        var namespace = Namespace.empty();
         var result = catalog.listViews(namespace, null, 10);
 
         assertTrue(result.identifiers().isEmpty());
@@ -174,14 +71,15 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyCreateView() {
-        var namespace = Namespace.of("ns_view3");
-        catalog.createNamespace(namespace);
+        var namespace = Namespace.empty();
+        var entityName = "view_1";
+        var location = String.format("s3a://warehouse/%s", entityName);
 
-        var view = TableIdentifier.of(namespace, "view");
+        var view = TableIdentifier.of(namespace, entityName);
         var rq = ImmutableCreateViewRequest
                 .builder()
-                .name("view")
-                .location("location")
+                .name(entityName)
+                .location(location)
                 .schema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .viewVersion(
                         ImmutableViewVersion
@@ -212,11 +110,11 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyDropView() {
-        var namespace = Namespace.of("ns_view4");
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
-        var view = TableIdentifier.of(namespace, "view");
-
-        catalog.createNamespace(namespace);
+        var namespace = Namespace.empty();
+        var entityName = "view_2";
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, entityName);
+        var view = TableIdentifier.of(namespace, entityName);
+        
         catalog.createView(namespace, rq);
 
         assertTrue(catalog.viewExists(view));
@@ -226,11 +124,10 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void returnNonEmptyListOfViews() {
-        var namespace = Namespace.of("ns_view5");
+        var namespace = Namespace.empty();
         var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
         var view = TableIdentifier.of(namespace, "view");
 
-        catalog.createNamespace(namespace);
         catalog.createView(namespace, rq);
 
         var result = catalog.listViews(namespace, null, 10);
@@ -241,12 +138,11 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyRenameView() {
-        var namespace = Namespace.of("ns_view6");
+        var namespace = Namespace.empty();
         var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
         var view = TableIdentifier.of(namespace, "view");
         var newViewName = TableIdentifier.of(namespace, "renamed_view");
-
-        catalog.createNamespace(namespace);
+        
         catalog.createView(namespace, rq);
 
 
@@ -258,11 +154,10 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyLoadView() {
-        var namespace = Namespace.of("ns_view7");
+        var namespace = Namespace.empty();
         var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
         var view = TableIdentifier.of(namespace, "view");
 
-        catalog.createNamespace(namespace);
         catalog.createView(namespace, rq);
 
         var result = catalog.loadView(view);
@@ -287,11 +182,10 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyReplaceView() {
-        var namespace = Namespace.of("ns_view8");
+        var namespace = Namespace.empty();
         var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, "view");
         var view = TableIdentifier.of(namespace, "view");
-
-        catalog.createNamespace(namespace);
+        
         var createdView = catalog.createView(namespace, rq);
 
         var updateRq = UpdateTableRequest
@@ -315,20 +209,15 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void returnFalseIfTableDoesNotExist() {
-        var namespace = Namespace.of("ns_table1");
+        var namespace = Namespace.empty();
         var table = TableIdentifier.of(namespace, "table");
-
-        catalog.createNamespace(namespace);
 
         assertFalse(catalog.tableExists(table));
     }
 
     @Test
     public void returnEmptyTableListing() {
-        var namespace = Namespace.of("ns_table2");
-
-        catalog.createNamespace(namespace);
-
+        var namespace = Namespace.empty();
         var result = catalog.listTables(namespace, null, 10);
 
         assertTrue(result.identifiers().isEmpty());
@@ -336,11 +225,8 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyCreateUnpartitionedAndUnsortedTable() {
-        var namespace = Namespace.of("ns_table3");
+        var namespace = Namespace.empty();
         var table = TableIdentifier.of(namespace, "table");
-
-        catalog.createNamespace(namespace);
-
         var rq = CreateTableRequest
                 .builder()
                 .withName("table")
@@ -357,11 +243,8 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyCreatePartitionedTable() {
-        var namespace = Namespace.of("ns_table4");
+        var namespace = Namespace.empty();
         var table = TableIdentifier.of(namespace, "table");
-
-        catalog.createNamespace(namespace);
-
         var rq = CreateTableRequest
                 .builder()
                 .withName("table")
@@ -384,11 +267,8 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyCreateSortedTable() {
-        var namespace = Namespace.of("ns_table5");
+        var namespace = Namespace.empty();
         var table = TableIdentifier.of(namespace, "table");
-
-        catalog.createNamespace(namespace);
-
         var rq = CreateTableRequest
                 .builder()
                 .withName("table")
@@ -410,11 +290,8 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyDropTable() {
-        var namespace = Namespace.of("ns_table6");
+        var namespace = Namespace.empty();
         var table = TableIdentifier.of(namespace, "table");
-
-        catalog.createNamespace(namespace);
-
         var rq = CreateTableRequest
                 .builder()
                 .withName("table")
@@ -435,12 +312,9 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyRenameTable() {
-        var namespace = Namespace.of("ns_table7");
+        var namespace = Namespace.empty();
         var table = TableIdentifier.of(namespace, "table");
         var newTable = TableIdentifier.of(namespace, "newTable");
-
-        catalog.createNamespace(namespace);
-
         var rq = CreateTableRequest
                 .builder()
                 .withName("table")
@@ -462,11 +336,8 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyUpdateTable() {
-        var namespace = Namespace.of("ns_table8");
+        var namespace = Namespace.empty();
         var table = TableIdentifier.of(namespace, "table");
-
-        catalog.createNamespace(namespace);
-
         var rq = CreateTableRequest
                 .builder()
                 .withName("table")
@@ -496,11 +367,8 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyLoadTable() {
-        var namespace = Namespace.of("ns_table9");
+        var namespace = Namespace.empty();
         var table = TableIdentifier.of(namespace, "table");
-
-        catalog.createNamespace(namespace);
-
         var rq = CreateTableRequest
                 .builder()
                 .withName("table")
@@ -519,7 +387,7 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void successfullyCommitTransaction() {
-        var namespace = Namespace.of("ns_tx1");
+        var namespace = Namespace.empty();
         var table = TableIdentifier.of(namespace, "table");
         var rq = CreateTableRequest
                 .builder()
@@ -530,7 +398,7 @@ public abstract class IcebergCatalogAdapterTest {
                 .withPartitionSpec(PartitionSpec.unpartitioned())
                 .build();
 
-        catalog.createNamespace(namespace);
+        
         var createdTable = catalog.createTable(namespace, rq);
 
         var transaction = List.of(

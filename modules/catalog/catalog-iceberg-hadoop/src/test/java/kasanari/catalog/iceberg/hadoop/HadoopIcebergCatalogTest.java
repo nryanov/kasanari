@@ -1,19 +1,14 @@
 package kasanari.catalog.iceberg.hadoop;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
-import kasanari.catalog.iceberg.core.IcebergCatalogAdapterTest;
 
 import java.util.Map;
 
+import kasanari.catalog.iceberg.core.IcebergCatalogAdapterWithoutNamespaceSupportTest;
 import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.aws.s3.S3FileIO;
-import org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider;
-import org.apache.iceberg.aws.s3.S3FileIOProperties;
-import org.apache.hadoop.fs.s3a.S3AFileSystem;
-// SimpleAWSCredentialsProvider
 
-public class HadoopIcebergCatalogTest extends IcebergCatalogAdapterTest {
+public class HadoopIcebergCatalogTest extends IcebergCatalogAdapterWithoutNamespaceSupportTest {
     @Override
     public IcebergCatalogAdapter setupCatalog() {
         var factory = new HadoopIcebergCatalogFactory();
@@ -25,8 +20,6 @@ public class HadoopIcebergCatalogTest extends IcebergCatalogAdapterTest {
                 Constants.SECRET_KEY, "password",
                 Constants.PATH_STYLE_ACCESS, "true",
                 Constants.SECURE_CONNECTIONS, "false",
-//                "fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem",
-//                Constants.AWS_CREDENTIALS_PROVIDER, "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider",
                 Constants.AWS_REGION, "none"
         ));
     }
