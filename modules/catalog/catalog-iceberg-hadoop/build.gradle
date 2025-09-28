@@ -2,8 +2,8 @@ dependencies {
     implementation project(':modules:catalog:catalog-iceberg-core')
 //    implementation project(':modules:catalog:catalog-iceberg-common')
 
+    testImplementation libs.testcontainers.minio
     testImplementation testFixtures(project(':modules:catalog:catalog-iceberg-core'))
-
 
 
     implementation("org.apache.iceberg:iceberg-aws")
