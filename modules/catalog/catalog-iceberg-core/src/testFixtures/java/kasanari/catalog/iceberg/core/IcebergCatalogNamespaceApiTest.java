@@ -95,7 +95,7 @@ public abstract class IcebergCatalogNamespaceApiTest {
         catalog.createNamespace(namespace, new HashMap<>(Map.of("prop1", "value")));
         var loadedNamespace = catalog.loadNamespaceMetadata(namespace);
 
-        var expectedProps = new HashMap<>(Map.of("prop1", "value"));
+        var expectedProps = new HashMap<>(Map.of("prop1", "value", "location", "s3a://warehouse/ns5"));
 
         assertEquals(expectedProps, loadedNamespace.properties());
         assertEquals(namespace, loadedNamespace.namespace());
@@ -117,7 +117,8 @@ public abstract class IcebergCatalogNamespaceApiTest {
         var expectedProperties = Map.of(
                 "property1", "value1",
                 "property3", "value3",
-                "property4", "value4"
+                "property4", "value4",
+                "location", "s3a://warehouse/ns6"
         );
 
         assertEquals(expectedProperties, loadedNamespace.properties());
