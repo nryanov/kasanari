@@ -1,10 +1,10 @@
 package kasanari.catalog.iceberg.jdbc;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
+import kasanari.catalog.iceberg.core.IcebergCatalogNamespaceApiTest;
 import kasanari.catalog.iceberg.core.IcebergCatalogTableApiTest;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
-import org.junit.jupiter.api.Assertions;
 import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 
-public class JdbcIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest {
+public class JdbcIcebergCatalogNamespaceApiTest extends IcebergCatalogNamespaceApiTest {
     private final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
             DockerImageName.
                     parse("postgres:17")
@@ -81,14 +81,10 @@ public class JdbcIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest {
     }
 
     @Override
-    public String entityLocation(String name) {
-        return "s3a://warehouse/" + name;
-    }
-
-    @Override
     public void reset() {
         try {
             postgres.execInContainer("psql", "-U", postgres.getUsername(), "-d", postgres.getDatabaseName(), "-c", "TRUNCATE iceberg_tables");
+            postgres.execInContainer("psql", "-U", postgres.getUsername(), "-d", postgres.getDatabaseName(), "-c", "TRUNCATE table_namespace");
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -107,11 +103,5 @@ public class JdbcIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest {
 
             s3Client.deleteObject(deleteObjectRq);
         });
-    }
-
-    @Override
-    public void returnEmptyTableListing() {
-        // jdbc catalog doesn't correctly handle empty namespaces
-        Assertions.assertTrue(true);
     }
 }
