@@ -1,4 +1,4 @@
-package kasanari.catalog.iceberg.jdbc;
+package kasanari.catalog.iceberg.nessie;
 
 import org.apache.iceberg.aws.AwsClientProperties;
 import org.apache.iceberg.aws.HttpClientProperties;
