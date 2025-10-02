@@ -72,6 +72,11 @@ public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest
     }
 
     @Override
+    public String entityName() {
+        return "table";
+    }
+
+    @Override
     public void reset() {
         var listObjectsRq = ListObjectsV2Request
                 .builder()
@@ -88,12 +93,6 @@ public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest
 
             s3Client.deleteObject(deleteObjectRq);
         });
-    }
-
-    @Override
-    public void returnEmptyTableListing() {
-        // hadoop catalog doesn't listing (?)
-        Assertions.assertTrue(true);
     }
 
     @Override
