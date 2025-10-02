@@ -141,4 +141,20 @@ public abstract class IcebergCatalogNamespaceApiTest {
         var page2 = catalog.listNamespaces(page1.nextPageToken(), 1, "ns7");
         assertEquals(List.of(namespace2), page2.namespaces());
     }
+
+    @Test
+    public void returnEmptyTableListing() {
+        var namespace = Namespace.empty();
+        var result = catalog.listTables(namespace, null, 10);
+
+        assertTrue(result.identifiers().isEmpty());
+    }
+
+    @Test
+    public void returnEmptyViewListing() {
+        var namespace = Namespace.empty();
+        var result = catalog.listViews(namespace, null, 10);
+
+        assertTrue(result.identifiers().isEmpty());
+    }
 }

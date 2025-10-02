@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 
 import java.net.URI;
 import java.util.HashMap;
+import java.util.UUID;
 
 
 public class NessieIcebergCatalogViewApiTest extends IcebergCatalogViewApiTest {
@@ -84,6 +85,11 @@ public class NessieIcebergCatalogViewApiTest extends IcebergCatalogViewApiTest {
     @Override
     public String entityLocation(String name) {
         return "s3a://warehouse/" + name;
+    }
+
+    @Override
+    public String entityName() {
+        return "view" + UUID.randomUUID();
     }
 
     @Override

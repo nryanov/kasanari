@@ -4,7 +4,6 @@ import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.IcebergCatalogTableApiTest;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
-import org.junit.jupiter.api.Assertions;
 import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -86,6 +85,11 @@ public class JdbcIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest {
     }
 
     @Override
+    public String entityName() {
+        return "table";
+    }
+
+    @Override
     public void reset() {
         try {
             postgres.execInContainer("psql", "-U", postgres.getUsername(), "-d", postgres.getDatabaseName(), "-c", "TRUNCATE iceberg_tables");
@@ -107,11 +111,5 @@ public class JdbcIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest {
 
             s3Client.deleteObject(deleteObjectRq);
         });
-    }
-
-    @Override
-    public void returnEmptyTableListing() {
-        // jdbc catalog doesn't correctly handle empty namespaces
-        Assertions.assertTrue(true);
     }
 }

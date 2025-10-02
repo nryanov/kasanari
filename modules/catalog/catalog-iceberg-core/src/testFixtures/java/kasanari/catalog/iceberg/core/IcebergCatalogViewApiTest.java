@@ -24,9 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class IcebergCatalogViewApiTest {
     protected IcebergCatalogAdapter catalog;
-    protected String defaultViewName = "view";
 
     abstract public String entityLocation(String name);
+
+    abstract public String entityName();
 
     @BeforeAll
     public final void setup() {
@@ -50,29 +51,22 @@ public abstract class IcebergCatalogViewApiTest {
     @Test
     public void returnFalseIfViewDoesNotExist() {
         var namespace = Namespace.empty();
-
-        var view = TableIdentifier.of(namespace, "view");
+        var viewName = entityName();
+        var view = TableIdentifier.of(namespace, viewName);
         var result = catalog.viewExists(view);
 
         assertFalse(result);
     }
 
     @Test
-    public void returnEmptyViewListing() {
-        var namespace = Namespace.empty();
-        var result = catalog.listViews(namespace, null, 10);
-
-        assertTrue(result.identifiers().isEmpty());
-    }
-
-    @Test
     public void successfullyCreateView() {
         var namespace = Namespace.empty();
-        var view = TableIdentifier.of(namespace, defaultViewName);
+        var viewName = entityName();
+        var view = TableIdentifier.of(namespace, viewName);
         var rq = ImmutableCreateViewRequest
                 .builder()
-                .name(defaultViewName)
-                .location(entityLocation(defaultViewName))
+                .name(viewName)
+                .location(entityLocation(viewName))
                 .schema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .viewVersion(
                         ImmutableViewVersion
@@ -104,8 +98,9 @@ public abstract class IcebergCatalogViewApiTest {
     @Test
     public void successfullyDropView() {
         var namespace = Namespace.empty();
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, defaultViewName, entityLocation(defaultViewName));
-        var view = TableIdentifier.of(namespace, defaultViewName);
+        var viewName = entityName();
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
+        var view = TableIdentifier.of(namespace, viewName);
 
         catalog.createView(namespace, rq);
 
@@ -117,8 +112,9 @@ public abstract class IcebergCatalogViewApiTest {
     @Test
     public void returnNonEmptyListOfViews() {
         var namespace = Namespace.empty();
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, defaultViewName, entityLocation(defaultViewName));
-        var view = TableIdentifier.of(namespace, defaultViewName);
+        var viewName = entityName();
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
+        var view = TableIdentifier.of(namespace, viewName);
 
         catalog.createView(namespace, rq);
 
@@ -131,8 +127,9 @@ public abstract class IcebergCatalogViewApiTest {
     @Test
     public void successfullyRenameView() {
         var namespace = Namespace.empty();
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, defaultViewName, entityLocation(defaultViewName));
-        var view = TableIdentifier.of(namespace, defaultViewName);
+        var viewName = entityName();
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
+        var view = TableIdentifier.of(namespace, viewName);
         var newViewName = TableIdentifier.of(namespace, "renamed_view");
 
         catalog.createView(namespace, rq);
@@ -147,15 +144,16 @@ public abstract class IcebergCatalogViewApiTest {
     @Test
     public void successfullyLoadView() {
         var namespace = Namespace.empty();
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, defaultViewName, entityLocation(defaultViewName));
-        var view = TableIdentifier.of(namespace, defaultViewName);
+        var viewName = entityName();
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
+        var view = TableIdentifier.of(namespace, viewName);
 
         catalog.createView(namespace, rq);
 
         var result = catalog.loadView(view);
 
         assertEquals(1, result.metadata().currentVersionId());
-        assertEquals("s3a://warehouse/view", result.metadata().location());
+        assertEquals("s3a://warehouse/" + viewName, result.metadata().location());
         assertEquals(1, result.metadata().formatVersion());
 
         assertEquals(1, result.metadata().versions().size());
@@ -175,8 +173,9 @@ public abstract class IcebergCatalogViewApiTest {
     @Test
     public void successfullyReplaceView() {
         var namespace = Namespace.empty();
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, defaultViewName, entityLocation(defaultViewName));
-        var view = TableIdentifier.of(namespace, defaultViewName);
+        var viewName = entityName();
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
+        var view = TableIdentifier.of(namespace, viewName);
 
         var createdView = catalog.createView(namespace, rq);
 

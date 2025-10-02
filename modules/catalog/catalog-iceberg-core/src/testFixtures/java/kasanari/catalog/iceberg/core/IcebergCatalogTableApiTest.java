@@ -28,11 +28,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class IcebergCatalogTableApiTest {
     protected IcebergCatalogAdapter catalog;
-    protected String defaultTableName = "table";
 
     abstract public IcebergCatalogAdapter setupCatalog();
 
     abstract public String entityLocation(String name);
+
+    abstract public String entityName();
 
     @BeforeAll
     public final void setup() {
@@ -52,27 +53,21 @@ public abstract class IcebergCatalogTableApiTest {
     @Test
     public void returnFalseIfTableDoesNotExist() {
         var namespace = Namespace.empty();
-        var table = TableIdentifier.of(namespace, defaultTableName);
+        var tableName = entityName();
+        var table = TableIdentifier.of(namespace, tableName);
 
         assertFalse(catalog.tableExists(table));
     }
 
     @Test
-    public void returnEmptyTableListing() {
-        var namespace = Namespace.empty();
-        var result = catalog.listTables(namespace, null, 10);
-
-        assertTrue(result.identifiers().isEmpty());
-    }
-
-    @Test
     public void successfullyCreateUnpartitionedAndUnsortedTable() {
         var namespace = Namespace.empty();
-        var table = TableIdentifier.of(namespace, defaultTableName);
+        var tableName = entityName();
+        var table = TableIdentifier.of(namespace, tableName);
         var rq = CreateTableRequest
                 .builder()
-                .withName(defaultTableName)
-                .withLocation(entityLocation(defaultTableName))
+                .withName(tableName)
+                .withLocation(entityLocation(tableName))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -86,11 +81,12 @@ public abstract class IcebergCatalogTableApiTest {
     @Test
     public void successfullyCreatePartitionedTable() {
         var namespace = Namespace.empty();
-        var table = TableIdentifier.of(namespace, defaultTableName);
+        var tableName = entityName();
+        var table = TableIdentifier.of(namespace, tableName);
         var rq = CreateTableRequest
                 .builder()
-                .withName(defaultTableName)
-                .withLocation(entityLocation(defaultTableName))
+                .withName(tableName)
+                .withLocation(entityLocation(tableName))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(
@@ -110,11 +106,12 @@ public abstract class IcebergCatalogTableApiTest {
     @Test
     public void successfullyCreateSortedTable() {
         var namespace = Namespace.empty();
-        var table = TableIdentifier.of(namespace, defaultTableName);
+        var tableName = entityName();
+        var table = TableIdentifier.of(namespace, tableName);
         var rq = CreateTableRequest
                 .builder()
-                .withName(defaultTableName)
-                .withLocation(entityLocation(defaultTableName))
+                .withName(tableName)
+                .withLocation(entityLocation(tableName))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withPartitionSpec(PartitionSpec.unpartitioned())
                 .withWriteOrder(SortOrder
@@ -133,11 +130,12 @@ public abstract class IcebergCatalogTableApiTest {
     @Test
     public void successfullyDropTable() {
         var namespace = Namespace.empty();
-        var table = TableIdentifier.of(namespace, defaultTableName);
+        var tableName = entityName();
+        var table = TableIdentifier.of(namespace, tableName);
         var rq = CreateTableRequest
                 .builder()
-                .withName(defaultTableName)
-                .withLocation(entityLocation(defaultTableName))
+                .withName(tableName)
+                .withLocation(entityLocation(tableName))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -155,12 +153,13 @@ public abstract class IcebergCatalogTableApiTest {
     @Test
     public void successfullyRenameTable() {
         var namespace = Namespace.empty();
-        var table = TableIdentifier.of(namespace, defaultTableName);
+        var tableName = entityName();
+        var table = TableIdentifier.of(namespace, tableName);
         var newTable = TableIdentifier.of(namespace, "newTable");
         var rq = CreateTableRequest
                 .builder()
-                .withName(defaultTableName)
-                .withLocation(entityLocation(defaultTableName))
+                .withName(tableName)
+                .withLocation(entityLocation(tableName))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -179,11 +178,12 @@ public abstract class IcebergCatalogTableApiTest {
     @Test
     public void successfullyUpdateTable() {
         var namespace = Namespace.empty();
-        var table = TableIdentifier.of(namespace, defaultTableName);
+        var tableName = entityName();
+        var table = TableIdentifier.of(namespace, tableName);
         var rq = CreateTableRequest
                 .builder()
-                .withName(defaultTableName)
-                .withLocation(entityLocation(defaultTableName))
+                .withName(tableName)
+                .withLocation(entityLocation(tableName))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -210,11 +210,12 @@ public abstract class IcebergCatalogTableApiTest {
     @Test
     public void successfullyLoadTable() {
         var namespace = Namespace.empty();
-        var table = TableIdentifier.of(namespace, defaultTableName);
+        var tableName = entityName();
+        var table = TableIdentifier.of(namespace, tableName);
         var rq = CreateTableRequest
                 .builder()
-                .withName(defaultTableName)
-                .withLocation(entityLocation(defaultTableName))
+                .withName(tableName)
+                .withLocation(entityLocation(tableName))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -230,11 +231,12 @@ public abstract class IcebergCatalogTableApiTest {
     @Test
     public void successfullyCommitTransaction() {
         var namespace = Namespace.empty();
-        var table = TableIdentifier.of(namespace, defaultTableName);
+        var tableName = entityName();
+        var table = TableIdentifier.of(namespace, tableName);
         var rq = CreateTableRequest
                 .builder()
-                .withName(defaultTableName)
-                .withLocation(entityLocation(defaultTableName))
+                .withName(tableName)
+                .withLocation(entityLocation(tableName))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())

@@ -2,14 +2,11 @@ package kasanari.catalog.iceberg.jdbc;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.IcebergCatalogCommons;
-import kasanari.catalog.iceberg.core.IcebergCatalogTableApiTest;
 import kasanari.catalog.iceberg.core.IcebergCatalogViewApiTest;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -94,6 +91,11 @@ public class JdbcIcebergCatalogViewApiTest extends IcebergCatalogViewApiTest {
     }
 
     @Override
+    public String entityName() {
+        return "view";
+    }
+
+    @Override
     public void reset() {
         try {
             postgres.execInContainer("psql", "-U", postgres.getUsername(), "-d", postgres.getDatabaseName(), "-c", "TRUNCATE iceberg_tables");
@@ -118,23 +120,17 @@ public class JdbcIcebergCatalogViewApiTest extends IcebergCatalogViewApiTest {
     }
 
     @Override
-    public void returnEmptyViewListing() {
-        // jdbc catalog doesn't correctly handle empty namespaces
-        Assertions.assertTrue(true);
-    }
-
-    @Override
     public void returnNonEmptyListOfViews() {
         var namespace = Namespace.empty();
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, defaultViewName, entityLocation(defaultViewName));
-        var view = TableIdentifier.of(namespace, defaultViewName);
+        var viewName = entityName();
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
 
         catalog.createView(namespace, rq);
 
         var result = catalog.listViews(namespace, null, 10);
 
         // returned view will have name `.view`
-        var expectedViews = List.of(TableIdentifier.of(namespace, "." + defaultViewName));
+        var expectedViews = List.of(TableIdentifier.of(namespace, "." + viewName));
         assertEquals(expectedViews, result.identifiers());
     }
 }
