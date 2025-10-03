@@ -2,59 +2,33 @@ package kasanari.catalog.iceberg.hadoop;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 
-import java.net.URI;
 import java.util.Map;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogTableApiTest;
+import kasanari.fixtures.s3.S3Container;
+import kasanari.fixtures.s3.S3Helper;
 import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.iceberg.CatalogProperties;
 import org.junit.jupiter.api.Assertions;
-import org.testcontainers.containers.MinIOContainer;
-import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 
 public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest {
-    private final MinIOContainer minio = new MinIOContainer(
-            DockerImageName.
-                    parse("minio/minio:RELEASE.2025-02-28T09-55-16Z")
-                    .asCompatibleSubstituteFor("minio")
-    );
-
-    private S3Client s3Client;
+    private final S3Container s3Container = new S3Container();
+    private S3Helper s3Helper;
 
     @Override
     public IcebergCatalogAdapter setupCatalog() {
-        minio.start();
+        s3Container.start();
+        s3Helper = new S3Helper(s3Container);
 
-        this.s3Client = S3Client
-                .builder()
-                .endpointOverride(URI.create(minio.getS3URL()))
-                .forcePathStyle(true)
-                .region(Region.of("none"))
-                .credentialsProvider(
-                        StaticCredentialsProvider.create(
-                                AwsBasicCredentials.create(
-                                        minio.getUserName(),
-                                        minio.getPassword())
-                        )
-                )
-                .build();
-
-        this.s3Client.createBucket(CreateBucketRequest.builder().bucket("warehouse").build());
+        s3Helper.createBucket("warehouse");
 
         var factory = new HadoopIcebergCatalogFactory();
         return factory.create(Map.of(
                 CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO",
                 CatalogProperties.WAREHOUSE_LOCATION, "s3a://warehouse",
-                Constants.ENDPOINT, minio.getS3URL(),
-                Constants.ACCESS_KEY,  minio.getUserName(),
-                Constants.SECRET_KEY, minio.getPassword(),
+                Constants.ENDPOINT, s3Container.url(),
+                Constants.ACCESS_KEY,  s3Container.username(),
+                Constants.SECRET_KEY, s3Container.password(),
                 Constants.PATH_STYLE_ACCESS, "true",
                 Constants.SECURE_CONNECTIONS, "false",
                 Constants.AWS_REGION, "none"
@@ -63,7 +37,7 @@ public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest
 
     @Override
     public void close() {
-        minio.stop();
+        s3Container.stop();
     }
 
     @Override
@@ -78,21 +52,7 @@ public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest
 
     @Override
     public void reset() {
-        var listObjectsRq = ListObjectsV2Request
-                .builder()
-                .bucket("warehouse")
-                .build();
-        var objects = s3Client.listObjectsV2(listObjectsRq);
-
-        objects.contents().forEach(content -> {
-            var deleteObjectRq = DeleteObjectRequest
-                    .builder()
-                    .bucket("warehouse")
-                    .key(content.key())
-                    .build();
-
-            s3Client.deleteObject(deleteObjectRq);
-        });
+        s3Helper.clearBucket("warehouse");
     }
 
     @Override

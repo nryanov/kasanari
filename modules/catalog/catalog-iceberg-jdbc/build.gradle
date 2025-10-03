@@ -4,6 +4,6 @@ dependencies {
 
     testImplementation libs.jdbc.postgresql
     testImplementation libs.testcontainers.postgresql
-    testImplementation libs.testcontainers.minio
     testImplementation testFixtures(project(':modules:catalog:catalog-iceberg-core'))
+    testImplementation testFixtures(project(':modules:fixtures:fixtures-s3'))
 }

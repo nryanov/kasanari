@@ -2,8 +2,8 @@ dependencies {
     implementation project(':modules:catalog:catalog-iceberg-core')
     implementation project(':modules:catalog:catalog-iceberg-common')
 
-    testImplementation libs.testcontainers.minio
     testImplementation testFixtures(project(':modules:catalog:catalog-iceberg-core'))
+    testImplementation testFixtures(project(':modules:fixtures:fixtures-s3'))
 
     implementation(libs.hadoop3.common) {
         exclude group: "org.slf4j", module: "slf4j-reload4j"

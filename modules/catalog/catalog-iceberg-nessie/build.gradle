@@ -5,7 +5,7 @@ dependencies {
 
     testImplementation libs.testcontainers.core
     testImplementation libs.testcontainers.nessie
-    testImplementation libs.testcontainers.minio
 
     testImplementation testFixtures(project(':modules:catalog:catalog-iceberg-core'))
+    testImplementation testFixtures(project(':modules:fixtures:fixtures-s3'))
 }

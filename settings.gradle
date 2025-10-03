@@ -8,7 +8,6 @@ pluginManagement {
     }
 }
 
-// change it
 rootProject.name = 'kasanari'
 
 include(
@@ -33,12 +32,22 @@ include(
         'modules:catalog:catalog-paimon-jdbc',
         'modules:catalog:catalog-paimon-hive',
         'modules:catalog:catalog-paimon-rest',
-        'modules:catalog:catalog-paimon-filesystem'
+        'modules:catalog:catalog-paimon-filesystem',
+
+        'modules:fixtures',
+        'modules:fixtures:fixtures-s3',
+        'modules:fixtures:fixtures-nessie',
+        'modules:fixtures:fixtures-postgres',
 )
 
 findProject(':modules:api')?.name = 'api'
 findProject(':modules:api:api-iceberg')?.name = 'api-iceberg'
 findProject(':modules:api:api-paimon')?.name = 'api-paimon'
+
+findProject(':modules:fixtures')?.name = 'fixtures'
+findProject(':modules:fixtures:fixtures-s3')?.name = 'fixtures-s3'
+findProject(':modules:fixtures:fixtures-nessie')?.name = 'fixtures-nessie'
+findProject(':modules:fixtures:fixtures-postgres')?.name = 'fixtures-postgres'
 
 findProject(':modules:server')?.name = 'server'
 findProject(':modules:catalog')?.name = 'catalog'

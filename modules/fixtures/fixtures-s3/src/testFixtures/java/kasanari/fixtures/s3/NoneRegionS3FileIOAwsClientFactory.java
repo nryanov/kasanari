@@ -1,4 +1,4 @@
-package kasanari.catalog.iceberg.jdbc;
+package kasanari.fixtures.s3;
 
 import org.apache.iceberg.aws.AwsClientProperties;
 import org.apache.iceberg.aws.HttpClientProperties;
@@ -9,7 +9,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import java.util.Map;
 
-// TODO: move to common fixture
 public class NoneRegionS3FileIOAwsClientFactory implements S3FileIOAwsClientFactory {
     private S3FileIOProperties s3FileIOProperties;
     private HttpClientProperties httpClientProperties;

@@ -2,21 +2,14 @@ package kasanari.catalog.iceberg.nessie;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.IcebergCatalogTableApiTest;
+import kasanari.fixtures.s3.NoneRegionS3FileIOAwsClientFactory;
+import kasanari.fixtures.s3.S3Container;
+import kasanari.fixtures.s3.S3Helper;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.projectnessie.testing.nessie.ImmutableNessieConfig;
 import org.projectnessie.testing.nessie.NessieContainer;
-import org.testcontainers.containers.MinIOContainer;
-import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -29,34 +22,16 @@ public class NessieIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest
                     .build()
     );
 
-    private final MinIOContainer minio = new MinIOContainer(
-            DockerImageName.
-                    parse("minio/minio:RELEASE.2025-02-28T09-55-16Z")
-                    .asCompatibleSubstituteFor("minio")
-    );
-
-    private S3Client s3Client;
+    private final S3Container s3Container = new S3Container();
+    private S3Helper s3Helper;
 
     @Override
     public IcebergCatalogAdapter setupCatalog() {
         nessie.start();
-        minio.start();
+        s3Container.start();
 
-        this.s3Client = S3Client
-                .builder()
-                .endpointOverride(URI.create(minio.getS3URL()))
-                .forcePathStyle(true)
-                .region(Region.of("none"))
-                .credentialsProvider(
-                        StaticCredentialsProvider.create(
-                                AwsBasicCredentials.create(
-                                        minio.getUserName(),
-                                        minio.getPassword())
-                        )
-                )
-                .build();
-
-        this.s3Client.createBucket(CreateBucketRequest.builder().bucket("warehouse").build());
+        s3Helper = new S3Helper(s3Container);
+        s3Helper.createBucket("warehouse");
 
         var properties = new HashMap<String, String>();
         properties.put("ref", "main");
@@ -65,11 +40,11 @@ public class NessieIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest
         properties.put("jdbc.schema-version", "V1");
         properties.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
         properties.put(CatalogProperties.WAREHOUSE_LOCATION, "s3a://warehouse");
-        properties.put(S3FileIOProperties.ENDPOINT, minio.getS3URL());
-        properties.put(S3FileIOProperties.ACCESS_KEY_ID, minio.getUserName());
-        properties.put(S3FileIOProperties.SECRET_ACCESS_KEY, minio.getPassword());
+        properties.put(S3FileIOProperties.ENDPOINT, s3Container.url());
+        properties.put(S3FileIOProperties.ACCESS_KEY_ID, s3Container.username());
+        properties.put(S3FileIOProperties.SECRET_ACCESS_KEY, s3Container.password());
         properties.put(S3FileIOProperties.PATH_STYLE_ACCESS, "true");
-        properties.put(S3FileIOProperties.CLIENT_FACTORY, "kasanari.catalog.iceberg.nessie.NoneRegionS3FileIOAwsClientFactory");
+        properties.put(S3FileIOProperties.CLIENT_FACTORY, NoneRegionS3FileIOAwsClientFactory.class.getName());
 
         var factory = new NessieIcebergCatalogFactory();
         return factory.create(properties);
@@ -78,7 +53,7 @@ public class NessieIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest
     @Override
     public void close() {
         nessie.close();
-        minio.close();
+        s3Container.stop();
     }
 
     @Override
@@ -93,20 +68,6 @@ public class NessieIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest
 
     @Override
     public void reset() {
-        var listObjectsRq = ListObjectsV2Request
-                .builder()
-                .bucket("warehouse")
-                .build();
-        var objects = s3Client.listObjectsV2(listObjectsRq);
-
-        objects.contents().forEach(content -> {
-            var deleteObjectRq = DeleteObjectRequest
-                    .builder()
-                    .bucket("warehouse")
-                    .key(content.key())
-                    .build();
-
-            s3Client.deleteObject(deleteObjectRq);
-        });
+        s3Helper.clearBucket("warehouse");
     }
 }
