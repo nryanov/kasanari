@@ -13,7 +13,7 @@ import java.net.URI;
 public class S3Helper {
     private final S3Client s3Client;
 
-    public S3Helper(S3Container container) {
+    public S3Helper(S3FixtureContainer container) {
         var minio = container.getMinio();
         this.s3Client = S3Client
                 .builder()

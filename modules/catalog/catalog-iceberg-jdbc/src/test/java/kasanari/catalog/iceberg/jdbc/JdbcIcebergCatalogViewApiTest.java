@@ -4,7 +4,7 @@ import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.IcebergCatalogCommons;
 import kasanari.catalog.iceberg.core.IcebergCatalogViewApiTest;
 import kasanari.fixtures.s3.NoneRegionS3FileIOAwsClientFactory;
-import kasanari.fixtures.s3.S3Container;
+import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
@@ -26,7 +26,7 @@ public class JdbcIcebergCatalogViewApiTest extends IcebergCatalogViewApiTest {
                     .asCompatibleSubstituteFor("postgres")
     );
 
-    private final S3Container s3Container = new S3Container();
+    private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
 
     @Override

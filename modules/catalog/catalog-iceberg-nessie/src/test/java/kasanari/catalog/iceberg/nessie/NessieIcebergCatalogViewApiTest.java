@@ -2,28 +2,20 @@ package kasanari.catalog.iceberg.nessie;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.IcebergCatalogViewApiTest;
+import kasanari.fixtures.nessie.NessieFixtureContainer;
 import kasanari.fixtures.s3.NoneRegionS3FileIOAwsClientFactory;
-import kasanari.fixtures.s3.S3Container;
+import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
-import org.projectnessie.testing.nessie.ImmutableNessieConfig;
-import org.projectnessie.testing.nessie.NessieContainer;
 
 import java.util.HashMap;
 import java.util.UUID;
 
 
 public class NessieIcebergCatalogViewApiTest extends IcebergCatalogViewApiTest {
-    private final NessieContainer nessie = new NessieContainer(
-            ImmutableNessieConfig
-                    .builder()
-                    .dockerImage("ghcr.io/projectnessie/nessie")
-                    .dockerTag("0.104.3")
-                    .build()
-    );
-
-    private final S3Container s3Container = new S3Container();
+    private final NessieFixtureContainer nessie = new NessieFixtureContainer();
+    private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
 
     @Override
@@ -36,7 +28,7 @@ public class NessieIcebergCatalogViewApiTest extends IcebergCatalogViewApiTest {
 
         var properties = new HashMap<String, String>();
         properties.put("ref", "main");
-        properties.put(CatalogProperties.URI, nessie.getExternalNessieUri().toString());
+        properties.put(CatalogProperties.URI, nessie.url());
         // view support
         properties.put("jdbc.schema-version", "V1");
         properties.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
@@ -53,7 +45,7 @@ public class NessieIcebergCatalogViewApiTest extends IcebergCatalogViewApiTest {
 
     @Override
     public void close() {
-        nessie.close();
+        nessie.stop();
         s3Container.stop();
     }
 

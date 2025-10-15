@@ -3,7 +3,7 @@ package kasanari.fixtures.s3;
 import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.utility.DockerImageName;
 
-public class S3Container {
+public class S3FixtureContainer {
     private final MinIOContainer minio = new MinIOContainer(
             DockerImageName.
                     parse("minio/minio:RELEASE.2025-02-28T09-55-16Z")

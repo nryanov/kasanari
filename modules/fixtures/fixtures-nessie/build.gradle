@@ -3,5 +3,6 @@ plugins {
 }
 
 dependencies {
-
+    testFixturesImplementation(libs.testcontainers.core)
+    testFixturesImplementation(libs.testcontainers.nessie)
 }

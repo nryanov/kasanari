@@ -5,14 +5,14 @@ import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import java.util.Map;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogTableApiTest;
-import kasanari.fixtures.s3.S3Container;
+import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.iceberg.CatalogProperties;
 import org.junit.jupiter.api.Assertions;
 
 public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest {
-    private final S3Container s3Container = new S3Container();
+    private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
 
     @Override
