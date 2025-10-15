@@ -3,5 +3,6 @@ plugins {
 }
 
 dependencies {
-
+    testFixturesImplementation(libs.jdbc.postgresql)
+    testFixturesImplementation(libs.testcontainers.postgresql)
 }

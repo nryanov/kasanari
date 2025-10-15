@@ -2,26 +2,21 @@ package kasanari.catalog.iceberg.jdbc;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.IcebergCatalogNamespaceApiTest;
+import kasanari.fixtures.postgres.PostgresFixtureContainer;
+import kasanari.fixtures.postgres.PostgresHelper;
 import kasanari.fixtures.s3.NoneRegionS3FileIOAwsClientFactory;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 
-import java.io.IOException;
 import java.util.HashMap;
 
 public class JdbcIcebergCatalogNamespaceApiTest extends IcebergCatalogNamespaceApiTest {
-    private final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
-            DockerImageName.
-                    parse("postgres:17")
-                    .asCompatibleSubstituteFor("postgres")
-    );
-
+    private final PostgresFixtureContainer postgres = new PostgresFixtureContainer();
     private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
+    private PostgresHelper postgresHelper;
 
     @Override
     public IcebergCatalogAdapter setupCatalog() {
@@ -31,10 +26,12 @@ public class JdbcIcebergCatalogNamespaceApiTest extends IcebergCatalogNamespaceA
         s3Helper = new S3Helper(s3Container);
         s3Helper.createBucket("warehouse");
 
+        postgresHelper = new PostgresHelper(postgres);
+
         var properties = new HashMap<String, String>();
-        properties.put("jdbc.user", postgres.getUsername());
-        properties.put("jdbc.password", postgres.getPassword());
-        properties.put(CatalogProperties.URI, postgres.getJdbcUrl());
+        properties.put("jdbc.user", postgres.username());
+        properties.put("jdbc.password", postgres.password());
+        properties.put(CatalogProperties.URI, postgres.jdbcUrl());
         // view support
         properties.put("jdbc.schema-version", "V1");
         properties.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
@@ -51,19 +48,14 @@ public class JdbcIcebergCatalogNamespaceApiTest extends IcebergCatalogNamespaceA
 
     @Override
     public void close() {
-        postgres.close();
+        postgres.stop();
         s3Container.stop();
     }
 
     @Override
     public void reset() {
-        try {
-            postgres.execInContainer("psql", "-U", postgres.getUsername(), "-d", postgres.getDatabaseName(), "-c", "TRUNCATE iceberg_tables");
-            postgres.execInContainer("psql", "-U", postgres.getUsername(), "-d", postgres.getDatabaseName(), "-c", "TRUNCATE table_namespace");
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
+        postgresHelper.truncateTable("iceberg_tables");
+        postgresHelper.truncateTable("table_namespace");
         s3Helper.clearBucket("warehouse");
     }
 }
