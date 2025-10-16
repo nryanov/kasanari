@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Deprecated
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class IcebergCatalogTableApiTest {
     protected IcebergCatalogAdapter catalog;

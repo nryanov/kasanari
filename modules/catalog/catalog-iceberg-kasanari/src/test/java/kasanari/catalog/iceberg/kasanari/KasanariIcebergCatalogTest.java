@@ -1,7 +1,7 @@
 package kasanari.catalog.iceberg.kasanari;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
-import kasanari.catalog.iceberg.core.IcebergCatalogAdapterTest;
+import kasanari.catalog.iceberg.core.DeprecatedIcebergCatalogAdapterTest;
 import kasanari.catalog.iceberg.core.IcebergCatalogCommons;
 import kasanari.catalog.iceberg.kasanari.stub.repository.jdbc.JdbcTableRepositoryStub;
 import org.apache.iceberg.MetadataUpdate;
@@ -23,7 +23,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
+public class KasanariIcebergCatalogTest extends DeprecatedIcebergCatalogAdapterTest {
     private final PostgreSQLContainer postgres = new PostgreSQLContainer(
             DockerImageName.
                     parse("postgres:17")

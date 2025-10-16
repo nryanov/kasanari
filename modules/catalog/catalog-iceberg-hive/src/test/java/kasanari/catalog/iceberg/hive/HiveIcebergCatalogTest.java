@@ -1,13 +1,13 @@
 package kasanari.catalog.iceberg.hive;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
-import kasanari.catalog.iceberg.core.IcebergCatalogAdapterTest;
+import kasanari.catalog.iceberg.core.DeprecatedIcebergCatalogAdapterTest;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.util.Map;
 
-public class HiveIcebergCatalogTest extends IcebergCatalogAdapterTest {
+public class HiveIcebergCatalogTest extends DeprecatedIcebergCatalogAdapterTest {
     private final GenericContainer hive = new GenericContainer<>(DockerImageName.parse("apache/hive:4.0.0"))
             .withExposedPorts(9083)
             .withEnv("SERVICE_NAME", "metastore");
