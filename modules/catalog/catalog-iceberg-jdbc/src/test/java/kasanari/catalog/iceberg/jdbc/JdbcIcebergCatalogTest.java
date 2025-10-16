@@ -1,7 +1,8 @@
 package kasanari.catalog.iceberg.jdbc;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
-import kasanari.catalog.iceberg.core.IcebergCatalogNamespaceApiTest;
+import kasanari.catalog.iceberg.core.IcebergCatalogAdapterTest;
+import kasanari.catalog.iceberg.core.IcebergCatalogCommons;
 import kasanari.fixtures.postgres.PostgresFixtureContainer;
 import kasanari.fixtures.postgres.PostgresHelper;
 import kasanari.fixtures.s3.NoneRegionS3FileIOAwsClientFactory;
@@ -9,10 +10,15 @@ import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
+import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.TableIdentifier;
 
 import java.util.HashMap;
+import java.util.List;
 
-public class JdbcIcebergCatalogNamespaceApiTest extends IcebergCatalogNamespaceApiTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class JdbcIcebergCatalogTest extends IcebergCatalogAdapterTest {
     private final PostgresFixtureContainer postgres = new PostgresFixtureContainer();
     private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
@@ -57,5 +63,35 @@ public class JdbcIcebergCatalogNamespaceApiTest extends IcebergCatalogNamespaceA
         postgresHelper.truncateTable("iceberg_tables");
         postgresHelper.truncateTable("table_namespace");
         s3Helper.clearBucket("warehouse");
+    }
+
+    @Override
+    public String entityLocation(String name) {
+        return "s3a://warehouse/" + name;
+    }
+
+    @Override
+    public String tableName() {
+        return "table";
+    }
+
+    @Override
+    public String viewName() {
+        return "view";
+    }
+
+    @Override
+    public void returnNonEmptyListOfViews() {
+        var namespace = Namespace.empty();
+        var viewName = viewName();
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
+
+        catalog.createView(namespace, rq);
+
+        var result = catalog.listViews(namespace, null, 10);
+
+        // returned view will have name `.view`
+        var expectedViews = List.of(TableIdentifier.of(namespace, "." + viewName));
+        assertEquals(expectedViews, result.identifiers());
     }
 }

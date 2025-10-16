@@ -1,7 +1,7 @@
 package kasanari.catalog.iceberg.nessie;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
-import kasanari.catalog.iceberg.core.IcebergCatalogNamespaceApiTest;
+import kasanari.catalog.iceberg.core.IcebergCatalogAdapterTest;
 import kasanari.fixtures.nessie.NessieFixtureContainer;
 import kasanari.fixtures.s3.NoneRegionS3FileIOAwsClientFactory;
 import kasanari.fixtures.s3.S3FixtureContainer;
@@ -14,11 +14,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class NessieIcebergCatalogNamespaceApiTest extends IcebergCatalogNamespaceApiTest {
+public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
     private final NessieFixtureContainer nessie = new NessieFixtureContainer();
     private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
@@ -52,6 +53,21 @@ public class NessieIcebergCatalogNamespaceApiTest extends IcebergCatalogNamespac
     public void close() {
         nessie.stop();
         s3Container.stop();
+    }
+
+    @Override
+    public String entityLocation(String name) {
+        return "s3a://warehouse/" + name;
+    }
+
+    @Override
+    public String tableName() {
+        return "table_" + UUID.randomUUID();
+    }
+
+    @Override
+    public String viewName() {
+        return "view_" + UUID.randomUUID();
     }
 
     @Override

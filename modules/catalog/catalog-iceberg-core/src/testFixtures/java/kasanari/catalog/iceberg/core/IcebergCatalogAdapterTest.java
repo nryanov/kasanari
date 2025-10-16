@@ -182,16 +182,9 @@ public abstract class IcebergCatalogAdapterTest {
 
     @Test
     public void returnEmptyTableListing() {
+        Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
         var namespace = Namespace.empty();
         var result = catalog.listTables(namespace, null, 10);
-
-        assertTrue(result.identifiers().isEmpty());
-    }
-
-    @Test
-    public void returnEmptyViewListing() {
-        var namespace = Namespace.empty();
-        var result = catalog.listViews(namespace, null, 10);
 
         assertTrue(result.identifiers().isEmpty());
     }
@@ -404,6 +397,15 @@ public abstract class IcebergCatalogAdapterTest {
         var loadedTable = catalog.loadTable(table);
 
         assertEquals("value", loadedTable.tableMetadata().properties().get("transaction-property"));
+    }
+
+    @Test
+    public void returnEmptyViewListing() {
+        Assumptions.assumeTrue(this::isViewSupported, "Test skipped: views are not supported in this catalog");
+        var namespace = Namespace.empty();
+        var result = catalog.listViews(namespace, null, 10);
+
+        assertTrue(result.identifiers().isEmpty());
     }
 
     @Test

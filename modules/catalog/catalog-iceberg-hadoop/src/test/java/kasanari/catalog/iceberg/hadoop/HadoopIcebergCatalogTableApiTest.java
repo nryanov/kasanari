@@ -4,14 +4,14 @@ import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 
 import java.util.Map;
 
-import kasanari.catalog.iceberg.core.IcebergCatalogTableApiTest;
+import kasanari.catalog.iceberg.core.IcebergCatalogAdapterTest;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.iceberg.CatalogProperties;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 
-public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest {
+public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogAdapterTest {
     private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
 
@@ -46,8 +46,23 @@ public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest
     }
 
     @Override
-    public String entityName() {
+    public String tableName() {
         return "table";
+    }
+
+    @Override
+    public String viewName() {
+        return "view";
+    }
+
+    @Override
+    public boolean isNamespaceSupported() {
+        return false;
+    }
+
+    @Override
+    public boolean isViewSupported() {
+        return false;
     }
 
     @Override
@@ -58,6 +73,6 @@ public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogTableApiTest
     @Override
     public void successfullyRenameTable() {
         // hadoop catalog doesn't support renaming
-        Assertions.assertTrue(true);
+        Assumptions.abort("Test skipped: hadoop catalog doesn't support table renaming");
     }
 }
