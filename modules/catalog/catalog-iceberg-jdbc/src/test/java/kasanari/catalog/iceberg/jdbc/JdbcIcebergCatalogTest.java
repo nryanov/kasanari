@@ -81,6 +81,11 @@ public class JdbcIcebergCatalogTest extends IcebergCatalogAdapterTest {
     }
 
     @Override
+    public Namespace namespaceName() {
+        return Namespace.empty();
+    }
+
+    @Override
     public void returnNonEmptyListOfViews() {
         var namespace = Namespace.empty();
         var viewName = viewName();

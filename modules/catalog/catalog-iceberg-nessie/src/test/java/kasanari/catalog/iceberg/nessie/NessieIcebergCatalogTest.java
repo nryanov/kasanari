@@ -71,6 +71,11 @@ public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
     }
 
     @Override
+    public Namespace namespaceName() {
+        return Namespace.empty();
+    }
+
+    @Override
     public void reset() {
         s3Helper.clearBucket("warehouse");
     }

@@ -9,6 +9,7 @@ import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.catalog.Namespace;
 import org.junit.jupiter.api.Assumptions;
 
 public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogAdapterTest {
@@ -53,6 +54,11 @@ public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogAdapterTest 
     @Override
     public String viewName() {
         return "view";
+    }
+
+    @Override
+    public Namespace namespaceName() {
+        return Namespace.empty();
     }
 
     @Override
