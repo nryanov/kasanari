@@ -2,18 +2,14 @@ package kasanari.catalog.iceberg.hive;
 
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapterTest;
+import kasanari.fixtures.hive.HiveFixtureContainer;
 import org.apache.iceberg.catalog.Namespace;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HiveIcebergCatalogTest extends IcebergCatalogAdapterTest {
-    private final GenericContainer hive = new GenericContainer<>(DockerImageName.parse("apache/hive:4.0.0"))
-            .withExposedPorts(9083)
-            .withEnv("SERVICE_NAME", "metastore");
-
+    private final HiveFixtureContainer hive = new HiveFixtureContainer();
     private IcebergCatalogAdapter adapter;
 
     private final AtomicInteger tableId = new AtomicInteger(1);
@@ -24,7 +20,7 @@ public class HiveIcebergCatalogTest extends IcebergCatalogAdapterTest {
     public IcebergCatalogAdapter setupCatalog() {
         hive.start();
 
-        var hiveUri = String.format("thrift://%s:%s", hive.getHost(), hive.getMappedPort(9083));
+        var hiveUri = hive.thriftUri();
         var hiveWarehouse = "file:///tmp/warehouse"; // local
 
         var factory = new HiveIcebergCatalogFactory();
@@ -38,7 +34,7 @@ public class HiveIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
     @Override
     public void close() {
-        hive.close();
+        hive.stop();
     }
 
     @Override

@@ -38,6 +38,7 @@ include(
         'modules:fixtures:fixtures-s3',
         'modules:fixtures:fixtures-nessie',
         'modules:fixtures:fixtures-postgres',
+        'modules:fixtures:fixtures-hive',
 )
 
 findProject(':modules:api')?.name = 'api'
@@ -48,6 +49,7 @@ findProject(':modules:fixtures')?.name = 'fixtures'
 findProject(':modules:fixtures:fixtures-s3')?.name = 'fixtures-s3'
 findProject(':modules:fixtures:fixtures-nessie')?.name = 'fixtures-nessie'
 findProject(':modules:fixtures:fixtures-postgres')?.name = 'fixtures-postgres'
+findProject(':modules:fixtures:fixtures-hive')?.name = 'fixtures-hive'
 
 findProject(':modules:server')?.name = 'server'
 findProject(':modules:catalog')?.name = 'catalog'
