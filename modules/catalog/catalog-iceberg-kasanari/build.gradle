@@ -1,16 +1,14 @@
 dependencies {
     implementation project(':modules:catalog:catalog-iceberg-core')
+    implementation project(':modules:catalog:catalog-iceberg-common')
 
     implementation libs.iceberg.api
     implementation libs.iceberg.common
 
-    implementation libs.hadoop3.client.api
-    implementation libs.hadoop3.client.runtime
-
     implementation libs.jdbi.core
     implementation libs.agroal.pool
 
-    testImplementation libs.jdbc.postgresql
-    testImplementation libs.testcontainers.postgresql
     testImplementation testFixtures(project(':modules:catalog:catalog-iceberg-core'))
+    testImplementation testFixtures(project(':modules:fixtures:fixtures-s3'))
+    testImplementation testFixtures(project(':modules:fixtures:fixtures-postgres'))
 }
