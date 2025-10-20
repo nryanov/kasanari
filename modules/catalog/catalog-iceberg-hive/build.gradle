@@ -3,13 +3,18 @@ plugins {
 }
 
 dependencies {
-    implementation project(':modules:catalog:catalog-iceberg-core')
-    implementation libs.iceberg.hive
-    implementation libs.hadoop3.client.api
-    implementation libs.hadoop3.client.runtime
-    implementation libs.hive.metastore
-    implementation libs.hive.common
+    implementation(project(':modules:catalog:catalog-iceberg-core'))
+    implementation(project(':modules:catalog:catalog-iceberg-common'))
+    implementation(libs.iceberg.hive)
+    implementation(libs.hadoop3.client.api)
+    implementation(libs.hadoop3.client.runtime)
+    implementation(libs.hive.metastore)
+    implementation(libs.hive.common)
 
-    testImplementation testFixtures(project(':modules:catalog:catalog-iceberg-core'))
-    testImplementation testFixtures(project(':modules:fixtures:fixtures-hive'))
+    implementation(libs.hadoop3.aws) {
+        exclude group: "software.amazon.awssdk", module: "bundle"
+    }
+
+    testImplementation(testFixtures(project(':modules:catalog:catalog-iceberg-core')))
+    testImplementation(testFixtures(project(':modules:fixtures:fixtures-hive')))
 }
