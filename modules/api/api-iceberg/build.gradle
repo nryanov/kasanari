@@ -5,17 +5,13 @@ plugins {
 }
 
 dependencies {
-    implementation libs.iceberg.api
-    implementation libs.iceberg.core
-    implementation libs.iceberg.common
+    implementation(libs.iceberg.api)
+    implementation(libs.iceberg.core)
+    implementation(libs.iceberg.common)
 
     implementation(libs.jakarta.annotation.api)
     implementation(libs.jakarta.inject.api)
     implementation(libs.jakarta.ws.rs.api)
-}
-
-openApiValidate {
-    inputSpec.set("$projectDir/src/main/resources/openapi/openapi.yaml")
 }
 
 var rootDir = rootProject.layout.projectDirectory

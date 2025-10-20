@@ -1,3 +1,7 @@
+plugins {
+    alias(libs.plugins.jandex)
+}
+
 dependencies {
     implementation project(':modules:catalog:catalog-iceberg-core')
     implementation libs.iceberg.hive
