@@ -3,22 +3,26 @@ plugins {
 }
 
 dependencies {
-    implementation enforcedPlatform(libs.quarkus.bom)
+    implementation(enforcedPlatform(libs.quarkus.bom))
 
-    implementation "io.quarkus:quarkus-arc"
-    implementation "io.quarkus:quarkus-rest-jackson"
-    implementation "io.quarkus:quarkus-smallrye-openapi"
-    implementation "io.quarkus:quarkus-container-image-jib"
+    implementation("io.quarkus:quarkus-arc")
+    implementation("io.quarkus:quarkus-rest-jackson")
+    implementation("io.quarkus:quarkus-smallrye-openapi")
+    implementation("io.quarkus:quarkus-container-image-jib")
 
-    implementation project(":modules:api:api-iceberg")
-    implementation project(':modules:catalog:catalog-iceberg-core')
+    // iceberg
+    implementation(project(":modules:api:api-iceberg"))
+    implementation(project(':modules:catalog:catalog-iceberg-core'))
+    implementation(project(':modules:catalog:catalog-iceberg-hadoop'))
+//    implementation(project(':modules:catalog:catalog-iceberg-hive')) // fixme
+    implementation(project(':modules:catalog:catalog-iceberg-inmemory'))
+    implementation(project(':modules:catalog:catalog-iceberg-jdbc'))
+    implementation(project(':modules:catalog:catalog-iceberg-kasanari'))
+    implementation(project(':modules:catalog:catalog-iceberg-nessie'))
+    implementation(project(':modules:catalog:catalog-iceberg-rest'))
 
-    implementation project(":modules:api:api-paimon")
-
-    implementation libs.asm
-
-    testImplementation "io.quarkus:quarkus-junit5"
-    testImplementation "io.rest-assured:rest-assured"
+    testImplementation("io.quarkus:quarkus-junit5")
+    testImplementation("io.rest-assured:rest-assured")
 }
 
 test {

@@ -1,8 +1,8 @@
 dependencies {
-    implementation project(':modules:catalog:catalog-iceberg-core')
-    implementation project(':modules:catalog:catalog-iceberg-common')
+    implementation(project(':modules:catalog:catalog-iceberg-core'))
+    implementation(project(':modules:catalog:catalog-iceberg-common'))
 
-    testImplementation testFixtures(project(':modules:catalog:catalog-iceberg-core'))
-    testImplementation testFixtures(project(':modules:fixtures:fixtures-s3'))
-    testImplementation testFixtures(project(':modules:fixtures:fixtures-postgres'))
+    testImplementation(testFixtures(project(':modules:catalog:catalog-iceberg-core')))
+    testImplementation(testFixtures(project(':modules:fixtures:fixtures-s3')))
+    testImplementation(testFixtures(project(':modules:fixtures:fixtures-postgres')))
 }

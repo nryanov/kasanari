@@ -5,46 +5,53 @@ plugins {
 }
 
 dependencies {
-    implementation enforcedPlatform(libs.quarkus.bom)
-
-    implementation libs.quarkus.jackson
-    implementation libs.quarkus.openapi
+    implementation libs.paimon.api
 }
 
-openApiValidate {
-    inputSpec.set("$projectDir/src/main/resources/openapi/openapi.yaml")
-}
+var rootDir = rootProject.layout.projectDirectory
+var specsDir = rootDir.dir("spec")
+var paimonSpecDir = specsDir.dir("paimon")
+var templatesDir = paimonSpecDir.dir("server-templates")
+var generatedDir = project.layout.buildDirectory.dir("generated")
+var generatedOpenApiSrcDir = project.layout.buildDirectory.dir("generated/src/main/java")
 
-// https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-spec.md
+// https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-resteasy.md
 // https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-gradle-plugin
 openApiGenerate {
-    var properties = new HashMap<String, String>()
-    properties.put("supportAsync", "false")
-    properties.put("useMutiny", "false")
-    properties.put("useMicroProfileOpenAPIAnnotations", "true")
-    properties.put("useBeanValidation", "false")
-    properties.put("hideGenerationTimestamp", "true")
-    properties.put("library", "quarkus")
-    properties.put("dateLibrary", "java8")
-    properties.put("interfaceOnly", "true")
-    properties.put("returnResponse", "false")
-    properties.put("useOneOfInterfaces", "false")
-    properties.put("generateBuilders", "true")
-    properties.put("generatePom", "false")
-    properties.put("apiPackage", "kasanari.api.paimon")
-    properties.put("modelPackage", "kasanari.api.paimon.dto")
-    properties.put("modelNamePrefix", "Paimon")
-    properties.put("modelNameSuffix", "Dto")
-    properties.put("generateApiTests", "false")
-    properties.put("useJakartaEe", "true")
-    properties.put("generateConstructorWithAllArgs", "true")
-    properties.put("generateJsonCreator", "false")
-    properties.put("cleanupOutput", "true")
+    inputSpec = paimonSpecDir.file("paimon-openapi-1.0.0.yaml").asFile.absolutePath
+    generatorName = "jaxrs-resteasy"
+    outputDir = generatedDir.get().asFile.absolutePath
+    ignoreFileOverride = specsDir.file(".openapi-generator-ignore").asFile.absolutePath
+    removeOperationIdPrefix = true
+    // https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator/src/main/resources/JavaJaxRS/resteasy
+    templateDir = templatesDir.asFile.absolutePath
 
-    generatorName.set("jaxrs-spec")
-    additionalProperties.putAll(properties)
-    inputSpec.set("$projectDir/src/main/resources/openapi/openapi.yaml")
-    outputDir.set("$buildDir/generated")
+    globalProperties.put("apiDocs", "false")
+    globalProperties.put("models", "false")
+    globalProperties.put("apis", "")
+    globalProperties.put("modelTests", "false")
+
+    serverVariables.put("basePath", "api/catalog")
+
+    configOptions.put("resourceName", "catalog")
+    configOptions.put("useTags", "true")
+    configOptions.put("useBeanValidation", "false")
+    configOptions.put("sourceFolder", "src/main/java")
+    configOptions.put("useJakartaEe", "true")
+    configOptions.put("hideGenerationTimestamp", "true")
+
+    additionalProperties.put("apiNamePrefix", "PaimonRest")
+    additionalProperties.put("apiNameSuffix", "")
+    additionalProperties.put("apiPackage", "kasanari.catalog.paimon.api")
+    additionalProperties.put("dateLibrary", "java8")
+
+    var modelNameMap = new HashMap<String, String>()
+
+    modelNameMappings = modelNameMap
+
+    var importMap = new HashMap<String, String>()
+
+    importMappings = importMap
 }
 
 sourceSets {
@@ -55,45 +62,21 @@ sourceSets {
     }
 }
 
-tasks.openApiGenerate {
-    doLast {
-        delete(
-                files("${buildDir}/generated/src/gen/java/kasanari/api/RestApplication.java"),
-                files("${buildDir}/generated/src/gen/java/kasanari/api/RestResourceRoot.java")
-        )
-
-        copy {
-            from "$buildDir/generated/src/gen/java/kasanari/api/paimon"
-            into "$buildDir/generated/src/gen/java/kasanari/api/paimon"
-
-            include "*.java"
-
-            // add path root
-            filter { String line ->
-                line.startsWith("@Path(\"/v1") ? line.replace("@Path(\"/v1", "@Path(\"/paimon/v1") : line
-            }
-
-            // remove all tags
-            filter { String line ->
-                line.trim().startsWith("@org.eclipse.microprofile.openapi.annotations.tags.Tag") ? null : line
-            }
-
-            filter { String line ->
-                line.contains("interface") ? "@org.eclipse.microprofile.openapi.annotations.tags.Tag(name=\"Paimon API\")\n" + line : line
-            }
-
-            filter { String line -> line.replace("V1Api", "PaimonApi") }
-
-            rename("(.+)", "PaimonApi.java")
+sourceSets {
+    main {
+        java {
+            srcDir(generatedOpenApiSrcDir)
         }
-
-        delete(fileTree("$buildDir/generated/src/gen/java/kasanari/api/paimon").matching {
-            include "V1Api.java"
-        })
     }
 }
 
-// TODO
+tasks.openApiGenerate {
+    doLast {
+        delete(files("${buildDir}/generated/src/main/java/kasanari/catalog/paimon/api/impl"),)
+    }
+}
+
+// TODO: fix generation for paimon
 //tasks.compileJava {
 //    dependsOn(tasks.openApiGenerate)
 //}

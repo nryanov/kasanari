@@ -1,15 +1,15 @@
 [versions]
 openapi-generator = "7.14.0"
-quarkus = "3.15.1"
+quarkus = "3.28.4"
 jandex = "1.0.0"
 iceberg = "1.7.1"
+paimon = "1.2.0"
 hadoop3 = "3.4.1"
 awssdk = "2.32.4"
 hive = { strictly = "2.3.9" }
 slfj4 = "2.0.17"
 jdbi = "3.49.4"
 agroal = "2.7.1"
-asm = "9.7.1"
 
 jakarta-ws-rs-api = "4.0.0"
 jakarta-inject-api = "2.0.1"
@@ -25,14 +25,13 @@ jdbc-postgresql = "42.7.5"
 
 [libraries]
 quarkus-bom = { group = "io.quarkus.platform", name = "quarkus-bom", version.ref = "quarkus" }
-quarkus-jackson = { group = "io.quarkus", name = "quarkus-rest-jackson" }
-quarkus-openapi = { group = "io.quarkus", name = "quarkus-smallrye-openapi" }
 
 # openapi generation
 jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotations-api" }
 jakarta-inject-api = { module = "jakarta.inject:jakarta.inject-api", version.ref = "jakarta-inject-api" }
 jakarta-ws-rs-api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref = "jakarta-ws-rs-api" }
 
+# iceberg
 # todo: use bom instead of direct deps
 iceberg-bom = { group = "org.apache.iceberg", name = "iceberg-bom", version.ref = "iceberg" }
 iceberg-core = { group = "org.apache.iceberg", name = "iceberg-core", version.ref = "iceberg" }
@@ -41,6 +40,9 @@ iceberg-common = { group = "org.apache.iceberg", name = "iceberg-common", versio
 iceberg-nessie = { group = "org.apache.iceberg", name = "iceberg-nessie", version.ref = "iceberg" }
 iceberg-hive = { group = "org.apache.iceberg", name = "iceberg-hive-runtime", version.ref = "iceberg" }
 iceberg-aws = { group = "org.apache.iceberg", name = "iceberg-aws", version.ref = "iceberg" }
+
+# paimon
+paimon-api = { group = "org.apache.paimon", name = "paimon-api", version.ref = "paimon" }
 
 hadoop3-client-api = { group = "org.apache.hadoop", name = "hadoop-client-api", version.ref = "hadoop3"}
 hadoop3-client-runtime = { group = "org.apache.hadoop", name = "hadoop-client-runtime", version.ref = "hadoop3"}
@@ -58,8 +60,6 @@ agroal-pool = { group = "io.agroal", name = "agroal-pool", version.ref = "agroal
 
 slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slfj4" }
 logback = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
-
-asm = { group = "org.ow2.asm", name = "asm", version.ref = "asm" }
 
 # test dependencies
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit" }

@@ -18,9 +18,8 @@ import org.apache.iceberg.rest.requests.UpdateTableRequest;
 public class IcebergCatalogService implements IcebergRestCatalogApiService {
     private final IcebergCatalogAdapter catalog;
 
-    public IcebergCatalogService() {
-        // todo
-        this.catalog = null;
+    public IcebergCatalogService(IcebergCatalogAdapter catalog) {
+        this.catalog = catalog;
     }
 
     @Override
