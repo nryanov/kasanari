@@ -21,9 +21,6 @@ dependencies {
     implementation(project(':modules:catalog:catalog-iceberg-nessie'))
     implementation(project(':modules:catalog:catalog-iceberg-rest'))
 
-    // TODO: fix paimon rest api generation
-//    implementation project(":modules:api:api-paimon")
-
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
 }
