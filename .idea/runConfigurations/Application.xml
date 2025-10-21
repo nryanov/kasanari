@@ -2,6 +2,7 @@
   <configuration default="false" name="Application" type="Application" factoryName="Application" nameIsGenerated="true">
     <envs>
       <env name="QUARKUS_PROFILE" value="local" />
+      <env name="AWS_REGION" value="none" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="kasanari.server.Application" />
     <module name="kasanari.modules.server.main" />
