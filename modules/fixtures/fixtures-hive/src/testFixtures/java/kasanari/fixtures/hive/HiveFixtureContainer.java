@@ -4,13 +4,13 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
 public class HiveFixtureContainer {
-    private final GenericContainer hive = new GenericContainer<>(DockerImageName.parse("apache/hive:4.0.0"))
+    private final GenericContainer<?> hive = new GenericContainer<>(DockerImageName.parse("apache/hive:4.0.0"))
             .withExposedPorts(9083)
             .withEnv("SERVICE_NAME", "metastore");
 
-    GenericContainer getHive() {
+    public GenericContainer<?> getHive() {
         if (!hive.isRunning()) {
-            throw new RuntimeException("Nessie is not yet started");
+            throw new RuntimeException("Hive is not started yet");
         }
         return hive;
     }

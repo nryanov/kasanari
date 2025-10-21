@@ -1,13 +1,9 @@
-plugins {
-    alias(libs.plugins.jandex)
-}
-
 dependencies {
-    implementation project(':modules:catalog:catalog-iceberg-core')
-    implementation project(':modules:catalog:catalog-iceberg-common')
-    implementation libs.iceberg.nessie
+    implementation(project(':modules:catalog:catalog-iceberg-core'))
+    implementation(project(':modules:catalog:catalog-iceberg-common'))
+    implementation(libs.iceberg.nessie)
 
-    testImplementation testFixtures(project(':modules:catalog:catalog-iceberg-core'))
-    testImplementation testFixtures(project(':modules:fixtures:fixtures-s3'))
-    testImplementation testFixtures(project(':modules:fixtures:fixtures-nessie'))
+    testImplementation(testFixtures(project(':modules:catalog:catalog-iceberg-core')))
+    testImplementation(testFixtures(project(':modules:fixtures:fixtures-s3')))
+    testImplementation(testFixtures(project(':modules:fixtures:fixtures-nessie')))
 }

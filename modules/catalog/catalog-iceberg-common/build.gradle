@@ -1,13 +1,9 @@
-plugins {
-    alias(libs.plugins.jandex)
-}
-
 dependencies {
-    api libs.iceberg.aws
+    api(libs.iceberg.aws)
 
-    api platform(libs.awssdk.bom)
-    api "software.amazon.awssdk:s3"
-    api "software.amazon.awssdk:aws-core"
-    api "software.amazon.awssdk:s3-transfer-manager"
-    api "software.amazon.awssdk:sts"
+    api(platform(libs.awssdk.bom))
+    api("software.amazon.awssdk:s3")
+    api("software.amazon.awssdk:aws-core")
+    api("software.amazon.awssdk:s3-transfer-manager")
+    api("software.amazon.awssdk:sts")
 }
