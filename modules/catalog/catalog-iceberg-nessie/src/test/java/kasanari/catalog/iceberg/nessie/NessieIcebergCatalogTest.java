@@ -35,8 +35,6 @@ public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
         var properties = new HashMap<String, String>();
         properties.put("ref", "main");
         properties.put(CatalogProperties.URI, nessie.url());
-        // view support
-        properties.put("jdbc.schema-version", "V1");
         properties.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
         properties.put(CatalogProperties.WAREHOUSE_LOCATION, "s3a://warehouse");
         properties.put(S3FileIOProperties.ENDPOINT, s3Container.url());
