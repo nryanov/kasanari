@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.SourceSetContainer
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+
 plugins {
     // https://github.com/OpenAPITools/openapi-generator/blob/master/modules/openapi-generator-gradle-plugin/README.adoc
     alias(libs.plugins.openapi.generator)
@@ -5,26 +8,26 @@ plugins {
 }
 
 dependencies {
-    implementation libs.paimon.api
+    implementation(libs.paimon.api)
 }
 
-var rootDir = rootProject.layout.projectDirectory
-var specsDir = rootDir.dir("spec")
-var paimonSpecDir = specsDir.dir("paimon")
-var templatesDir = paimonSpecDir.dir("server-templates")
-var generatedDir = project.layout.buildDirectory.dir("generated")
-var generatedOpenApiSrcDir = project.layout.buildDirectory.dir("generated/src/main/java")
+val rootDir = rootProject.layout.projectDirectory
+val specsDir = rootDir.dir("spec")
+val paimonSpecDir = specsDir.dir("paimon")
+val templatesDir = paimonSpecDir.dir("server-templates")
+val generatedDir = layout.buildDirectory.dir("generated")
+val generatedOpenApiSrcDir = layout.buildDirectory.dir("generated/src/main/java")
 
 // https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-resteasy.md
 // https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-gradle-plugin
 openApiGenerate {
-    inputSpec = paimonSpecDir.file("paimon-openapi-1.0.0.yaml").asFile.absolutePath
-    generatorName = "jaxrs-resteasy"
-    outputDir = generatedDir.get().asFile.absolutePath
-    ignoreFileOverride = specsDir.file(".openapi-generator-ignore").asFile.absolutePath
-    removeOperationIdPrefix = true
+    inputSpec.set(paimonSpecDir.file("paimon-openapi-1.0.0.yaml").asFile.absolutePath)
+    generatorName.set("jaxrs-resteasy")
+    outputDir.set(generatedDir.get().asFile.absolutePath)
+    ignoreFileOverride.set(specsDir.file(".openapi-generator-ignore").asFile.absolutePath)
+    removeOperationIdPrefix.set(true)
     // https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator/src/main/resources/JavaJaxRS/resteasy
-    templateDir = templatesDir.asFile.absolutePath
+    templateDir.set(templatesDir.asFile.absolutePath)
 
     globalProperties.put("apiDocs", "false")
     globalProperties.put("models", "false")
@@ -45,38 +48,22 @@ openApiGenerate {
     additionalProperties.put("apiPackage", "kasanari.catalog.paimon.api")
     additionalProperties.put("dateLibrary", "java8")
 
-    var modelNameMap = new HashMap<String, String>()
-
-    modelNameMappings = modelNameMap
-
-    var importMap = new HashMap<String, String>()
-
-    importMappings = importMap
+    modelNameMappings = mutableMapOf()
+    importMappings = mutableMapOf()
 }
 
-sourceSets {
-    main {
-        java {
-            srcDir "${buildDir}/generated/src/gen/java"
-        }
-    }
+the<SourceSetContainer>().named("main") {
+    java.srcDir(layout.buildDirectory.dir("generated/src/gen/java"))
+    java.srcDir(generatedOpenApiSrcDir)
 }
 
-sourceSets {
-    main {
-        java {
-            srcDir(generatedOpenApiSrcDir)
-        }
-    }
-}
-
-tasks.openApiGenerate {
+tasks.named<GenerateTask>("openApiGenerate") {
     doLast {
-        delete(files("${buildDir}/generated/src/main/java/kasanari/catalog/paimon/api/impl"),)
+        delete(layout.buildDirectory.dir("generated/src/main/java/kasanari/catalog/paimon/api/impl"))
     }
 }
 
 // TODO: fix generation for paimon
-//tasks.compileJava {
-//    dependsOn(tasks.openApiGenerate)
-//}
+// tasks.named("compileJava") {
+//     dependsOn(tasks.named("openApiGenerate"))
+// }
