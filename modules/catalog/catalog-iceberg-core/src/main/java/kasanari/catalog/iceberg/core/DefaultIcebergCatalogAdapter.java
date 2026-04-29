@@ -302,9 +302,7 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
 
     @Override
     public ListTablesResponse listTables(Namespace namespace, String pageToken, Integer pageSize) {
-        var namespaceIdentifier = Namespace.of(namespace.levels());
-
-        var tables = catalog.listTables(namespaceIdentifier);
+        var tables = catalog.listTables(namespace);
 
         pageToken = pageToken == null ? "" : pageToken;
         pageSize = pageSize == null ? 0 : pageSize;

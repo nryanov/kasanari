@@ -29,11 +29,40 @@ public class IcebergCatalogCommons {
 
     public static final Schema DEFAULT_SCHEMA = SchemaParser.fromJson(DEFAULT_SCHEMA_JSON);
 
+    @Deprecated
     public static CreateViewRequest defaultCreateViewRequest(Namespace namespace, String name) {
         return ImmutableCreateViewRequest
                 .builder()
                 .name(name)
                 .location("location")
+                .schema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .viewVersion(
+                        ImmutableViewVersion
+                                .builder()
+                                .versionId(1)
+                                .timestampMillis(1)
+                                .schemaId(1)
+                                .putAllSummary(Map.of())
+                                .addAllRepresentations(
+                                        List.of(
+                                                ImmutableSQLViewRepresentation
+                                                        .builder()
+                                                        .dialect("spark")
+                                                        .sql("select * from table")
+                                                        .build()
+                                        )
+                                )
+                                .defaultNamespace(namespace)
+                                .build()
+                )
+                .build();
+    }
+
+    public static CreateViewRequest defaultCreateViewRequest(Namespace namespace, String name, String location) {
+        return ImmutableCreateViewRequest
+                .builder()
+                .name(name)
+                .location(location)
                 .schema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .viewVersion(
                         ImmutableViewVersion

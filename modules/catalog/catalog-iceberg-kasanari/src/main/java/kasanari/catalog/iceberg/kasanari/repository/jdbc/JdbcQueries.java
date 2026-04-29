@@ -82,7 +82,7 @@ public class JdbcQueries {
     public final static String UPSERT_NAMESPACE_PROPERTIES = """
             INSERT INTO kasanari_iceberg_namespace_properties(catalog_name, namespace_name, property_key, property_value)
             VALUES (?, ?, ?, ?)
-            ON CONFLICT (catalog_name, namespace_name, property_key) DO UPDATE SET updated_at = CURRENT_TIMESTAMP
+            ON CONFLICT (catalog_name, namespace_name, property_key) DO UPDATE SET updated_at = CURRENT_TIMESTAMP, property_value = EXCLUDED.property_value
             """;
 
     public static String SELECT_ROOT_NAMESPACES = """

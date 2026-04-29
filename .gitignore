@@ -1,6 +1,8 @@
+!.idea/
+.idea/*
+!.idea/runConfigurations
 .gradle/
 build/
 target/
 *.iml
-.idea/
 .bsp

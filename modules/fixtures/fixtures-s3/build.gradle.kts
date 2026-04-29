@@ -1,0 +1,15 @@
+plugins {
+    id("java-test-fixtures")
+}
+
+dependencies {
+    testFixturesImplementation(libs.testcontainers.minio)
+
+    testFixturesImplementation(platform(libs.awssdk.bom))
+    testFixturesImplementation("software.amazon.awssdk:s3")
+    testFixturesImplementation("software.amazon.awssdk:aws-core")
+    testFixturesImplementation("software.amazon.awssdk:s3-transfer-manager")
+    testFixturesImplementation("software.amazon.awssdk:sts")
+
+    testFixturesImplementation(libs.iceberg.aws)
+}

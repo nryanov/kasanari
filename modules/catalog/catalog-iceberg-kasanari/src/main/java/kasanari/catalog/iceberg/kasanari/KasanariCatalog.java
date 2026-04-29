@@ -157,7 +157,7 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     public List<TableIdentifier> listTables(Namespace namespace) {
-        if (namespaceRepository.notExists(namespace)) {
+        if (!namespace.isEmpty() && namespaceRepository.notExists(namespace)) {
             throw new NoSuchNamespaceException(
                     "Namespace `%s` does not exist in catalog `%s`",
                     IcebergUtils.namespaceName(namespace),

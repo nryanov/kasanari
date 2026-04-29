@@ -4,81 +4,115 @@ import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.core.IcebergCatalogAdapterTest;
 import kasanari.catalog.iceberg.core.IcebergCatalogCommons;
 import kasanari.catalog.iceberg.kasanari.stub.repository.jdbc.JdbcTableRepositoryStub;
+import kasanari.fixtures.postgres.PostgresFixtureContainer;
+import kasanari.fixtures.postgres.PostgresHelper;
+import kasanari.fixtures.s3.NoneRegionS3FileIOAwsClientFactory;
+import kasanari.fixtures.s3.S3FixtureContainer;
+import kasanari.fixtures.s3.S3Helper;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.MetadataUpdate;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.UpdateRequirement;
+import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
 import org.jdbi.v3.core.Handle;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
-    private final PostgreSQLContainer postgres = new PostgreSQLContainer(
-            DockerImageName.
-                    parse("postgres:17")
-                    .asCompatibleSubstituteFor("postgres")
-    )
-            .withUsername("postgres")
-            .withPassword("postgres")
-            .withDatabaseName("kasanari");
+    private final PostgresFixtureContainer postgres = new PostgresFixtureContainer();
+    private final S3FixtureContainer s3Container = new S3FixtureContainer();
+    private S3Helper s3Helper;
+    private PostgresHelper postgresHelper;
+
+    private IcebergCatalogAdapter adapter;
+    private final AtomicInteger namespaceId = new AtomicInteger(1);
 
     @Override
     public IcebergCatalogAdapter setupCatalog() {
-//        postgres.start();
+        postgres.start();
+        s3Container.start();
+
+        s3Helper = new S3Helper(s3Container);
+        s3Helper.createBucket("warehouse");
+
+        postgresHelper = new PostgresHelper(postgres);
 
         var factory = new KasanariIcebergCatalogFactory();
-//        return factory.create(Map.of(
-//                KasanariCatalogProperties.WAREHOUSE, "file:///tmp/iceberg-kasanari-catalog-warehouse",
-//                KasanariCatalogProperties.URI, postgres.getJdbcUrl(),
-//                KasanariCatalogProperties.USER, postgres.getUsername(),
-//                KasanariCatalogProperties.PASSWORD, postgres.getPassword()
-//        ));
+        var properties = new HashMap<String, String>();
+        properties.put(KasanariCatalogProperties.USER, postgres.username());
+        properties.put(KasanariCatalogProperties.PASSWORD, postgres.password());
+        properties.put(KasanariCatalogProperties.URI, postgres.jdbcUrl());
+        properties.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
+        properties.put(CatalogProperties.WAREHOUSE_LOCATION, "s3a://warehouse");
+        properties.put(S3FileIOProperties.ENDPOINT, s3Container.url());
+        properties.put(S3FileIOProperties.ACCESS_KEY_ID, s3Container.username());
+        properties.put(S3FileIOProperties.SECRET_ACCESS_KEY, s3Container.password());
+        properties.put(S3FileIOProperties.PATH_STYLE_ACCESS, "true");
+        properties.put(S3FileIOProperties.CLIENT_FACTORY, NoneRegionS3FileIOAwsClientFactory.class.getName());
 
-        return factory.create(Map.of(
-                KasanariCatalogProperties.WAREHOUSE, "file:///tmp/iceberg-kasanari-catalog-warehouse",
-                KasanariCatalogProperties.URI, "jdbc:postgresql://localhost:5432/postgres",
-                KasanariCatalogProperties.USER, "postgres",
-                KasanariCatalogProperties.PASSWORD, "postgres"
-        ));
+        adapter = factory.create(properties);
+        return adapter;
     }
 
     @Override
     public void close() {
-//        postgres.close();
+        postgres.stop();
+        s3Container.stop();
     }
 
     @Override
     public void reset() {
-        var catalogDelegate = (KasanariCatalog) catalog.delegate();
-        catalogDelegate.getDataSource().getJdbi().useTransaction(tx -> {
-            tx.execute("TRUNCATE TABLE kasanari_iceberg_namespace_properties CASCADE");
-            tx.execute("TRUNCATE TABLE kasanari_iceberg_tables CASCADE");
-            tx.execute("TRUNCATE TABLE kasanari_iceberg_views CASCADE");
-            tx.execute("TRUNCATE TABLE kasanari_iceberg_namespaces CASCADE");
-        });
+        postgresHelper.truncateTable("kasanari_iceberg_namespace_properties");
+        postgresHelper.truncateTable("kasanari_iceberg_tables");
+        postgresHelper.truncateTable("kasanari_iceberg_views");
+        postgresHelper.truncateTable("kasanari_iceberg_namespaces");
+        s3Helper.clearBucket("warehouse");
+    }
+
+    @Override
+    public String entityLocation(String name) {
+        return "s3a://warehouse/" + name;
+    }
+
+    @Override
+    public String tableName() {
+        return "table";
+    }
+
+    @Override
+    public String viewName() {
+        return "view";
+    }
+
+    @Override
+    public Namespace namespaceName() {
+        var ns = Namespace.of("ns_" + namespaceId.getAndIncrement());
+        adapter.createNamespace(ns);
+        return ns;
     }
 
     @Test
     public void successfullyCommitMultiTableTransaction() {
-        var namespace = Namespace.of("ns_multi_table_tx1");
+        var namespace = namespaceName();
         var tableOne = TableIdentifier.of(namespace, "table_1");
         var tableTwo = TableIdentifier.of(namespace, "table_2");
 
         var createTableOneRq = CreateTableRequest
                 .builder()
                 .withName("table_1")
-                .withLocation("location")
+                .withLocation(entityLocation(tableOne.toString()))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -87,13 +121,11 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
         var createTableTwoRq = CreateTableRequest
                 .builder()
                 .withName("table_2")
-                .withLocation("location")
+                .withLocation(entityLocation(tableTwo.toString()))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
                 .build();
-
-        catalog.createNamespace(namespace);
 
         var createdTableOne = catalog.createTable(namespace, createTableOneRq);
         var createdTableTwo = catalog.createTable(namespace, createTableTwoRq);
@@ -137,14 +169,14 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
             }
         });
 
-        var namespace = Namespace.of("ns_multi_table_tx2");
+        var namespace = namespaceName();
         var tableOne = TableIdentifier.of(namespace, "table_1");
         var tableTwo = TableIdentifier.of(namespace, "table_2");
 
         var createTableOneRq = CreateTableRequest
                 .builder()
                 .withName("table_1")
-                .withLocation("location")
+                .withLocation(entityLocation(tableOne.toString()))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -153,13 +185,11 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
         var createTableTwoRq = CreateTableRequest
                 .builder()
                 .withName("table_2")
-                .withLocation("location")
+                .withLocation(entityLocation(tableTwo.toString()))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
                 .build();
-
-        catalog.createNamespace(namespace);
 
         var createdTableOne = catalog.createTable(namespace, createTableOneRq);
         var createdTableTwo = catalog.createTable(namespace, createTableTwoRq);
@@ -208,14 +238,14 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
             }
         });
 
-        var namespace = Namespace.of("ns_multi_table_tx3");
+        var namespace = namespaceName();
         var tableOne = TableIdentifier.of(namespace, "table_1");
         var tableTwo = TableIdentifier.of(namespace, "table_2");
 
         var createTableOneRq = CreateTableRequest
                 .builder()
                 .withName("table_1")
-                .withLocation("location")
+                .withLocation(entityLocation(tableOne.toString()))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -224,13 +254,11 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
         var createTableTwoRq = CreateTableRequest
                 .builder()
                 .withName("table_2")
-                .withLocation("location")
+                .withLocation(entityLocation(tableTwo.toString()))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
                 .build();
-
-        kasanariCatalog.createNamespace(namespace);
 
         var createdTableOne = defaultCatalog.createTable(namespace, createTableOneRq);
         var createdTableTwo = defaultCatalog.createTable(namespace, createTableTwoRq);

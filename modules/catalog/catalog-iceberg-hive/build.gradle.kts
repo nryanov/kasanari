@@ -1,0 +1,10 @@
+dependencies {
+    implementation(project(":modules:catalog:catalog-iceberg-core"))
+    implementation(project(":modules:catalog:catalog-iceberg-common"))
+    implementation(libs.iceberg.hive)
+    implementation(libs.hive.metastore)
+    implementation(libs.hive.common)
+
+    testImplementation(testFixtures(project(":modules:catalog:catalog-iceberg-core")))
+    testImplementation(testFixtures(project(":modules:fixtures:fixtures-hive")))
+}

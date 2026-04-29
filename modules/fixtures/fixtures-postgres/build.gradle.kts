@@ -1,0 +1,8 @@
+plugins {
+    id("java-test-fixtures")
+}
+
+dependencies {
+    testFixturesImplementation(libs.jdbc.postgresql)
+    testFixturesImplementation(libs.testcontainers.postgresql)
+}
