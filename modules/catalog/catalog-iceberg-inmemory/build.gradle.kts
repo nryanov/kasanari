@@ -1,0 +1,5 @@
+dependencies {
+    implementation(project(":modules:catalog:catalog-iceberg-core"))
+
+    testImplementation(testFixtures(project(":modules:catalog:catalog-iceberg-core")))
+}
