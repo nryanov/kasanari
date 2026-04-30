@@ -1,15 +1,10 @@
 # Paimon REST api
-Important: currently openapi-generator create ENUMs which use case-sensitive equals method.
-In some cases it may produce errors because value will not be found. 
-To overcome it use after enum definition in openapi.yaml `x-enum-varnames: ["value1", "value2", ..., "valueN"]`
 
 ## Version
-- 1.0.0
+- 1.4.1
+- https://github.com/apache/paimon/blob/release-1.4.1/docs/static/rest-catalog-open-api.yaml
 
 ## Generate
 ```shell
-# iceberg
-./gradlew :modules:api:api-iceberg:openApiGenerate
-# paimon
 ./gradlew :modules:api:api-paimon:openApiGenerate
 ```

@@ -4,7 +4,7 @@ info:
   title: Kasanari Iceberg REST Catalog API
   version: 0.0.1
 
-# The server configuration is sourced from iceberg-openapi-1.9.2.yaml
+# The server configuration is sourced from iceberg-openapi-1.10.1.yaml
 servers:
   - url: "{scheme}://{host}/{basePath}"
     description: Server URL when the port can be inferred from the scheme
@@ -34,7 +34,7 @@ servers:
         description: Optional prefix to be appended to all routes
         default: ""
 
-# The security configuration is sourced from iceberg-openapi-1.9.2.yaml
+# The security configuration is sourced from iceberg-openapi-1.10.1.yaml
 # All routes are currently configured using an Authorization header.
 security:
   - OAuth2: [catalog]
@@ -48,40 +48,40 @@ paths:
   ############################
 
   /v1/config:
-    $ref: './iceberg-openapi-1.9.2.yaml#/paths/~1v1~1config'
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1config'
 
   /v1/{prefix}/namespaces:
-    $ref: './iceberg-openapi-1.9.2.yaml#/paths/~1v1~1{prefix}~1namespaces'
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces'
 
   /v1/{prefix}/namespaces/{namespace}:
-    $ref: './iceberg-openapi-1.9.2.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}'
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}'
 
   /v1/{prefix}/namespaces/{namespace}/properties:
-    $ref: './iceberg-openapi-1.9.2.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1properties'
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1properties'
 
   /v1/{prefix}/namespaces/{namespace}/tables:
-    $ref: './iceberg-openapi-1.9.2.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1tables'
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1tables'
 
   /v1/{prefix}/namespaces/{namespace}/register:
-    $ref: './iceberg-openapi-1.9.2.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1register'
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1register'
 
   /v1/{prefix}/namespaces/{namespace}/tables/{table}:
-    $ref: './iceberg-openapi-1.9.2.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1tables~1{table}'
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1tables~1{table}'
 
   /v1/{prefix}/tables/rename:
-    $ref: './iceberg-openapi-1.9.2.yaml#/paths/~1v1~1{prefix}~1tables~1rename'
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1tables~1rename'
 
   /v1/{prefix}/transactions/commit:
-    $ref: './iceberg-openapi-1.9.2.yaml#/paths/~1v1~1{prefix}~1transactions~1commit'
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1transactions~1commit'
 
   /v1/{prefix}/namespaces/{namespace}/views:
-    $ref: './iceberg-openapi-1.9.2.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1views'
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1views'
 
   /v1/{prefix}/namespaces/{namespace}/views/{view}:
-    $ref: './iceberg-openapi-1.9.2.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1views~1{view}'
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1views~1{view}'
 
   /v1/{prefix}/views/rename:
-    $ref: './iceberg-openapi-1.9.2.yaml#/paths/~1v1~1{prefix}~1views~1rename'
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1views~1rename'
 
   # /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics:
   # TODO: Not implemented
@@ -119,4 +119,4 @@ components:
           scopes:
             catalog: Allows interacting with the Config and Catalog APIs
     BearerAuth:
-      $ref: './iceberg-openapi-1.9.2.yaml#/components/securitySchemes/BearerAuth'
+      $ref: './iceberg-openapi-1.10.1.yaml#/components/securitySchemes/BearerAuth'
