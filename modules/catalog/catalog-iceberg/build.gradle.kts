@@ -55,7 +55,6 @@ dependencies {
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-
     testImplementation("org.junit.jupiter:junit-jupiter-api")
 
     testImplementation(testFixtures(project(":modules:fixtures:fixtures-s3")))

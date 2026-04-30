@@ -5,6 +5,7 @@ import org.apache.iceberg.aws.HttpClientProperties;
 import org.apache.iceberg.aws.s3.S3FileIOAwsClientFactory;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import java.util.Map;
@@ -25,6 +26,26 @@ public class NoneRegionS3FileIOAwsClientFactory implements S3FileIOAwsClientFact
         this.s3FileIOProperties = new S3FileIOProperties(properties);
         this.awsClientProperties = new AwsClientProperties(properties);
         this.httpClientProperties = new HttpClientProperties(properties);
+    }
+
+    @Override
+    public S3AsyncClient s3Async() {
+        if (s3FileIOProperties.isS3CRTEnabled()) {
+            return S3AsyncClient.crtBuilder()
+                    .applyMutation(awsClientProperties::applyClientRegionConfiguration)
+                    .applyMutation(awsClientProperties::applyClientCredentialConfigurations)
+                    .applyMutation(s3FileIOProperties::applyEndpointConfigurations)
+                    .applyMutation(s3FileIOProperties::applyS3CrtConfigurations)
+                    .region(Region.of("none"))
+                    .build();
+        }
+        return S3AsyncClient.builder()
+                .applyMutation(awsClientProperties::applyClientRegionConfiguration)
+                .applyMutation(awsClientProperties::applyClientCredentialConfigurations)
+                .applyMutation(awsClientProperties::applyLegacyMd5Plugin)
+                .applyMutation(s3FileIOProperties::applyEndpointConfigurations)
+                .region(Region.of("none"))
+                .build();
     }
 
     @Override
