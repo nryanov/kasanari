@@ -8,8 +8,8 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.iceberg.api)
-    implementation(libs.iceberg.core)
+    api(libs.iceberg.api)
+    api(libs.iceberg.core)
     implementation(libs.iceberg.common)
 
     implementation(libs.jakarta.annotation.api)
