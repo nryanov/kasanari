@@ -1,11 +1,11 @@
 [versions]
 openapi-generator = "7.14.0"
-quarkus = "3.28.4"
+quarkus = "3.31.2"
 jandex = "1.0.0"
-iceberg = "1.7.1"
-paimon = "1.2.0"
+iceberg = "1.10.1"
+paimon = "1.3.1"
 hadoop3 = "3.4.1"
-awssdk = "2.32.4"
+awssdk = "2.41.24"
 hive = { strictly = "2.3.9" }
 slfj4 = "2.0.17"
 jdbi = "3.49.4"
