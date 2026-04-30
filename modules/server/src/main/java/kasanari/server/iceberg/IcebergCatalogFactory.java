@@ -2,13 +2,13 @@ package kasanari.server.iceberg;
 
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Produces;
-import kasanari.catalog.iceberg.core.IcebergCatalogAdapter;
-import kasanari.catalog.iceberg.hadoop.HadoopIcebergCatalogFactory;
-import kasanari.catalog.iceberg.inmemory.InMemoryIcebergCatalogFactory;
-import kasanari.catalog.iceberg.jdbc.JdbcIcebergCatalogFactory;
-import kasanari.catalog.iceberg.kasanari.KasanariIcebergCatalogFactory;
-import kasanari.catalog.iceberg.nessie.NessieIcebergCatalogFactory;
-import kasanari.catalog.iceberg.rest.RestIcebergCatalogFactory;
+import kasanari.catalog.iceberg.IcebergCatalogAdapter;
+import kasanari.catalog.iceberg.HadoopIcebergCatalogFactory;
+import kasanari.catalog.iceberg.InMemoryIcebergCatalogFactory;
+import kasanari.catalog.iceberg.JdbcIcebergCatalogFactory;
+import kasanari.catalog.iceberg.KasanariIcebergCatalogFactory;
+import kasanari.catalog.iceberg.NessieIcebergCatalogFactory;
+import kasanari.catalog.iceberg.RestIcebergCatalogFactory;
 import kasanari.server.configuration.IcebergCatalogConfiguration;
 import org.jboss.logging.Logger;
 

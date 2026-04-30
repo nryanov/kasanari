@@ -33,7 +33,7 @@ jakarta-ws-rs-api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref = 
 
 # iceberg
 # todo: use bom instead of direct deps
-iceberg-bom = { group = "org.apache.iceberg", name = "iceberg-bom", version.ref = "iceberg" }
+iceberg-platform = { group = "org.apache.iceberg", name = "iceberg-bom", version.ref = "iceberg" }
 iceberg-core = { group = "org.apache.iceberg", name = "iceberg-core", version.ref = "iceberg" }
 iceberg-api = { group = "org.apache.iceberg", name = "iceberg-api", version.ref = "iceberg" }
 iceberg-common = { group = "org.apache.iceberg", name = "iceberg-common", version.ref = "iceberg" }
@@ -46,10 +46,12 @@ paimon-api = { group = "org.apache.paimon", name = "paimon-api", version.ref = "
 
 hadoop3-client-api = { group = "org.apache.hadoop", name = "hadoop-client-api", version.ref = "hadoop3"}
 hadoop3-client-runtime = { group = "org.apache.hadoop", name = "hadoop-client-runtime", version.ref = "hadoop3"}
+hadoop3-client = { group = "org.apache.hadoop", name = "hadoop-client", version.ref = "hadoop3" }
 hadoop3-common = { group = "org.apache.hadoop", name = "hadoop-common", version.ref = "hadoop3"}
 hadoop3-aws = { group = "org.apache.hadoop", name = "hadoop-aws", version.ref = "hadoop3"}
 hadoop3-hdfs-client = { module = "org.apache.hadoop:hadoop-hdfs-client", version.ref = "hadoop3" }
 
+aws-platform = { module = "software.amazon.awssdk:bom", version.ref = "awssdk" }
 awssdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "awssdk" }
 
 hive-metastore = { group = "org.apache.hive", name = "hive-metastore", version.ref = "hive" }
@@ -66,6 +68,7 @@ junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit" }
 junit = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit-platform" }
 
+testcontainers-bom = { group = "org.testcontainers", name = "testcontainers-bom", version.ref = "testcontainers" }
 testcontainers-core = { group = "org.testcontainers", name = "testcontainers", version.ref = "testcontainers" }
 testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql", version.ref = "testcontainers" }
 testcontainers-minio = { group = "org.testcontainers", name = "minio", version.ref = "testcontainers" }

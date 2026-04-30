@@ -5,6 +5,8 @@ pluginManagement {
         mavenLocal()
     }
     plugins {
+        id("io.quarkus") version "3.31.2"
+        id("org.kordamp.gradle.jandex") version "2.3.0"
     }
 }
 
@@ -16,21 +18,9 @@ include(
     "modules:api:api-paimon",
     "modules:server",
     "modules:catalog",
-    "modules:catalog:catalog-iceberg-core",
-    "modules:catalog:catalog-iceberg-common",
-    "modules:catalog:catalog-iceberg-hadoop",
-    "modules:catalog:catalog-iceberg-inmemory",
-    "modules:catalog:catalog-iceberg-hive",
-    "modules:catalog:catalog-iceberg-nessie",
-    "modules:catalog:catalog-iceberg-rest",
-    "modules:catalog:catalog-iceberg-kasanari",
-    "modules:catalog:catalog-iceberg-jdbc",
-    "modules:catalog:catalog-paimon-core",
-    "modules:catalog:catalog-paimon-kasanari",
-    "modules:catalog:catalog-paimon-jdbc",
-    "modules:catalog:catalog-paimon-hive",
-    "modules:catalog:catalog-paimon-rest",
-    "modules:catalog:catalog-paimon-filesystem",
+    "modules:catalog:catalog-iceberg",
+    "modules:catalog:catalog-paimon",
+    // fixtures
     "modules:fixtures",
     "modules:fixtures:fixtures-s3",
     "modules:fixtures:fixtures-nessie",
@@ -50,18 +40,5 @@ findProject(":modules:fixtures:fixtures-hive")?.name = "fixtures-hive"
 
 findProject(":modules:server")?.name = "server"
 findProject(":modules:catalog")?.name = "catalog"
-findProject(":modules:catalog:catalog-iceberg-core")?.name = "catalog-iceberg-core"
-findProject(":modules:catalog:catalog-iceberg-common")?.name = "catalog-iceberg-common"
-findProject(":modules:catalog:catalog-iceberg-hadoop")?.name = "catalog-iceberg-hadoop"
-findProject(":modules:catalog:catalog-iceberg-inmemory")?.name = "catalog-iceberg-inmemory"
-findProject(":modules:catalog:catalog-iceberg-hive")?.name = "catalog-iceberg-hive"
-findProject(":modules:catalog:catalog-iceberg-nessie")?.name = "catalog-iceberg-nessie"
-findProject(":modules:catalog:catalog-iceberg-rest")?.name = "catalog-iceberg-rest"
-findProject(":modules:catalog:catalog-iceberg-kasanari")?.name = "catalog-iceberg-kasanari"
-findProject(":modules:catalog:catalog-iceberg-jdbc")?.name = "catalog-iceberg-jdbc"
-findProject(":modules:catalog:catalog-paimon-kasanari")?.name = "catalog-paimon-kasanari"
-findProject(":modules:catalog:catalog-paimon-jdbc")?.name = "catalog-paimon-jdbc"
-findProject(":modules:catalog:catalog-paimon-hive")?.name = "catalog-paimon-hive"
-findProject(":modules:catalog:catalog-paimon-rest")?.name = "catalog-paimon-rest"
-findProject(":modules:catalog:catalog-paimon-filesystem")?.name = "catalog-paimon-filesystem"
-findProject(":modules:catalog:catalog-paimon-core")?.name = "catalog-paimon-core"
+findProject(":modules:catalog:catalog-iceberg")?.name = "catalog-iceberg"
+findProject(":modules:catalog:catalog-paimon")?.name = "catalog-paimon"
