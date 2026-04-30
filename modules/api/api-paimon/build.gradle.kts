@@ -20,8 +20,9 @@ val generatedOpenApiSrcDir = layout.buildDirectory.dir("generated/src/main/java"
 
 // https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-resteasy.md
 // https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-gradle-plugin
+// https://github.com/apache/paimon/blob/release-1.4.1/docs/static/rest-catalog-open-api.yaml
 openApiGenerate {
-    inputSpec.set(paimonSpecDir.file("paimon-openapi-1.0.0.yaml").asFile.absolutePath)
+    inputSpec.set(paimonSpecDir.file("paimon-openapi-1.4.1.yaml").asFile.absolutePath)
     generatorName.set("jaxrs-resteasy")
     outputDir.set(generatedDir.get().asFile.absolutePath)
     ignoreFileOverride.set(specsDir.file(".openapi-generator-ignore").asFile.absolutePath)
