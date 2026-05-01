@@ -51,7 +51,6 @@ import org.apache.paimon.rest.responses.ListViewsGloballyResponse;
 import org.apache.paimon.rest.responses.ListViewsResponse;
 
 public interface PaimonCatalogAdapter {
-    ConfigResponse getConfig(String warehouse);
 
     ListDatabasesResponse listDatabases(String prefix, Integer maxResults, String pageToken);
 
