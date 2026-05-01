@@ -1,11 +1,9 @@
 package kasanari.catalog.paimon;
 
-import org.apache.paimon.PagedList;
-import org.apache.paimon.catalog.Database;
+import org.apache.paimon.Snapshot;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.catalog.PropertyChange;
-import org.apache.paimon.catalog.TableQueryAuthResult;
 import org.apache.paimon.function.FunctionImpl;
 import org.apache.paimon.rest.requests.AlterDatabaseRequest;
 import org.apache.paimon.rest.requests.AlterFunctionRequest;
@@ -54,8 +52,9 @@ import org.apache.paimon.rest.responses.ListTagsResponse;
 import org.apache.paimon.rest.responses.ListViewDetailsResponse;
 import org.apache.paimon.rest.responses.ListViewsGloballyResponse;
 import org.apache.paimon.rest.responses.ListViewsResponse;
-import org.apache.paimon.table.TableSnapshot;
-import org.apache.paimon.view.View;
+import org.apache.paimon.schema.Schema;
+import org.apache.paimon.table.AppendOnlyFileStoreTable;
+import org.apache.paimon.table.PrimaryKeyFileStoreTable;
 import org.apache.paimon.view.ViewImpl;
 import org.apache.paimon.view.ViewSchema;
 
@@ -63,8 +62,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 
 public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     private final Catalog catalog;
@@ -86,7 +83,7 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public GetDatabaseResponse getDatabase(String prefix, String database) {
-        Database loaded = call(() -> catalog.getDatabase(database));
+        var loaded = call(() -> catalog.getDatabase(database));
         return new GetDatabaseResponse(
                 loaded.name(),
                 loaded.name(),
@@ -107,15 +104,19 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public AlterDatabaseResponse alterDatabase(String prefix, String database, AlterDatabaseRequest request) {
-        List<PropertyChange> changes = new ArrayList<>();
-        for (Object removal : listOrEmpty(request.getRemovals())) {
-            changes.add(PropertyChange.removeProperty(removal.toString()));
+        var changes = new ArrayList<PropertyChange>();
+
+        for (var removal : listOrEmpty(request.getRemovals())) {
+            changes.add(PropertyChange.removeProperty(removal));
         }
-        for (Map.Entry<String, String> update : mapOrEmpty(request.getUpdates()).entrySet()) {
+
+        for (var update : mapOrEmpty(request.getUpdates()).entrySet()) {
             changes.add(PropertyChange.setProperty(update.getKey(), update.getValue()));
         }
+
         run(() -> catalog.alterDatabase(database, changes, false));
 
+        // todo: fill in missing properties
         return new AlterDatabaseResponse(
                 listOrEmpty(request.getRemovals()),
                 new ArrayList<>(mapOrEmpty(request.getUpdates()).keySet()),
@@ -136,20 +137,33 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public void createTable(String prefix, String database, CreateTableRequest request) {
-        Identifier identifier = tableIdentifier(database, request.getIdentifier());
-        run(() -> catalog.createTable(identifier, request.getSchema(), false));
+        run(() -> catalog.createTable(request.getIdentifier(), request.getSchema(), false));
     }
 
     @Override
     public ListTableDetailsResponse listTableDetails(String prefix, String database, Integer maxResults, String pageToken, String tableNamePattern, String tableType) {
         var paged = call(() -> catalog.listTableDetailsPaged(database, maxResults, pageToken, tableNamePattern, tableType));
-        List<GetTableResponse> tableDetails = new ArrayList<>();
-        for (Object element : paged.getElements()) {
-            if (element instanceof GetTableResponse) {
-                tableDetails.add((GetTableResponse) element);
-            } else {
-                tableDetails.add(toGetTableResponse(database, (org.apache.paimon.table.Table) element, null));
-            }
+        var tableDetails = new ArrayList<GetTableResponse>();
+
+        for (var table : paged.getElements()) {
+            var schemaId = table.latestSnapshot().map(Snapshot::schemaId).orElse(-1L);
+
+            var it = new GetTableResponse(
+                    table.uuid(),
+                    database,
+                    table.name(),
+                    table.options().get("path"),
+                    false,
+                    schemaId,
+                    null,
+                    null,
+                    0L,
+                    null,
+                    0L,
+                    null
+            );
+
+            tableDetails.add(it);
         }
         return new ListTableDetailsResponse(tableDetails, paged.getNextPageToken());
     }
@@ -163,15 +177,39 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     @Override
     public GetTableResponse getTableById(String prefix, String tableId) {
         var table = call(() -> catalog.getTableById(tableId));
-        var parsed = parseFullName(table.fullName());
+
+        long schemaId = -1;
+        Schema schema = null;
+
+        var database = "";
+        var name = table.name();
+
+        var fullName = table.fullName();
+        var tableNameParts = fullName.split("[.]");
+
+        if (tableNameParts.length > 1) {
+            database = tableNameParts[0];
+        }
+
+
+        if (table instanceof PrimaryKeyFileStoreTable) {
+            schema = ((PrimaryKeyFileStoreTable) table).schema().toSchema();
+            schemaId = ((PrimaryKeyFileStoreTable) table).schema().id();
+        }
+
+        if (table instanceof AppendOnlyFileStoreTable) {
+            schema = ((AppendOnlyFileStoreTable) table).schema().toSchema();
+            schemaId = ((AppendOnlyFileStoreTable) table).schema().id();
+        }
+
         return new GetTableResponse(
                 tableId,
-                parsed.getKey(),
-                parsed.getValue(),
-                asString(table.options().get("path")),
+                database,
+                name,
+                table.options().get("path"),
                 false,
-                -1L,
-                null,
+                schemaId,
+                schema,
                 null,
                 0L,
                 null,
@@ -182,17 +220,12 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public GetTableResponse getTable(String prefix, String database, String table) {
-        Optional<GetTableResponse> fromDetails = findTableDetail(database, table);
-        if (fromDetails.isPresent()) {
-            return fromDetails.get();
-        }
-
         var loaded = call(() -> catalog.getTable(Identifier.create(database, table)));
         return new GetTableResponse(
                 loaded.uuid(),
                 database,
                 loaded.name(),
-                asString(loaded.options().get("path")),
+                loaded.options().get("path"),
                 false,
                 -1L,
                 null,
@@ -221,12 +254,13 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public CommitTableResponse commitTable(String prefix, String database, String table, CommitTableRequest request) {
-        boolean success = call(() -> catalog.commitSnapshot(
+        var success = call(() -> catalog.commitSnapshot(
                 Identifier.create(database, table),
                 request.getTableId(),
                 request.getSnapshot(),
                 listOrEmpty(request.getStatistics())
         ));
+
         return new CommitTableResponse(success);
     }
 
@@ -247,7 +281,7 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public AuthTableQueryResponse authTableQuery(String prefix, String database, String table, AuthTableQueryRequest request) {
-        TableQueryAuthResult result = call(() -> catalog.authTableQuery(
+        var result = call(() -> catalog.authTableQuery(
                 Identifier.create(database, table),
                 request.select()
         ));
@@ -256,7 +290,7 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public GetTableSnapshotResponse getTableSnapshot(String prefix, String database, String table) {
-        Optional<TableSnapshot> snapshot = call(() -> catalog.loadSnapshot(Identifier.create(database, table)));
+        var snapshot = call(() -> catalog.loadSnapshot(Identifier.create(database, table)));
         return new GetTableSnapshotResponse(snapshot.orElse(null));
     }
 
@@ -267,18 +301,19 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public ListSnapshotsResponse listSnapshots(String prefix, String database, String table, Integer maxResults, String pageToken) {
-        PagedList paged = call(() -> catalog.listSnapshotsPaged(Identifier.create(database, table), maxResults, pageToken));
+        var paged = call(() -> catalog.listSnapshotsPaged(Identifier.create(database, table), maxResults, pageToken));
         return new ListSnapshotsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public ListPartitionsResponse listPartitions(String prefix, String database, String table, Integer maxResults, String pageToken, String partitionNamePattern) {
-        PagedList paged = call(() -> catalog.listPartitionsPaged(
+        var paged = call(() -> catalog.listPartitionsPaged(
                 Identifier.create(database, table),
                 maxResults,
                 pageToken,
                 partitionNamePattern
         ));
+
         return new ListPartitionsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
@@ -289,7 +324,7 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public ListPartitionsResponse listPartitionsByNames(String prefix, String database, String table, ListPartitionsByNamesRequest request) {
-        List partitions = call(() -> catalog.listPartitionsByNames(Identifier.create(database, table), request.getPartitionSpecs()));
+        var partitions = call(() -> catalog.listPartitionsByNames(Identifier.create(database, table), request.getPartitionSpecs()));
         return new ListPartitionsResponse(partitions, null);
     }
 
@@ -320,7 +355,7 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public ListTagsResponse listTags(String prefix, String database, String table, Integer maxResults, String pageToken, String tagNamePrefix) {
-        PagedList paged = call(() -> catalog.listTagsPaged(
+        var paged = call(() -> catalog.listTagsPaged(
                 Identifier.create(database, table),
                 maxResults,
                 pageToken,
@@ -352,7 +387,7 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public ListConsumersResponse listConsumers(String prefix, String database, String table, Integer maxResults, String pageToken) {
-        PagedList paged = call(() -> catalog.listConsumersPaged(Identifier.create(database, table), maxResults, pageToken));
+        var paged = call(() -> catalog.listConsumersPaged(Identifier.create(database, table), maxResults, pageToken));
         return new ListConsumersResponse(paged.getElements(), paged.getNextPageToken());
     }
 
@@ -363,46 +398,64 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public ListViewsResponse listViews(String prefix, String database, Integer maxResults, String pageToken, String viewNamePattern) {
-        PagedList paged = call(() -> catalog.listViewsPaged(database, maxResults, pageToken, viewNamePattern));
+        var paged = call(() -> catalog.listViewsPaged(database, maxResults, pageToken, viewNamePattern));
         return new ListViewsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public void createView(String prefix, String database, CreateViewRequest request) {
-        Identifier identifier = tableIdentifier(database, request.getIdentifier());
-        ViewSchema schema = request.getSchema();
-        View view = new ViewImpl(
-                identifier,
+        var schema = request.getSchema();
+        var view = new ViewImpl(
+                request.getIdentifier(),
                 schema.fields(),
                 schema.query(),
                 schema.dialects(),
                 schema.comment(),
                 schema.options()
         );
-        run(() -> catalog.createView(identifier, view, false));
+        run(() -> catalog.createView(request.getIdentifier(), view, false));
     }
 
     @Override
     public ListViewDetailsResponse listViewDetails(String prefix, String database, Integer maxResults, String pageToken, String viewNamePattern) {
-        PagedList paged = call(() -> catalog.listViewDetailsPaged(database, maxResults, pageToken, viewNamePattern));
-        return new ListViewDetailsResponse(paged.getElements(), paged.getNextPageToken());
+        var paged = call(() -> catalog.listViewDetailsPaged(database, maxResults, pageToken, viewNamePattern));
+        var viewDetails = new ArrayList<GetViewResponse>();
+
+        for (var view : paged.getElements()) {
+            var schema = new ViewSchema(
+                    view.rowType().getFields(),
+                    view.query(),
+                    view.dialects(),
+                    view.comment().orElse(null),
+                    view.options()
+            );
+
+            var it = new GetViewResponse(
+                    view.fullName(),
+                    view.name(),
+                    schema,
+                    null,
+                    -1L,
+                    null,
+                    -1L,
+                    null
+            );
+
+            viewDetails.add(it);
+        }
+        return new ListViewDetailsResponse(viewDetails, paged.getNextPageToken());
     }
 
     @Override
     public ListViewsGloballyResponse listViewsGlobally(String prefix, String databaseNamePattern, String viewNamePattern, Integer maxResults, String pageToken) {
-        PagedList paged = call(() -> catalog.listViewsPagedGlobally(databaseNamePattern, viewNamePattern, maxResults, pageToken));
+        var paged = call(() -> catalog.listViewsPagedGlobally(databaseNamePattern, viewNamePattern, maxResults, pageToken));
         return new ListViewsGloballyResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public GetViewResponse getView(String prefix, String database, String view) {
-        Optional<GetViewResponse> fromDetails = findViewDetail(database, view);
-        if (fromDetails.isPresent()) {
-            return fromDetails.get();
-        }
-
-        View loaded = call(() -> catalog.getView(Identifier.create(database, view)));
-        ViewSchema schema = new ViewSchema(
+        var loaded = call(() -> catalog.getView(Identifier.create(database, view)));
+        var schema = new ViewSchema(
                 loaded.rowType().getFields(),
                 loaded.query(),
                 loaded.dialects(),
@@ -438,13 +491,13 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public ListFunctionsResponse listFunctions(String prefix, String database, Integer maxResults, String pageToken, String functionNamePattern) {
-        PagedList paged = call(() -> catalog.listFunctionsPaged(database, maxResults, pageToken, functionNamePattern));
+        var paged = call(() -> catalog.listFunctionsPaged(database, maxResults, pageToken, functionNamePattern));
         return new ListFunctionsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public void createFunction(String prefix, String database, CreateFunctionRequest request) {
-        Identifier identifier = Identifier.create(database, request.name());
+        var identifier = Identifier.create(database, request.name());
         var function = new FunctionImpl(
                 identifier,
                 request.inputParams(),
@@ -459,13 +512,36 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public ListFunctionDetailsResponse listFunctionDetails(String prefix, String database, Integer maxResults, String pageToken, String functionNamePattern) {
-        PagedList paged = call(() -> catalog.listFunctionDetailsPaged(database, maxResults, pageToken, functionNamePattern));
-        return new ListFunctionDetailsResponse(paged.getElements(), paged.getNextPageToken());
+        var paged = call(() -> catalog.listFunctionDetailsPaged(database, maxResults, pageToken, functionNamePattern));
+        var functionDetails = new ArrayList<GetFunctionResponse>();
+
+        for (var function : paged.getElements()) {
+
+            var it = new GetFunctionResponse(
+                    function.fullName(),
+                    function.name(),
+                    function.inputParams().orElse(null),
+                    function.returnParams().orElse(null),
+                    function.isDeterministic(),
+                    function.definitions(),
+                    function.comment(),
+                    function.options(),
+                    null,
+                    0L,
+                    null,
+                    0L,
+                    null
+            );
+
+            functionDetails.add(it);
+        }
+
+        return new ListFunctionDetailsResponse(functionDetails, paged.getNextPageToken());
     }
 
     @Override
     public ListFunctionsGloballyResponse listFunctionsGlobally(String prefix, String databaseNamePattern, String functionNamePattern, Integer maxResults, String pageToken) {
-        PagedList paged = call(() -> catalog.listFunctionsPagedGlobally(databaseNamePattern, functionNamePattern, maxResults, pageToken));
+        var paged = call(() -> catalog.listFunctionsPagedGlobally(databaseNamePattern, functionNamePattern, maxResults, pageToken));
         return new ListFunctionsGloballyResponse(paged.getElements(), paged.getNextPageToken());
     }
 
@@ -499,74 +575,10 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
         run(() -> catalog.dropFunction(Identifier.create(database, function), false));
     }
 
-    private Identifier tableIdentifier(String database, Identifier identifierFromRequest) {
-        if (identifierFromRequest != null) {
-            return identifierFromRequest;
-        }
-        throw new IllegalArgumentException("Identifier is required in request body.");
-    }
-
-    private Optional<GetTableResponse> findTableDetail(String database, String table) {
-        PagedList details = call(() -> catalog.listTableDetailsPaged(database, null, null, table, null));
-        for (Object element : details.getElements()) {
-            if (element instanceof GetTableResponse) {
-                GetTableResponse response = (GetTableResponse) element;
-                if (Objects.equals(table, response.getName())) {
-                    return Optional.of(response);
-                }
-            }
-        }
-        return Optional.empty();
-    }
-
-    private Optional<GetViewResponse> findViewDetail(String database, String view) {
-        PagedList details = call(() -> catalog.listViewDetailsPaged(database, null, null, view));
-        for (Object element : details.getElements()) {
-            if (element instanceof GetViewResponse) {
-                GetViewResponse response = (GetViewResponse) element;
-                if (Objects.equals(view, response.getName())) {
-                    return Optional.of(response);
-                }
-            }
-        }
-        return Optional.empty();
-    }
-
-    private GetTableResponse toGetTableResponse(String database, org.apache.paimon.table.Table table, String tableId) {
-        return new GetTableResponse(
-                tableId == null ? table.uuid() : tableId,
-                database,
-                table.name(),
-                asString(table.options().get("path")),
-                false,
-                -1L,
-                null,
-                null,
-                0L,
-                null,
-                0L,
-                null
-        );
-    }
-
-    private Map.Entry<String, String> parseFullName(String fullName) {
-        if (fullName == null || !fullName.contains(".")) {
-            return Map.entry(Identifier.UNKNOWN_DATABASE, fullName);
-        }
-        int dot = fullName.indexOf('.');
-        return Map.entry(fullName.substring(0, dot), fullName.substring(dot + 1));
-    }
-
-    private String asString(Object value) {
-        return value == null ? null : value.toString();
-    }
-
-    @SuppressWarnings("unchecked")
     private Map<String, String> mapOrEmpty(Map<String, String> map) {
         return map == null ? Collections.emptyMap() : map;
     }
 
-    @SuppressWarnings("unchecked")
     private <T> List<T> listOrEmpty(List<T> list) {
         return list == null ? Collections.emptyList() : list;
     }
