@@ -3,3 +3,164 @@ openapi: 3.0.3
 info:
   title: Kasanari Paimon REST Catalog API
   version: 0.0.1
+
+# The server configuration is sourced from paimon-openapi-1.4.1.yaml
+servers:
+  - url: "{scheme}://{host}/{basePath}"
+    description: Server URL when the port can be inferred from the scheme
+    variables:
+      scheme:
+        description: The scheme of the URI, either http or https.
+        default: https
+      host:
+        description: The host address for the specified server
+        default: localhost
+      basePath:
+        description: Optional prefix to be appended to all routes
+        default: ""
+  - url: "{scheme}://{host}:{port}/{basePath}"
+    description: Generic base server URL, with all parts configurable
+    variables:
+      scheme:
+        description: The scheme of the URI, either http or https.
+        default: https
+      host:
+        description: The host address for the specified server
+        default: localhost
+      port:
+        description: The port used when addressing the host
+        default: "443"
+      basePath:
+        description: Optional prefix to be appended to all routes
+        default: ""
+
+# The security configuration is sourced from paimon-openapi-1.4.1.yaml
+# All routes are currently configured using an Authorization header.
+security:
+  - BearerAuth: []
+
+paths:
+
+  ###########################
+  # Paimon REST Catalog API #
+  # '~1' -> replacement for '/'
+  ###########################
+
+  /paimon/v1/config:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1config'
+
+  /paimon/v1/{prefix}/databases:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases'
+
+  /paimon/v1/{prefix}/databases/{database}:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}'
+
+  /paimon/v1/{prefix}/databases/{database}/register:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1register'
+
+  /paimon/v1/{prefix}/databases/{database}/tables:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables'
+
+  /paimon/v1/{prefix}/databases/{database}/table-details:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1table-details'
+
+  /paimon/v1/{prefix}/tables:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1tables'
+
+  /paimon/v1/{prefix}/tables/id/{tableId}:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1tables~1id~1{tableId}'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}'
+
+  /paimon/v1/{prefix}/tables/rename:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1tables~1rename'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/commit:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1commit'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/rollback:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1rollback'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/rollback-schema:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1rollback-schema'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/token:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1token'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/auth:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1auth'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/snapshot:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1snapshot'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/snapshots/{version}:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1snapshots~1{version}'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/snapshots:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1snapshots'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/partitions:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1partitions'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/partitions/mark:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1partitions~1mark'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/partitions/list-by-names:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1partitions~1list-by-names'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/branches:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1branches'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/branches/{branch}:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1branches~1{branch}'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/branches/{branch}/rename:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1branches~1{branch}~1rename'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/branches/{branch}/forward:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1branches~1{branch}~1forward'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/tags:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1tags'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/tags/{tag}:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1tags~1{tag}'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/consumers:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1consumers'
+
+  /paimon/v1/{prefix}/databases/{database}/tables/{table}/consumers/reset:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1tables~1{table}~1consumers~1reset'
+
+  /paimon/v1/{prefix}/databases/{database}/views:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1views'
+
+  /paimon/v1/{prefix}/databases/{database}/view-details:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1view-details'
+
+  /paimon/v1/{prefix}/views:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1views'
+
+  /paimon/v1/{prefix}/databases/{database}/views/{view}:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1views~1{view}'
+
+  /paimon/v1/{prefix}/views/rename:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1views~1rename'
+
+  /paimon/v1/{prefix}/databases/{database}/functions:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1functions'
+
+  /paimon/v1/{prefix}/databases/{database}/function-details:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1function-details'
+
+  /paimon/v1/{prefix}/functions:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1functions'
+
+  /paimon/v1/{prefix}/databases/{database}/functions/{function}:
+    $ref: './paimon-openapi-1.4.1.yaml#/paths/~1v1~1{prefix}~1databases~1{database}~1functions~1{function}'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      $ref: './paimon-openapi-1.4.1.yaml#/components/securitySchemes/BearerAuth'

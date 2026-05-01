@@ -27,7 +27,7 @@ val generatedOpenApiSrcDir = layout.buildDirectory.dir("generated/src/main/java"
 // https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-resteasy.md
 // https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-gradle-plugin
 openApiGenerate {
-    inputSpec.set(icebergSpecDir.file("kasanari-catalog-service.yaml").asFile.absolutePath)
+    inputSpec.set(icebergSpecDir.file("kasanari-iceberg-catalog-service.yaml").asFile.absolutePath)
     generatorName.set("jaxrs-resteasy")
     outputDir.set(generatedDir.get().asFile.absolutePath)
     ignoreFileOverride.set(specsDir.file(".openapi-generator-ignore").asFile.absolutePath)
