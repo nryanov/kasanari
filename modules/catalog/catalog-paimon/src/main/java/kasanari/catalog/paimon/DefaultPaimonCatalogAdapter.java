@@ -1,6 +1,12 @@
 package kasanari.catalog.paimon;
 
+import org.apache.paimon.PagedList;
+import org.apache.paimon.catalog.Database;
 import org.apache.paimon.catalog.Catalog;
+import org.apache.paimon.catalog.Identifier;
+import org.apache.paimon.catalog.PropertyChange;
+import org.apache.paimon.catalog.TableQueryAuthResult;
+import org.apache.paimon.function.FunctionImpl;
 import org.apache.paimon.rest.requests.AlterDatabaseRequest;
 import org.apache.paimon.rest.requests.AlterFunctionRequest;
 import org.apache.paimon.rest.requests.AlterTableRequest;
@@ -48,6 +54,17 @@ import org.apache.paimon.rest.responses.ListTagsResponse;
 import org.apache.paimon.rest.responses.ListViewDetailsResponse;
 import org.apache.paimon.rest.responses.ListViewsGloballyResponse;
 import org.apache.paimon.rest.responses.ListViewsResponse;
+import org.apache.paimon.table.TableSnapshot;
+import org.apache.paimon.view.View;
+import org.apache.paimon.view.ViewImpl;
+import org.apache.paimon.view.ViewSchema;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     private final Catalog catalog;
@@ -58,260 +75,529 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public ListDatabasesResponse listDatabases(String prefix, Integer maxResults, String pageToken) {
-        return null;
+        var paged = call(() -> catalog.listDatabasesPaged(maxResults, pageToken, null));
+        return new ListDatabasesResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public void createDatabase(String prefix, CreateDatabaseRequest request) {
-
+        run(() -> catalog.createDatabase(request.getName(), false, mapOrEmpty(request.getOptions())));
     }
 
     @Override
     public GetDatabaseResponse getDatabase(String prefix, String database) {
-        return null;
+        Database loaded = call(() -> catalog.getDatabase(database));
+        return new GetDatabaseResponse(
+                loaded.name(),
+                loaded.name(),
+                null,
+                mapOrEmpty(loaded.options()),
+                null,
+                0L,
+                null,
+                0L,
+                null
+        );
     }
 
     @Override
     public void dropDatabase(String prefix, String database) {
-
+        run(() -> catalog.dropDatabase(database, false, false));
     }
 
     @Override
     public AlterDatabaseResponse alterDatabase(String prefix, String database, AlterDatabaseRequest request) {
-        return null;
+        List<PropertyChange> changes = new ArrayList<>();
+        for (Object removal : listOrEmpty(request.getRemovals())) {
+            changes.add(PropertyChange.removeProperty(removal.toString()));
+        }
+        for (Map.Entry<String, String> update : mapOrEmpty(request.getUpdates()).entrySet()) {
+            changes.add(PropertyChange.setProperty(update.getKey(), update.getValue()));
+        }
+        run(() -> catalog.alterDatabase(database, changes, false));
+
+        return new AlterDatabaseResponse(
+                listOrEmpty(request.getRemovals()),
+                new ArrayList<>(mapOrEmpty(request.getUpdates()).keySet()),
+                Collections.emptyList()
+        );
     }
 
     @Override
     public void registerTable(String prefix, String database, RegisterTableRequest request) {
-
+        run(() -> catalog.registerTable(request.getIdentifier(), request.getPath()));
     }
 
     @Override
     public ListTablesResponse listTables(String prefix, String database, Integer maxResults, String pageToken, String tableNamePattern) {
-        return null;
+        var paged = call(() -> catalog.listTablesPaged(database, maxResults, pageToken, tableNamePattern, null));
+        return new ListTablesResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public void createTable(String prefix, String database, CreateTableRequest request) {
+        Identifier identifier = tableIdentifier(database, request.getIdentifier());
+        run(() -> catalog.createTable(identifier, request.getSchema(), false));
     }
 
     @Override
     public ListTableDetailsResponse listTableDetails(String prefix, String database, Integer maxResults, String pageToken, String tableNamePattern, String tableType) {
-        return null;
+        var paged = call(() -> catalog.listTableDetailsPaged(database, maxResults, pageToken, tableNamePattern, tableType));
+        List<GetTableResponse> tableDetails = new ArrayList<>();
+        for (Object element : paged.getElements()) {
+            if (element instanceof GetTableResponse) {
+                tableDetails.add((GetTableResponse) element);
+            } else {
+                tableDetails.add(toGetTableResponse(database, (org.apache.paimon.table.Table) element, null));
+            }
+        }
+        return new ListTableDetailsResponse(tableDetails, paged.getNextPageToken());
     }
 
     @Override
     public ListTablesGloballyResponse listTablesGlobally(String prefix, String databaseNamePattern, String tableNamePattern, Integer maxResults, String pageToken) {
-        return null;
+        var paged = call(() -> catalog.listTablesPagedGlobally(databaseNamePattern, tableNamePattern, maxResults, pageToken));
+        return new ListTablesGloballyResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public GetTableResponse getTableById(String prefix, String tableId) {
-        return null;
+        var table = call(() -> catalog.getTableById(tableId));
+        var parsed = parseFullName(table.fullName());
+        return new GetTableResponse(
+                tableId,
+                parsed.getKey(),
+                parsed.getValue(),
+                asString(table.options().get("path")),
+                false,
+                -1L,
+                null,
+                null,
+                0L,
+                null,
+                0L,
+                null
+        );
     }
 
     @Override
     public GetTableResponse getTable(String prefix, String database, String table) {
-        return null;
+        Optional<GetTableResponse> fromDetails = findTableDetail(database, table);
+        if (fromDetails.isPresent()) {
+            return fromDetails.get();
+        }
+
+        var loaded = call(() -> catalog.getTable(Identifier.create(database, table)));
+        return new GetTableResponse(
+                loaded.uuid(),
+                database,
+                loaded.name(),
+                asString(loaded.options().get("path")),
+                false,
+                -1L,
+                null,
+                null,
+                0L,
+                null,
+                0L,
+                null
+        );
     }
 
     @Override
     public void alterTable(String prefix, String database, String table, AlterTableRequest request) {
-
+        run(() -> catalog.alterTable(Identifier.create(database, table), listOrEmpty(request.getChanges()), false));
     }
 
     @Override
     public void dropTable(String prefix, String database, String table) {
-
+        run(() -> catalog.dropTable(Identifier.create(database, table), false));
     }
 
     @Override
     public void renameTable(String prefix, RenameTableRequest request) {
-
+        run(() -> catalog.renameTable(request.getSource(), request.getDestination(), false));
     }
 
     @Override
     public CommitTableResponse commitTable(String prefix, String database, String table, CommitTableRequest request) {
-        return null;
+        boolean success = call(() -> catalog.commitSnapshot(
+                Identifier.create(database, table),
+                request.getTableId(),
+                request.getSnapshot(),
+                listOrEmpty(request.getStatistics())
+        ));
+        return new CommitTableResponse(success);
     }
 
     @Override
     public void rollbackTable(String prefix, String database, String table, RollbackTableRequest request) {
-
+        run(() -> catalog.rollbackTo(Identifier.create(database, table), request.getInstant(), request.getFromSnapshot()));
     }
 
     @Override
     public void rollbackSchema(String prefix, String database, String table, RollbackSchemaRequest request) {
-
+        run(() -> catalog.rollbackSchema(Identifier.create(database, table), request.getSchemaId()));
     }
 
     @Override
     public GetTableTokenResponse getTableToken(String prefix, String database, String table) {
-        return null;
+        throw new UnsupportedOperationException("Current catalog does not support loading table token.");
     }
 
     @Override
     public AuthTableQueryResponse authTableQuery(String prefix, String database, String table, AuthTableQueryRequest request) {
-        return null;
+        TableQueryAuthResult result = call(() -> catalog.authTableQuery(
+                Identifier.create(database, table),
+                request.select()
+        ));
+        return new AuthTableQueryResponse(result.filter(), result.columnMasking());
     }
 
     @Override
     public GetTableSnapshotResponse getTableSnapshot(String prefix, String database, String table) {
-        return null;
+        Optional<TableSnapshot> snapshot = call(() -> catalog.loadSnapshot(Identifier.create(database, table)));
+        return new GetTableSnapshotResponse(snapshot.orElse(null));
     }
 
     @Override
     public GetVersionSnapshotResponse getVersionSnapshot(String prefix, String database, String table, String version) {
-        return null;
+        return new GetVersionSnapshotResponse(call(() -> catalog.loadSnapshot(Identifier.create(database, table), version)).orElse(null));
     }
 
     @Override
     public ListSnapshotsResponse listSnapshots(String prefix, String database, String table, Integer maxResults, String pageToken) {
-        return null;
+        PagedList paged = call(() -> catalog.listSnapshotsPaged(Identifier.create(database, table), maxResults, pageToken));
+        return new ListSnapshotsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public ListPartitionsResponse listPartitions(String prefix, String database, String table, Integer maxResults, String pageToken, String partitionNamePattern) {
-        return null;
+        PagedList paged = call(() -> catalog.listPartitionsPaged(
+                Identifier.create(database, table),
+                maxResults,
+                pageToken,
+                partitionNamePattern
+        ));
+        return new ListPartitionsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public void markDonePartitions(String prefix, String database, String table, MarkDonePartitionsRequest request) {
-
+        run(() -> catalog.markDonePartitions(Identifier.create(database, table), request.getPartitionSpecs()));
     }
 
     @Override
     public ListPartitionsResponse listPartitionsByNames(String prefix, String database, String table, ListPartitionsByNamesRequest request) {
-        return null;
+        List partitions = call(() -> catalog.listPartitionsByNames(Identifier.create(database, table), request.getPartitionSpecs()));
+        return new ListPartitionsResponse(partitions, null);
     }
 
     @Override
     public ListBranchesResponse listBranches(String prefix, String database, String table) {
-        return null;
+        return new ListBranchesResponse(call(() -> catalog.listBranches(Identifier.create(database, table))));
     }
 
     @Override
     public void createBranch(String prefix, String database, String table, CreateBranchRequest request) {
-
+        run(() -> catalog.createBranch(Identifier.create(database, table), request.branch(), request.fromTag()));
     }
 
     @Override
     public void dropBranch(String prefix, String database, String table, String branch) {
-
+        run(() -> catalog.dropBranch(Identifier.create(database, table), branch));
     }
 
     @Override
     public void renameBranch(String prefix, String database, String table, String branch, RenameBranchRequest request) {
-
+        run(() -> catalog.renameBranch(Identifier.create(database, table), branch, request.toBranch()));
     }
 
     @Override
     public void forwardBranch(String prefix, String database, String table, String branch, ForwardBranchRequest request) {
-
+        run(() -> catalog.fastForward(Identifier.create(database, table), branch));
     }
 
     @Override
     public ListTagsResponse listTags(String prefix, String database, String table, Integer maxResults, String pageToken, String tagNamePrefix) {
-        return null;
+        PagedList paged = call(() -> catalog.listTagsPaged(
+                Identifier.create(database, table),
+                maxResults,
+                pageToken,
+                tagNamePrefix
+        ));
+        return new ListTagsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public void createTag(String prefix, String database, String table, CreateTagRequest request) {
-
+        run(() -> catalog.createTag(
+                Identifier.create(database, table),
+                request.tagName(),
+                request.snapshotId(),
+                request.timeRetained(),
+                false
+        ));
     }
 
     @Override
     public GetTagResponse getTag(String prefix, String database, String table, String tag) {
-        return null;
+        return call(() -> catalog.getTag(Identifier.create(database, table), tag));
     }
 
     @Override
     public void deleteTag(String prefix, String database, String table, String tag) {
-
+        run(() -> catalog.deleteTag(Identifier.create(database, table), tag));
     }
 
     @Override
     public ListConsumersResponse listConsumers(String prefix, String database, String table, Integer maxResults, String pageToken) {
-        return null;
+        PagedList paged = call(() -> catalog.listConsumersPaged(Identifier.create(database, table), maxResults, pageToken));
+        return new ListConsumersResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public void resetConsumer(String prefix, String database, String table, ResetConsumerRequest request) {
-
+        run(() -> catalog.resetConsumer(Identifier.create(database, table), request.consumerId(), request.nextSnapshotId()));
     }
 
     @Override
     public ListViewsResponse listViews(String prefix, String database, Integer maxResults, String pageToken, String viewNamePattern) {
-        return null;
+        PagedList paged = call(() -> catalog.listViewsPaged(database, maxResults, pageToken, viewNamePattern));
+        return new ListViewsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public void createView(String prefix, String database, CreateViewRequest request) {
-
+        Identifier identifier = tableIdentifier(database, request.getIdentifier());
+        ViewSchema schema = request.getSchema();
+        View view = new ViewImpl(
+                identifier,
+                schema.fields(),
+                schema.query(),
+                schema.dialects(),
+                schema.comment(),
+                schema.options()
+        );
+        run(() -> catalog.createView(identifier, view, false));
     }
 
     @Override
     public ListViewDetailsResponse listViewDetails(String prefix, String database, Integer maxResults, String pageToken, String viewNamePattern) {
-        return null;
+        PagedList paged = call(() -> catalog.listViewDetailsPaged(database, maxResults, pageToken, viewNamePattern));
+        return new ListViewDetailsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public ListViewsGloballyResponse listViewsGlobally(String prefix, String databaseNamePattern, String viewNamePattern, Integer maxResults, String pageToken) {
-        return null;
+        PagedList paged = call(() -> catalog.listViewsPagedGlobally(databaseNamePattern, viewNamePattern, maxResults, pageToken));
+        return new ListViewsGloballyResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public GetViewResponse getView(String prefix, String database, String view) {
-        return null;
+        Optional<GetViewResponse> fromDetails = findViewDetail(database, view);
+        if (fromDetails.isPresent()) {
+            return fromDetails.get();
+        }
+
+        View loaded = call(() -> catalog.getView(Identifier.create(database, view)));
+        ViewSchema schema = new ViewSchema(
+                loaded.rowType().getFields(),
+                loaded.query(),
+                loaded.dialects(),
+                loaded.comment().orElse(null),
+                loaded.options()
+        );
+        return new GetViewResponse(
+                Identifier.create(database, view).getFullName(),
+                view,
+                schema,
+                null,
+                0L,
+                null,
+                0L,
+                null
+        );
     }
 
     @Override
     public void alterView(String prefix, String database, String view, AlterViewRequest request) {
-
+        run(() -> catalog.alterView(Identifier.create(database, view), listOrEmpty(request.viewChanges()), false));
     }
 
     @Override
     public void dropView(String prefix, String database, String view) {
-
+        run(() -> catalog.dropView(Identifier.create(database, view), false));
     }
 
     @Override
     public void renameView(String prefix, RenameTableRequest request) {
-
+        run(() -> catalog.renameView(request.getSource(), request.getDestination(), false));
     }
 
     @Override
     public ListFunctionsResponse listFunctions(String prefix, String database, Integer maxResults, String pageToken, String functionNamePattern) {
-        return null;
+        PagedList paged = call(() -> catalog.listFunctionsPaged(database, maxResults, pageToken, functionNamePattern));
+        return new ListFunctionsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public void createFunction(String prefix, String database, CreateFunctionRequest request) {
-
+        Identifier identifier = Identifier.create(database, request.name());
+        var function = new FunctionImpl(
+                identifier,
+                request.inputParams(),
+                request.returnParams(),
+                request.isDeterministic(),
+                request.definitions(),
+                request.comment(),
+                request.options()
+        );
+        run(() -> catalog.createFunction(identifier, function, false));
     }
 
     @Override
     public ListFunctionDetailsResponse listFunctionDetails(String prefix, String database, Integer maxResults, String pageToken, String functionNamePattern) {
-        return null;
+        PagedList paged = call(() -> catalog.listFunctionDetailsPaged(database, maxResults, pageToken, functionNamePattern));
+        return new ListFunctionDetailsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public ListFunctionsGloballyResponse listFunctionsGlobally(String prefix, String databaseNamePattern, String functionNamePattern, Integer maxResults, String pageToken) {
-        return null;
+        PagedList paged = call(() -> catalog.listFunctionsPagedGlobally(databaseNamePattern, functionNamePattern, maxResults, pageToken));
+        return new ListFunctionsGloballyResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
     public GetFunctionResponse getFunction(String prefix, String database, String function) {
-        return null;
+        var loaded = call(() -> catalog.getFunction(Identifier.create(database, function)));
+        return new GetFunctionResponse(
+                Identifier.create(database, function).getFullName(),
+                loaded.name(),
+                loaded.inputParams().orElse(null),
+                loaded.returnParams().orElse(null),
+                loaded.isDeterministic(),
+                loaded.definitions(),
+                loaded.comment(),
+                loaded.options(),
+                null,
+                0L,
+                null,
+                0L,
+                null
+        );
     }
 
     @Override
     public void alterFunction(String prefix, String database, String function, AlterFunctionRequest request) {
-
+        run(() -> catalog.alterFunction(Identifier.create(database, function), request.changes(), false));
     }
 
     @Override
     public void dropFunction(String prefix, String database, String function) {
+        run(() -> catalog.dropFunction(Identifier.create(database, function), false));
+    }
 
+    private Identifier tableIdentifier(String database, Identifier identifierFromRequest) {
+        if (identifierFromRequest != null) {
+            return identifierFromRequest;
+        }
+        throw new IllegalArgumentException("Identifier is required in request body.");
+    }
+
+    private Optional<GetTableResponse> findTableDetail(String database, String table) {
+        PagedList details = call(() -> catalog.listTableDetailsPaged(database, null, null, table, null));
+        for (Object element : details.getElements()) {
+            if (element instanceof GetTableResponse) {
+                GetTableResponse response = (GetTableResponse) element;
+                if (Objects.equals(table, response.getName())) {
+                    return Optional.of(response);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private Optional<GetViewResponse> findViewDetail(String database, String view) {
+        PagedList details = call(() -> catalog.listViewDetailsPaged(database, null, null, view));
+        for (Object element : details.getElements()) {
+            if (element instanceof GetViewResponse) {
+                GetViewResponse response = (GetViewResponse) element;
+                if (Objects.equals(view, response.getName())) {
+                    return Optional.of(response);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private GetTableResponse toGetTableResponse(String database, org.apache.paimon.table.Table table, String tableId) {
+        return new GetTableResponse(
+                tableId == null ? table.uuid() : tableId,
+                database,
+                table.name(),
+                asString(table.options().get("path")),
+                false,
+                -1L,
+                null,
+                null,
+                0L,
+                null,
+                0L,
+                null
+        );
+    }
+
+    private Map.Entry<String, String> parseFullName(String fullName) {
+        if (fullName == null || !fullName.contains(".")) {
+            return Map.entry(Identifier.UNKNOWN_DATABASE, fullName);
+        }
+        int dot = fullName.indexOf('.');
+        return Map.entry(fullName.substring(0, dot), fullName.substring(dot + 1));
+    }
+
+    private String asString(Object value) {
+        return value == null ? null : value.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, String> mapOrEmpty(Map<String, String> map) {
+        return map == null ? Collections.emptyMap() : map;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> List<T> listOrEmpty(List<T> list) {
+        return list == null ? Collections.emptyList() : list;
+    }
+
+    private void run(CatalogRunnable runnable) {
+        try {
+            runnable.run();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private <T> T call(CatalogSupplier<T> supplier) {
+        try {
+            return supplier.get();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @FunctionalInterface
+    private interface CatalogRunnable {
+        void run() throws Exception;
+    }
+
+    @FunctionalInterface
+    private interface CatalogSupplier<T> {
+        T get() throws Exception;
     }
 }
