@@ -14,6 +14,8 @@ dependencies {
     // iceberg
     implementation(project(":modules:api:api-iceberg"))
     implementation(project(":modules:catalog:catalog-iceberg"))
+    // paimon
+    implementation(project(":modules:api:api-paimon"))
 
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
