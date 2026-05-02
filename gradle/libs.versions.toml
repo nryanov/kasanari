@@ -41,6 +41,11 @@ iceberg-aws = { group = "org.apache.iceberg", name = "iceberg-aws", version.ref 
 
 # paimon
 paimon-api = { group = "org.apache.paimon", name = "paimon-api", version.ref = "paimon" }
+paimon-core = { group = "org.apache.paimon", name = "paimon-core", version.ref = "paimon" }
+paimon-common = { group = "org.apache.paimon", name = "paimon-common", version.ref = "paimon" }
+paimon-s3 = { group = "org.apache.paimon", name = "paimon-s3", version.ref = "paimon" }
+paimon-format = { group = "org.apache.paimon", name = "paimon-format", version.ref = "paimon" }
+paimon-hive-catalog = { group = "org.apache.paimon", name = "paimon-hive-catalog", version.ref = "paimon" }
 
 hadoop3-client = { group = "org.apache.hadoop", name = "hadoop-client", version.ref = "hadoop3" }
 hadoop3-common = { group = "org.apache.hadoop", name = "hadoop-common", version.ref = "hadoop3"}
