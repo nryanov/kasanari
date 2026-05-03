@@ -16,7 +16,6 @@ jakarta-inject-api = "2.0.1"
 jakarta-annotations-api = "3.0.0"
 # test dependencies
 junit = "5.12.2"
-junit-platform = "1.12.2"
 testcontainers = "1.21.0"
 testcontainers-nessie = "0.104.1"
 jdbc-postgresql = "42.7.5"
@@ -65,6 +64,7 @@ slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slfj4" }
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit" }
 
 testcontainers-bom = { group = "org.testcontainers", name = "testcontainers-bom", version.ref = "testcontainers" }
+# todo: use bom-only
 testcontainers-core = { group = "org.testcontainers", name = "testcontainers", version.ref = "testcontainers" }
 testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql", version.ref = "testcontainers" }
 testcontainers-minio = { group = "org.testcontainers", name = "minio", version.ref = "testcontainers" }

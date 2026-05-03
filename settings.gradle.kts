@@ -22,6 +22,7 @@ include(
     "modules:catalog:catalog-paimon",
     // fixtures
     "modules:fixtures",
+    "modules:fixtures:fixtures-common",
     "modules:fixtures:fixtures-s3",
     "modules:fixtures:fixtures-nessie",
     "modules:fixtures:fixtures-postgres",
@@ -33,6 +34,7 @@ findProject(":modules:api:api-iceberg")?.name = "api-iceberg"
 findProject(":modules:api:api-paimon")?.name = "api-paimon"
 
 findProject(":modules:fixtures")?.name = "fixtures"
+findProject(":modules:fixtures:fixtures-common")?.name = "fixtures-common"
 findProject(":modules:fixtures:fixtures-s3")?.name = "fixtures-s3"
 findProject(":modules:fixtures:fixtures-nessie")?.name = "fixtures-nessie"
 findProject(":modules:fixtures:fixtures-postgres")?.name = "fixtures-postgres"
