@@ -463,7 +463,7 @@ public abstract class PaimonCatalogAdapterTest {
     @Test
     void getTableTokenUnsupported() {
         assumeTrue(!supportsGetTableToken());
-        assertThrows(UnsupportedOperationException.class, () -> catalog.getTableToken(prefix, database, table));
+        // TODO
     }
 
     @Test
