@@ -47,13 +47,7 @@ dependencies {
     implementation(libs.agroal.pool)
 
     // test
-    testImplementation(platform(libs.testcontainers.bom))
-    testImplementation(platform(libs.junit.bom))
-
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.junit.jupiter:junit-jupiter-api")
-
+    testImplementation(testFixtures(project(":modules:fixtures:fixtures-common")))
     testImplementation(testFixtures(project(":modules:fixtures:fixtures-s3")))
     testImplementation(testFixtures(project(":modules:fixtures:fixtures-hive")))
     testImplementation(testFixtures(project(":modules:fixtures:fixtures-postgres")))

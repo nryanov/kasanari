@@ -13,15 +13,15 @@
     </property>
     <property>
         <name>javax.jdo.option.ConnectionURL</name>
-        <value>jdbc:postgresql://postgres:5432/postgres</value>
+        <value>jdbc:postgresql://postgres:5432/test</value>
     </property>
     <property>
         <name>javax.jdo.option.ConnectionUserName</name>
-        <value>postgres</value>
+        <value>test</value>
     </property>
     <property>
         <name>javax.jdo.option.ConnectionPassword</name>
-        <value>postgres</value>
+        <value>test</value>
     </property>
 
     <property>
