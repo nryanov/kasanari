@@ -42,6 +42,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -129,6 +130,46 @@ public abstract class PaimonCatalogAdapterTest {
         return true;
     }
 
+    protected boolean supportListGlobally() {
+        return true;
+    }
+
+    protected boolean supportRollbackTable() {
+        return true;
+    }
+
+    protected boolean supportRollbackSchema() {
+        return true;
+    }
+
+    protected boolean supportAuthTable() {
+        return true;
+    }
+
+    protected boolean supportRegisterTable() {
+        return true;
+    }
+
+    protected boolean supportAlterDatabase() {
+        return true;
+    }
+
+    protected boolean supportAlterTable() {
+        return true;
+    }
+
+    protected boolean supportAlterView() {
+        return true;
+    }
+
+    protected boolean supportCommit() {
+        return true;
+    }
+
+    protected boolean supportSnapshot() {
+        return true;
+    }
+
     protected boolean supportsGetTableByIdWithNamespace() {
         return true;
     }
@@ -160,10 +201,7 @@ public abstract class PaimonCatalogAdapterTest {
         var request = new CreateDatabaseRequest(database, Collections.emptyMap());
         catalog.createDatabase(prefix, request);
 
-        var expected = true;
-        var result = catalog.listDatabases(prefix, 100, null).getDatabases().contains(database);
-
-        assertEquals(expected, result);
+        assertTrue(catalog.listDatabases(prefix, 100, null).getDatabases().contains(database));
     }
 
     @Test
@@ -200,21 +238,18 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void alterDatabase() {
-        assumeTrue(supportsDatabases());
+        assumeTrue(supportsDatabases() && supportAlterDatabase());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var alterDatabaseRequest = new AlterDatabaseRequest(List.of("owner"), Map.of("owner", "updated"));
         catalog.createDatabase(prefix, createDatabaseRequest);
 
-        var expected = true;
-        var result = catalog.alterDatabase(prefix, database, alterDatabaseRequest).getUpdated().contains("owner");
-
-        assertEquals(expected, result);
+        assertTrue(catalog.alterDatabase(prefix, database, alterDatabaseRequest).getUpdated().contains("owner"));
     }
 
     @Test
     void alterDatabaseWithNullCollections() {
-        assumeTrue(supportsDatabases());
+        assumeTrue(supportsDatabases() && supportAlterDatabase());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var alterDatabaseRequest = new AlterDatabaseRequest(null, null);
@@ -228,7 +263,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void registerTable() {
-        assumeTrue(supportsDatabases() && supportsTables());
+        assumeTrue(supportsDatabases() && supportsTables() && supportRegisterTable());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var registerTableRequest = new RegisterTableRequest(Identifier.create(database, table), registeredTablePath(database, table));
@@ -246,10 +281,7 @@ public abstract class PaimonCatalogAdapterTest {
         catalog.createDatabase(prefix, createDatabaseRequest);
         catalog.createTable(prefix, database, createTableRequest);
 
-        var expected = true;
-        var result = catalog.listTables(prefix, database, 100, null, null).getTables().contains(table);
-
-        assertEquals(expected, result);
+        assertTrue(catalog.listTables(prefix, database, 100, null, null).getTables().contains(table));
     }
 
     @Test
@@ -272,30 +304,28 @@ public abstract class PaimonCatalogAdapterTest {
         catalog.createDatabase(prefix, createDatabaseRequest);
         catalog.createTable(prefix, database, createTableRequest);
 
-        var expected = true;
         var result = catalog.listTableDetails(prefix, database, 100, null, null, null)
                 .getTableDetails()
                 .stream()
                 .anyMatch(it -> table.equals(it.getName()));
 
-        assertEquals(expected, result);
+        assertTrue(result);
     }
 
     @Test
     void listTablesGlobally() {
-        assumeTrue(supportsDatabases() && supportsTables());
+        assumeTrue(supportsDatabases() && supportsTables() && supportListGlobally());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         catalog.createDatabase(prefix, createDatabaseRequest);
         catalog.createTable(prefix, database, createTableRequest);
 
-        var expected = true;
         var result = catalog.listTablesGlobally(prefix, database, table, 100, null)
                 .getTables()
                 .contains(Identifier.create(database, table));
 
-        assertEquals(expected, result);
+        assertTrue(result);
     }
 
     @Test
@@ -303,6 +333,7 @@ public abstract class PaimonCatalogAdapterTest {
         assumeTrue(supportsTables() && supportsGetTableByIdWithNamespace());
         var tableId = existingTableIdWithNamespace();
         assumeTrue(tableId != null && !tableId.isBlank());
+
         var expected = tableId;
         var result = catalog.getTableById(prefix, tableId).getId();
 
@@ -314,6 +345,7 @@ public abstract class PaimonCatalogAdapterTest {
         assumeTrue(supportsTables() && supportsGetTableByIdWithoutNamespace());
         var tableId = existingTableIdWithoutNamespace();
         assumeTrue(tableId != null && !tableId.isBlank());
+
         var expected = tableId;
         var result = catalog.getTableById(prefix, tableId).getId();
 
@@ -337,7 +369,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void alterTable() {
-        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations());
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportAlterTable());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
@@ -350,7 +382,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void alterTableWithNullChanges() {
-        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations());
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportAlterTable());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
@@ -388,7 +420,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void commitTable() {
-        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations());
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportCommit());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
@@ -404,7 +436,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void rollbackTable() {
-        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations());
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportRollbackTable());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
@@ -417,7 +449,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void rollbackSchema() {
-        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations());
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportRollbackSchema());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
@@ -436,7 +468,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void authTableQuery() {
-        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations());
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportAuthTable());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
@@ -452,7 +484,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void getTableSnapshot() {
-        assumeTrue(supportsDatabases() && supportsTables());
+        assumeTrue(supportsDatabases() && supportsTables() && supportSnapshot());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
@@ -464,7 +496,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void getVersionSnapshot() {
-        assumeTrue(supportsDatabases() && supportsTables());
+        assumeTrue(supportsDatabases() && supportsTables() && supportSnapshot());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
@@ -476,7 +508,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void listSnapshots() {
-        assumeTrue(supportsDatabases() && supportsTables());
+        assumeTrue(supportsDatabases() && supportsTables() && supportSnapshot());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
@@ -738,7 +770,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void listViewsGlobally() {
-        assumeTrue(supportsDatabases() && supportsViews());
+        assumeTrue(supportsDatabases() && supportsViews() && supportListGlobally());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
@@ -770,7 +802,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void alterView() {
-        assumeTrue(supportsDatabases() && supportsViews());
+        assumeTrue(supportsDatabases() && supportsViews() && supportAlterView());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
@@ -876,7 +908,7 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void listFunctionsGlobally() {
-        assumeTrue(supportsDatabases() && supportsFunctions());
+        assumeTrue(supportsDatabases() && supportsFunctions() && supportListGlobally());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createFunctionRequest = new CreateFunctionRequest(
