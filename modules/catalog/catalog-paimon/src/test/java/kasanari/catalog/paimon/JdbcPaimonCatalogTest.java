@@ -50,7 +50,8 @@ public class JdbcPaimonCatalogTest extends PaimonCatalogAdapterTest {
 
     @Override
     protected void close() {
-        super.close();
+        postgres.stop();
+        s3Container.stop();
     }
 
     @Override
