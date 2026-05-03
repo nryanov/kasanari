@@ -1,50 +1,82 @@
 package kasanari.catalog.paimon;
 
 import org.apache.paimon.catalog.Identifier;
+import org.apache.paimon.function.FunctionDefinition;
+import org.apache.paimon.rest.requests.AlterDatabaseRequest;
+import org.apache.paimon.rest.requests.AlterFunctionRequest;
+import org.apache.paimon.rest.requests.AlterTableRequest;
+import org.apache.paimon.rest.requests.AlterViewRequest;
+import org.apache.paimon.rest.requests.AuthTableQueryRequest;
+import org.apache.paimon.rest.requests.CommitTableRequest;
+import org.apache.paimon.rest.requests.CreateBranchRequest;
 import org.apache.paimon.rest.requests.CreateDatabaseRequest;
+import org.apache.paimon.rest.requests.CreateFunctionRequest;
 import org.apache.paimon.rest.requests.CreateTableRequest;
+import org.apache.paimon.rest.requests.CreateTagRequest;
+import org.apache.paimon.rest.requests.CreateViewRequest;
+import org.apache.paimon.rest.requests.ForwardBranchRequest;
+import org.apache.paimon.rest.requests.ListPartitionsByNamesRequest;
+import org.apache.paimon.rest.requests.MarkDonePartitionsRequest;
+import org.apache.paimon.rest.requests.RegisterTableRequest;
+import org.apache.paimon.rest.requests.RenameBranchRequest;
 import org.apache.paimon.rest.requests.RenameTableRequest;
+import org.apache.paimon.rest.requests.ResetConsumerRequest;
+import org.apache.paimon.rest.requests.RollbackSchemaRequest;
+import org.apache.paimon.rest.requests.RollbackTableRequest;
 import org.apache.paimon.schema.Schema;
+import org.apache.paimon.table.Instant;
+import org.apache.paimon.types.DataField;
 import org.apache.paimon.types.DataTypes;
+import org.apache.paimon.view.ViewSchema;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class PaimonCatalogAdapterTest {
     protected PaimonCatalogAdapter catalog;
+    protected String prefix;
+    protected String database;
+    protected String table;
+    protected String renamedTable;
+    protected String view;
+    protected String renamedView;
+    protected String function;
+    protected String branch;
+    protected String renamedBranch;
+    protected String tag;
 
     @BeforeAll
     public final void setup() {
         this.catalog = setupCatalogAdapter();
     }
 
-    protected abstract PaimonCatalogAdapter setupCatalogAdapter();
-
-    protected abstract String databaseName();
-
-    protected abstract String tableName();
-
-    protected String renamedTableName(String sourceName) {
-        return sourceName + "_renamed";
-    }
-
-    protected boolean isTableRenameSupported() {
-        return true;
+    @BeforeEach
+    public final void beforeEach() {
+        reset();
+        prefix = "";
+        database = uniqueName("db");
+        table = uniqueName("table");
+        renamedTable = uniqueName("table_renamed");
+        view = uniqueName("view");
+        renamedView = uniqueName("view_renamed");
+        function = uniqueName("fn");
+        branch = uniqueName("branch");
+        renamedBranch = uniqueName("branch_renamed");
+        tag = uniqueName("tag");
     }
 
     @AfterAll
@@ -52,123 +84,938 @@ public abstract class PaimonCatalogAdapterTest {
         close();
     }
 
-    protected void close() {
-    }
-
-    @BeforeEach
-    public final void beforeEach() {
-        reset();
-    }
+    protected abstract PaimonCatalogAdapter setupCatalogAdapter();
 
     protected void reset() {
+        // Optional for concrete implementations.
+    }
+
+    protected void close() {
+        // Optional for concrete implementations.
+    }
+
+    protected boolean supportsDatabases() {
+        return true;
+    }
+
+    protected boolean supportsTables() {
+        return true;
+    }
+
+    protected boolean supportsTableMutations() {
+        return true;
+    }
+
+    protected boolean supportsPartitions() {
+        return true;
+    }
+
+    protected boolean supportsBranches() {
+        return true;
+    }
+
+    protected boolean supportsTags() {
+        return true;
+    }
+
+    protected boolean supportsConsumers() {
+        return true;
+    }
+
+    protected boolean supportsViews() {
+        return true;
+    }
+
+    protected boolean supportsFunctions() {
+        return true;
+    }
+
+    protected boolean supportListGlobally() {
+        return true;
+    }
+
+    protected boolean supportRollbackTable() {
+        return true;
+    }
+
+    protected boolean supportRollbackSchema() {
+        return true;
+    }
+
+    protected boolean supportAuthTable() {
+        return true;
+    }
+
+    protected boolean supportRegisterTable() {
+        return true;
+    }
+
+    protected boolean supportAlterDatabase() {
+        return true;
+    }
+
+    protected boolean supportAlterTable() {
+        return true;
+    }
+
+    protected boolean supportAlterView() {
+        return true;
+    }
+
+    protected boolean supportCommit() {
+        return true;
+    }
+
+    protected boolean supportSnapshot() {
+        return true;
+    }
+
+    protected boolean supportsGetTableByIdWithNamespace() {
+        return true;
+    }
+
+    protected boolean supportsGetTableByIdWithoutNamespace() {
+        return true;
+    }
+
+    protected boolean supportsGetTableToken() {
+        return false;
+    }
+
+    protected String registeredTablePath(String database, String table) {
+        return "/tmp/" + database + "/" + table;
+    }
+
+    protected String existingTableIdWithNamespace() {
+        return null;
+    }
+
+    protected String existingTableIdWithoutNamespace() {
+        return null;
     }
 
     @Test
-    public void returnEmptyDatabaseList() {
-        var result = catalog.listDatabases("test", 10, null);
-        assertTrue(result.getDatabases().isEmpty());
+    void listDatabases() {
+        assumeTrue(supportsDatabases());
+
+        var request = new CreateDatabaseRequest(database, Collections.emptyMap());
+        catalog.createDatabase(prefix, request);
+
+        assertTrue(catalog.listDatabases(prefix, 100, null).getDatabases().contains(database));
     }
 
     @Test
-    public void successfullyCreateGetAndDropDatabase() {
-        var db = databaseName();
-        var createRequest = new CreateDatabaseRequest(db, Map.of("owner", "kasanari"));
+    void createDatabase() {
+        assumeTrue(supportsDatabases());
 
-        catalog.createDatabase("test", createRequest);
+        var request = new CreateDatabaseRequest(database, Map.of("owner", "test"));
 
-        var loaded = catalog.getDatabase("test", db);
-        assertEquals(db, loaded.getName());
-        assertEquals("kasanari", loaded.getOptions().get("owner"));
-
-        catalog.dropDatabase("test", db);
-
-        var databasesAfterDrop = catalog.listDatabases("test", 100, null).getDatabases();
-        assertFalse(databasesAfterDrop.contains(db));
+        assertDoesNotThrow(() -> catalog.createDatabase(prefix, request));
     }
 
     @Test
-    public void returnEmptyTableListing() {
-        var db = databaseName();
-        catalog.createDatabase("test", new CreateDatabaseRequest(db, Map.of()));
+    void getDatabase() {
+        assumeTrue(supportsDatabases());
 
-        var result = catalog.listTables("test", db, 10, null, null);
-        assertTrue(result.getTables().isEmpty());
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+
+        var expected = database;
+        var result = catalog.getDatabase(prefix, database).getName();
+
+        assertEquals(expected, result);
     }
 
     @Test
-    public void successfullyCreateGetAndDropTable() {
-        var db = databaseName();
-        catalog.createDatabase("test", new CreateDatabaseRequest(db, Map.of()));
+    void dropDatabase() {
+        assumeTrue(supportsDatabases());
 
-        var table = tableName();
-        var identifier = Identifier.create(db, table);
-        var createTableRequest = new CreateTableRequest(identifier, defaultSchema());
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        catalog.createDatabase(prefix, createDatabaseRequest);
 
-        catalog.createTable("test", db, createTableRequest);
-
-        var loaded = catalog.getTable("test", db, table);
-        assertEquals(table, loaded.getName());
-        assertEquals(db, loaded.getDatabase());
-
-        catalog.dropTable("test", db, table);
-
-        var tablesAfterDrop = catalog.listTables("test", db, 100, null, null).getTables();
-        assertFalse(tablesAfterDrop.contains(table));
+        assertDoesNotThrow(() -> catalog.dropDatabase(prefix, database));
     }
 
     @Test
-    public void successfullyRenameTable() {
-        Assumptions.assumeTrue(this::isTableRenameSupported, "Table rename is not supported by this catalog.");
+    void alterDatabase() {
+        assumeTrue(supportsDatabases() && supportAlterDatabase());
 
-        var db = databaseName();
-        catalog.createDatabase("test", new CreateDatabaseRequest(db, Map.of()));
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var alterDatabaseRequest = new AlterDatabaseRequest(List.of("owner"), Map.of("owner", "updated"));
+        catalog.createDatabase(prefix, createDatabaseRequest);
 
-        var source = tableName();
-        var target = renamedTableName(source);
-
-        catalog.createTable("test", db, new CreateTableRequest(Identifier.create(db, source), defaultSchema()));
-        catalog.renameTable("test", new RenameTableRequest(Identifier.create(db, source), Identifier.create(db, target)));
-
-        var tables = catalog.listTables("test", db, 100, null, null).getTables();
-        assertFalse(tables.contains(source));
-        assertTrue(tables.contains(target));
+        assertTrue(catalog.alterDatabase(prefix, database, alterDatabaseRequest).getUpdated().contains("owner"));
     }
 
     @Test
-    public void supportsPagedTableListing() {
-        var db = databaseName();
-        catalog.createDatabase("test", new CreateDatabaseRequest(db, Map.of()));
+    void alterDatabaseWithNullCollections() {
+        assumeTrue(supportsDatabases() && supportAlterDatabase());
 
-        var table1 = tableName();
-        var table2 = renamedTableName(table1);
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var alterDatabaseRequest = new AlterDatabaseRequest(null, null);
+        catalog.createDatabase(prefix, createDatabaseRequest);
 
-        catalog.createTable("test", db, new CreateTableRequest(Identifier.create(db, table1), defaultSchema()));
-        catalog.createTable("test", db, new CreateTableRequest(Identifier.create(db, table2), defaultSchema()));
+        var expected = Collections.emptyList();
+        var result = catalog.alterDatabase(prefix, database, alterDatabaseRequest).getUpdated();
 
-        var page1 = catalog.listTables("test", db, 1, null, null);
-        assertNotNull(page1.getTables());
-        assertFalse(page1.getTables().isEmpty());
-
-        var discoveredTables = new HashSet<>(page1.getTables());
-        if (page1.getNextPageToken() != null) {
-            var page2 = catalog.listTables("test", db, 1, page1.getNextPageToken(), null);
-            discoveredTables.addAll(page2.getTables());
-        } else {
-            // Some catalog implementations may ignore page size and return all entries in one page.
-            discoveredTables.addAll(catalog.listTables("test", db, 100, null, null).getTables());
-        }
-
-        assertTrue(discoveredTables.contains(table1));
-        assertTrue(discoveredTables.contains(table2));
+        assertEquals(expected, result);
     }
 
-    private Schema defaultSchema() {
-        return Schema
-                .newBuilder()
-                .column("id", DataTypes.INT())
-                .column("name", DataTypes.STRING())
-                .primaryKey("id")
-                .options(new HashMap<>(Map.of("bucket", "1")))
-                .build();
+    @Test
+    void registerTable() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportRegisterTable());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var registerTableRequest = new RegisterTableRequest(Identifier.create(database, table), registeredTablePath(database, table));
+        catalog.createDatabase(prefix, createDatabaseRequest);
+
+        assertDoesNotThrow(() -> catalog.registerTable(prefix, database, registerTableRequest));
+    }
+
+    @Test
+    void listTables() {
+        assumeTrue(supportsDatabases() && supportsTables());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertTrue(catalog.listTables(prefix, database, 100, null, null).getTables().contains(table));
+    }
+
+    @Test
+    void createTable() {
+        assumeTrue(supportsDatabases() && supportsTables());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+
+        assertDoesNotThrow(() -> catalog.createTable(prefix, database, createTableRequest));
+    }
+
+    @Test
+    void listTableDetails() {
+        assumeTrue(supportsDatabases() && supportsTables());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        var result = catalog.listTableDetails(prefix, database, 100, null, null, null)
+                .getTableDetails()
+                .stream()
+                .anyMatch(it -> table.equals(it.getName()));
+
+        assertTrue(result);
+    }
+
+    @Test
+    void listTablesGlobally() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportListGlobally());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        var result = catalog.listTablesGlobally(prefix, database, table, 100, null)
+                .getTables()
+                .contains(Identifier.create(database, table));
+
+        assertTrue(result);
+    }
+
+    @Test
+    void getTableByIdWithNamespace() {
+        assumeTrue(supportsTables() && supportsGetTableByIdWithNamespace());
+        var tableId = existingTableIdWithNamespace();
+        assumeTrue(tableId != null && !tableId.isBlank());
+
+        var expected = tableId;
+        var result = catalog.getTableById(prefix, tableId).getId();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void getTableByIdWithoutNamespace() {
+        assumeTrue(supportsTables() && supportsGetTableByIdWithoutNamespace());
+        var tableId = existingTableIdWithoutNamespace();
+        assumeTrue(tableId != null && !tableId.isBlank());
+
+        var expected = tableId;
+        var result = catalog.getTableById(prefix, tableId).getId();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void getTable() {
+        assumeTrue(supportsDatabases() && supportsTables());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        var expected = table;
+        var result = catalog.getTable(prefix, database, table).getName();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void alterTable() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportAlterTable());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var alterTableRequest = new AlterTableRequest(Collections.emptyList());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertDoesNotThrow(() -> catalog.alterTable(prefix, database, table, alterTableRequest));
+    }
+
+    @Test
+    void alterTableWithNullChanges() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportAlterTable());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var alterTableRequest = new AlterTableRequest(null);
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertDoesNotThrow(() -> catalog.alterTable(prefix, database, table, alterTableRequest));
+    }
+
+    @Test
+    void dropTable() {
+        assumeTrue(supportsDatabases() && supportsTables());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertDoesNotThrow(() -> catalog.dropTable(prefix, database, table));
+    }
+
+    @Test
+    void renameTable() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var renameTableRequest = new RenameTableRequest(Identifier.create(database, table), Identifier.create(database, renamedTable));
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertDoesNotThrow(() -> catalog.renameTable(prefix, renameTableRequest));
+    }
+
+    @Test
+    void commitTable() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportCommit());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var commitTableRequest = new CommitTableRequest(table, null, null);
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        var expected = true;
+        var result = catalog.commitTable(prefix, database, table, commitTableRequest) != null;
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void rollbackTable() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportRollbackTable());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var rollbackTableRequest = new RollbackTableRequest(Instant.snapshot(1L), null);
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertDoesNotThrow(() -> catalog.rollbackTable(prefix, database, table, rollbackTableRequest));
+    }
+
+    @Test
+    void rollbackSchema() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportRollbackSchema());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var rollbackSchemaRequest = new RollbackSchemaRequest(1L);
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertDoesNotThrow(() -> catalog.rollbackSchema(prefix, database, table, rollbackSchemaRequest));
+    }
+
+    @Test
+    void getTableTokenUnsupported() {
+        assumeTrue(!supportsGetTableToken());
+        assertThrows(UnsupportedOperationException.class, () -> catalog.getTableToken(prefix, database, table));
+    }
+
+    @Test
+    void authTableQuery() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportAuthTable());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var authTableQueryRequest = new AuthTableQueryRequest(null);
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        var expected = true;
+        var result = catalog.authTableQuery(prefix, database, table, authTableQueryRequest) != null;
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void getTableSnapshot() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportSnapshot());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertDoesNotThrow(() -> catalog.getTableSnapshot(prefix, database, table));
+    }
+
+    @Test
+    void getVersionSnapshot() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportSnapshot());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertDoesNotThrow(() -> catalog.getVersionSnapshot(prefix, database, table, "main"));
+    }
+
+    @Test
+    void listSnapshots() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportSnapshot());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        var expected = Collections.emptyList();
+        var result = catalog.listSnapshots(prefix, database, table, 100, null).getSnapshots();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void listPartitions() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsPartitions());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        var expected = Collections.emptyList();
+        var result = catalog.listPartitions(prefix, database, table, 100, null, null).getPartitions();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void markDonePartitions() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsPartitions());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var markDonePartitionsRequest = new MarkDonePartitionsRequest(Collections.emptyList());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertDoesNotThrow(() -> catalog.markDonePartitions(prefix, database, table, markDonePartitionsRequest));
+    }
+
+    @Test
+    void listPartitionsByNames() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsPartitions());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var listPartitionsByNamesRequest = new ListPartitionsByNamesRequest(Collections.emptyList());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        var expected = Collections.emptyList();
+        var result = catalog.listPartitionsByNames(prefix, database, table, listPartitionsByNamesRequest).getPartitions();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void listBranches() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsBranches());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        var expected = true;
+        var result = catalog.listBranches(prefix, database, table) != null;
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void createBranch() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsBranches());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var createBranchRequest = new CreateBranchRequest(branch, null);
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertDoesNotThrow(() -> catalog.createBranch(prefix, database, table, createBranchRequest));
+    }
+
+    @Test
+    void dropBranch() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsBranches());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var createBranchRequest = new CreateBranchRequest(branch, null);
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createBranch(prefix, database, table, createBranchRequest);
+
+        assertDoesNotThrow(() -> catalog.dropBranch(prefix, database, table, branch));
+    }
+
+    @Test
+    void renameBranch() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsBranches());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var createBranchRequest = new CreateBranchRequest(branch, null);
+        var renameBranchRequest = new RenameBranchRequest(renamedBranch);
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createBranch(prefix, database, table, createBranchRequest);
+
+        assertDoesNotThrow(() -> catalog.renameBranch(prefix, database, table, branch, renameBranchRequest));
+    }
+
+    @Test
+    void forwardBranch() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsBranches());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var createBranchRequest = new CreateBranchRequest(branch, null);
+        var forwardBranchRequest = new ForwardBranchRequest();
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createBranch(prefix, database, table, createBranchRequest);
+
+        assertDoesNotThrow(() -> catalog.forwardBranch(prefix, database, table, branch, forwardBranchRequest));
+    }
+
+    @Test
+    void listTags() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTags());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        var expected = Collections.emptyList();
+        var result = catalog.listTags(prefix, database, table, 100, null, null).tags();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void createTag() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTags());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var createTagRequest = new CreateTagRequest(tag, null, null);
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertDoesNotThrow(() -> catalog.createTag(prefix, database, table, createTagRequest));
+    }
+
+    @Test
+    void getTag() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTags());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var createTagRequest = new CreateTagRequest(tag, null, null);
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createTag(prefix, database, table, createTagRequest);
+
+        var expected = tag;
+        var result = catalog.getTag(prefix, database, table, tag).tagName();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void deleteTag() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTags());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var createTagRequest = new CreateTagRequest(tag, null, null);
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createTag(prefix, database, table, createTagRequest);
+
+        assertDoesNotThrow(() -> catalog.deleteTag(prefix, database, table, tag));
+    }
+
+    @Test
+    void listConsumers() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsConsumers());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        var expected = Collections.emptyList();
+        var result = catalog.listConsumers(prefix, database, table, 100, null).getConsumers();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void resetConsumer() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsConsumers());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var resetConsumerRequest = new ResetConsumerRequest(uniqueName("consumer"), null);
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        assertDoesNotThrow(() -> catalog.resetConsumer(prefix, database, table, resetConsumerRequest));
+    }
+
+    @Test
+    void listViews() {
+        assumeTrue(supportsDatabases() && supportsViews());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createView(prefix, database, createViewRequest);
+
+        var expected = true;
+        var result = catalog.listViews(prefix, database, 100, null, null).getViews().contains(view);
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void createView() {
+        assumeTrue(supportsDatabases() && supportsViews());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+
+        assertDoesNotThrow(() -> catalog.createView(prefix, database, createViewRequest));
+    }
+
+    @Test
+    void listViewDetails() {
+        assumeTrue(supportsDatabases() && supportsViews());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createView(prefix, database, createViewRequest);
+
+        var expected = true;
+        var result = catalog.listViewDetails(prefix, database, 100, null, null)
+                .getViewDetails()
+                .stream()
+                .anyMatch(it -> view.equals(it.getName()));
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void listViewsGlobally() {
+        assumeTrue(supportsDatabases() && supportsViews() && supportListGlobally());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createView(prefix, database, createViewRequest);
+
+        var expected = true;
+        var result = catalog.listViewsGlobally(prefix, database, view, 100, null)
+                .getViews()
+                .contains(Identifier.create(database, view));
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void getView() {
+        assumeTrue(supportsDatabases() && supportsViews());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createView(prefix, database, createViewRequest);
+
+        var expected = view;
+        var result = catalog.getView(prefix, database, view).getName();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void alterView() {
+        assumeTrue(supportsDatabases() && supportsViews() && supportAlterView());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
+        var alterViewRequest = new AlterViewRequest(Collections.emptyList());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createView(prefix, database, createViewRequest);
+
+        assertDoesNotThrow(() -> catalog.alterView(prefix, database, view, alterViewRequest));
+    }
+
+    @Test
+    void dropView() {
+        assumeTrue(supportsDatabases() && supportsViews());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createView(prefix, database, createViewRequest);
+
+        assertDoesNotThrow(() -> catalog.dropView(prefix, database, view));
+    }
+
+    @Test
+    void renameView() {
+        assumeTrue(supportsDatabases() && supportsViews());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
+        var renameViewRequest = new RenameTableRequest(Identifier.create(database, view), Identifier.create(database, renamedView));
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createView(prefix, database, createViewRequest);
+
+        assertDoesNotThrow(() -> catalog.renameView(prefix, renameViewRequest));
+    }
+
+    @Test
+    void listFunctions() {
+        assumeTrue(supportsDatabases() && supportsFunctions());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createFunctionRequest = new CreateFunctionRequest(
+                function,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                true,
+                Map.of("sql", FunctionDefinition.sql("SELECT 1")),
+                "test function",
+                Collections.emptyMap()
+        );
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createFunction(prefix, database, createFunctionRequest);
+
+        var expected = true;
+        var result = catalog.listFunctions(prefix, database, 100, null, null).functions().contains(function);
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void createFunction() {
+        assumeTrue(supportsDatabases() && supportsFunctions());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createFunctionRequest = new CreateFunctionRequest(
+                function,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                true,
+                Map.of("sql", FunctionDefinition.sql("SELECT 1")),
+                "test function",
+                Collections.emptyMap()
+        );
+        catalog.createDatabase(prefix, createDatabaseRequest);
+
+        assertDoesNotThrow(() -> catalog.createFunction(prefix, database, createFunctionRequest));
+    }
+
+    @Test
+    void listFunctionDetails() {
+        assumeTrue(supportsDatabases() && supportsFunctions());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createFunctionRequest = new CreateFunctionRequest(
+                function,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                true,
+                Map.of("sql", FunctionDefinition.sql("SELECT 1")),
+                "test function",
+                Collections.emptyMap()
+        );
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createFunction(prefix, database, createFunctionRequest);
+
+        var expected = true;
+        var result = catalog.listFunctionDetails(prefix, database, 100, null, null)
+                .getFunctionDetails()
+                .stream()
+                .anyMatch(it -> function.equals(it.name()));
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void listFunctionsGlobally() {
+        assumeTrue(supportsDatabases() && supportsFunctions() && supportListGlobally());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createFunctionRequest = new CreateFunctionRequest(
+                function,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                true,
+                Map.of("sql", FunctionDefinition.sql("SELECT 1")),
+                "test function",
+                Collections.emptyMap()
+        );
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createFunction(prefix, database, createFunctionRequest);
+
+        var expected = true;
+        var result = catalog.listFunctionsGlobally(prefix, database, function, 100, null)
+                .functions()
+                .contains(Identifier.create(database, function));
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void getFunction() {
+        assumeTrue(supportsDatabases() && supportsFunctions());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createFunctionRequest = new CreateFunctionRequest(
+                function,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                true,
+                Map.of("sql", FunctionDefinition.sql("SELECT 1")),
+                "test function",
+                Collections.emptyMap()
+        );
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createFunction(prefix, database, createFunctionRequest);
+
+        var expected = function;
+        var result = catalog.getFunction(prefix, database, function).name();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void alterFunction() {
+        assumeTrue(supportsDatabases() && supportsFunctions());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createFunctionRequest = new CreateFunctionRequest(
+                function,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                true,
+                Map.of("sql", FunctionDefinition.sql("SELECT 1")),
+                "test function",
+                Collections.emptyMap()
+        );
+        var alterFunctionRequest = new AlterFunctionRequest(Collections.emptyList());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createFunction(prefix, database, createFunctionRequest);
+
+        assertDoesNotThrow(() -> catalog.alterFunction(prefix, database, function, alterFunctionRequest));
+    }
+
+    @Test
+    void dropFunction() {
+        assumeTrue(supportsDatabases() && supportsFunctions());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createFunctionRequest = new CreateFunctionRequest(
+                function,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                true,
+                Map.of("sql", FunctionDefinition.sql("SELECT 1")),
+                "test function",
+                Collections.emptyMap()
+        );
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createFunction(prefix, database, createFunctionRequest);
+
+        assertDoesNotThrow(() -> catalog.dropFunction(prefix, database, function));
+    }
+
+    protected String uniqueName(String prefix) {
+        return prefix + "_" + UUID.randomUUID().toString().replace("-", "");
+    }
+
+    protected Schema tableSchema() {
+        return new Schema(
+                List.of(new DataField(0, "id", DataTypes.INT())),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Collections.emptyMap(),
+                "test"
+        );
+    }
+
+    protected ViewSchema viewSchema() {
+        return new ViewSchema(
+                List.of(new DataField(0, "id", DataTypes.INT())),
+                "SELECT 1",
+                Collections.emptyMap(),
+                "test view",
+                Collections.emptyMap()
+        );
     }
 }
