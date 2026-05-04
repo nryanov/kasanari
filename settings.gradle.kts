@@ -16,10 +16,12 @@ include(
     "modules:api",
     "modules:api:api-iceberg",
     "modules:api:api-paimon",
+    "modules:api:api-lance",
     "modules:server",
     "modules:catalog",
     "modules:catalog:catalog-iceberg",
     "modules:catalog:catalog-paimon",
+    "modules:catalog:catalog-lance",
     // fixtures
     "modules:fixtures",
     "modules:fixtures:fixtures-common",
@@ -32,6 +34,7 @@ include(
 findProject(":modules:api")?.name = "api"
 findProject(":modules:api:api-iceberg")?.name = "api-iceberg"
 findProject(":modules:api:api-paimon")?.name = "api-paimon"
+findProject(":modules:api:api-lance")?.name = "api-lance"
 
 findProject(":modules:fixtures")?.name = "fixtures"
 findProject(":modules:fixtures:fixtures-common")?.name = "fixtures-common"
@@ -44,3 +47,4 @@ findProject(":modules:server")?.name = "server"
 findProject(":modules:catalog")?.name = "catalog"
 findProject(":modules:catalog:catalog-iceberg")?.name = "catalog-iceberg"
 findProject(":modules:catalog:catalog-paimon")?.name = "catalog-paimon"
+findProject(":modules:catalog:catalog-lance")?.name = "catalog-lance"
