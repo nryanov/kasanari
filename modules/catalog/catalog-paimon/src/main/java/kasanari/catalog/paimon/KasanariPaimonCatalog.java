@@ -5,10 +5,12 @@ import kasanari.catalog.paimon.model.TableRecord;
 import kasanari.catalog.paimon.repository.BranchRepository;
 import kasanari.catalog.paimon.repository.DatabaseRepository;
 import kasanari.catalog.paimon.repository.FunctionRepository;
+import kasanari.catalog.paimon.repository.jdbc.KasanariCatalogLock;
 import kasanari.catalog.paimon.repository.TableRepository;
 import kasanari.catalog.paimon.repository.TagRepository;
 import kasanari.catalog.paimon.repository.TransactionManager;
 import kasanari.catalog.paimon.repository.ViewRepository;
+import org.apache.paimon.CoreOptions;
 import org.apache.paimon.PagedList;
 import org.apache.paimon.Snapshot;
 import org.apache.paimon.catalog.AbstractCatalog;
@@ -21,6 +23,7 @@ import org.apache.paimon.fs.FileIO;
 import org.apache.paimon.fs.Path;
 import org.apache.paimon.function.Function;
 import org.apache.paimon.function.FunctionChange;
+import org.apache.paimon.operation.Lock;
 import org.apache.paimon.partition.PartitionStatistics;
 import org.apache.paimon.rest.responses.GetTagResponse;
 import org.apache.paimon.schema.Schema;
@@ -40,9 +43,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 
 public class KasanariPaimonCatalog extends AbstractCatalog {
     private final TransactionManager<Handle> transactionManager;
+    // TODO: each repository should also accept catalogKey (or warehouse)?
     private final DatabaseRepository<Handle> databaseRepository;
     private final TableRepository<Handle> tableRepository;
     private final ViewRepository<Handle> viewRepository;
@@ -156,24 +161,69 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     }
 
     @Override
+    public void repairDatabase(String databaseName) {
+        // TODO
+        super.repairDatabase(databaseName);
+    }
+
+    @Override
     protected void createTableImpl(Identifier identifier, Schema schema) {
         var schemaManager = getSchemaManager(identifier);
+        var path = getTableLocation(identifier);
         try {
-            // TODO: lock table (advisory locks)
-            schemaManager.createTable(schema);
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                    var tableSchema = schemaManager.createTable(schema);
+                    var properties = collectTableProperties(tableSchema);
+                    tableRepository.create(tx, new TableRecord(identifier, properties));
+                    return tableSchema;
+                }));
         } catch (Exception e) {
+            try {
+                fileIO.deleteDirectoryQuietly(path);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+
             throw new RuntimeException(e);
         }
     }
 
     @Override
     protected void renameTableImpl(Identifier fromTable, Identifier toTable) {
-
+        var fromPath = getTableLocation(fromTable);
+        var toPath = getTableLocation(toTable);
+        transactionManager.inTransaction(tx -> tableRepository.rename(tx, fromTable, toTable));
+        try {
+            fileIO.rename(fromPath, toPath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     protected void alterTableImpl(Identifier identifier, List<SchemaChange> changes) throws TableNotExistException, ColumnAlreadyExistException, ColumnNotExistException {
-        // TODO: lock (advisory locks)
+        var schemaManager = getSchemaManager(identifier);
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                var updatedSchema = schemaManager.commitChanges(changes);
+                var properties = collectTableProperties(updatedSchema);
+                tableRepository.alter(tx, new TableRecord(identifier, properties));
+                return updatedSchema;
+            }));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void repairCatalog() {
+        // TODO
+        super.repairCatalog();
+    }
+
+    @Override
+    public void repairTable(Identifier identifier) throws TableNotExistException {
+        super.repairTable(identifier);
     }
 
     @Override
@@ -330,5 +380,42 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
     private SchemaManager getSchemaManager(Identifier identifier) {
         return new SchemaManager(fileIO, getTableLocation(identifier));
+    }
+
+    private  <T> T runWithLock(Handle handle, Identifier identifier, Callable<T> callable) {
+        try {
+            if (!lockEnabled()) {
+                return callable.call();
+            }
+
+            var lock = new KasanariCatalogLock(handle);
+            return Lock.fromCatalog(lock, identifier).runWithLock(callable);
+        } catch (Exception e) {
+            // todo: log & domain error
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Map<String, String> collectTableProperties(TableSchema tableSchema) {
+        var properties = new HashMap<>(tableSchema.options());
+        properties.putAll(convertToPropertiesTableKey(tableSchema));
+        return properties;
+    }
+
+    private Map<String, String> convertToPropertiesTableKey(TableSchema tableSchema) {
+        var properties = new HashMap<String, String>();
+        if (!tableSchema.primaryKeys().isEmpty()) {
+            properties.put(
+                    CoreOptions.PRIMARY_KEY.key(), String.join(",", tableSchema.primaryKeys()));
+        }
+        if (!tableSchema.partitionKeys().isEmpty()) {
+            properties.put(
+                    CoreOptions.PARTITION.key(), String.join(",", tableSchema.partitionKeys()));
+        }
+        if (!tableSchema.bucketKeys().isEmpty()) {
+            properties.put(
+                    CoreOptions.BUCKET_KEY.key(), String.join(",", tableSchema.bucketKeys()));
+        }
+        return properties;
     }
 }
