@@ -2,6 +2,7 @@ package kasanari.catalog.paimon;
 
 import kasanari.catalog.paimon.model.DatabaseRecord;
 import kasanari.catalog.paimon.model.TableRecord;
+import kasanari.catalog.paimon.model.ViewRecord;
 import kasanari.catalog.paimon.repository.BranchRepository;
 import kasanari.catalog.paimon.repository.DatabaseRepository;
 import kasanari.catalog.paimon.repository.FunctionRepository;
@@ -34,6 +35,7 @@ import org.apache.paimon.table.Table;
 import org.apache.paimon.utils.SnapshotNotExistException;
 import org.apache.paimon.view.View;
 import org.apache.paimon.view.ViewChange;
+import org.apache.paimon.view.ViewImpl;
 import org.jdbi.v3.core.Handle;
 
 import javax.annotation.Nullable;
@@ -48,6 +50,7 @@ import java.util.concurrent.Callable;
 public class KasanariPaimonCatalog extends AbstractCatalog {
     private final TransactionManager<Handle> transactionManager;
     // TODO: each repository should also accept catalogKey (or warehouse)?
+    // TODO: check that current branch is main in each operation?
     private final DatabaseRepository<Handle> databaseRepository;
     private final TableRepository<Handle> tableRepository;
     private final ViewRepository<Handle> viewRepository;
@@ -228,34 +231,125 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
     @Override
     protected TableSchema loadTableSchema(Identifier identifier) throws TableNotExistException {
+        var isExists = transactionManager.inTransactionR(tx -> tableRepository.exists(tx, identifier));
+        if (!isExists) {
+            throw new TableNotExistException(identifier);
+        }
 
-        return null;
+        var location = getTableLocation(identifier);
+        return tableSchemaInFileSystem(location, identifier.getBranchNameOrDefault())
+                .orElseThrow(
+                        () -> new RuntimeException("There is no paimon table in " + location));
     }
 
     @Override
     public Table getTableById(String tableId) throws TableIdNotExistException {
+        // TODO: implement?
         return super.getTableById(tableId);
     }
 
     @Override
     public View getView(Identifier identifier) throws ViewNotExistException {
-        return super.getView(identifier);
+        var maybe = transactionManager.inTransactionR(tx -> viewRepository.find(tx, identifier));
+        if (maybe.isEmpty()) {
+            throw new ViewNotExistException(identifier);
+        }
+
+        var view = maybe.get();
+        var location = getTableLocation(identifier);
+
+        var viewSchema = tableSchemaInFileSystem(location, identifier.getBranchNameOrDefault())
+                .orElseThrow(() -> new RuntimeException("There is no paimon view in " + location));
+
+        return new ViewImpl(
+                identifier,
+                viewSchema.fields(),
+                view.query(),
+                view.dialects(),
+                view.comment().orElse(null),
+                view.options()
+        );
     }
 
     @Override
     public void dropView(Identifier identifier, boolean ignoreIfNotExists) throws ViewNotExistException {
-        super.dropView(identifier, ignoreIfNotExists);
+        var dropped = transactionManager.inTransactionR(tx -> viewRepository.delete(tx, identifier));
+
+        if (dropped) {
+            try {
+                var viewPath = getTableLocation(identifier);
+                if (fileIO.exists(viewPath)) {
+                    fileIO.deleteDirectoryQuietly(viewPath);
+                }
+            } catch (IOException e) {
+                // TODO: log
+            }
+        } else {
+            // TODO: log
+            throw new ViewNotExistException(identifier);
+        }
     }
 
     @Override
     public void createView(Identifier identifier, View view, boolean ignoreIfExists) throws ViewAlreadyExistException, DatabaseNotExistException {
-        // TODO: lock (advisory locks)
-        super.createView(identifier, view, ignoreIfExists);
+        var schemaManager = getSchemaManager(identifier);
+
+        var fields = view.rowType().getFields();
+        var viewSchema = new Schema(fields, List.of(), List.of(), view.options(), view.comment().orElse(null));
+        transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+            var schema = schemaManager.createTable(viewSchema);
+            viewRepository.create(tx, new ViewRecord(identifier, view));
+            return schema;
+        }));
     }
 
     @Override
     public List<String> listViews(String databaseName) throws DatabaseNotExistException {
-        return super.listViews(databaseName);
+        // todo: validate database existence
+        return transactionManager.inTransactionR(tx -> viewRepository.findAll(tx, databaseName))
+                .stream().map(ViewRecord::name)
+                .toList();
+    }
+
+    @Override
+    public void renameView(Identifier fromView, Identifier toView, boolean ignoreIfNotExists) throws ViewNotExistException, ViewAlreadyExistException {
+        var fromPath = getTableLocation(fromView);
+        var toPath = getTableLocation(toView);
+
+        // TODO: check from/to view existence
+        var renamed = transactionManager.inTransactionR(tx -> viewRepository.rename(tx, fromView, toView));
+
+        if (renamed) {
+            try {
+                fileIO.rename(fromPath, toPath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            if (!ignoreIfNotExists) {
+                throw new ViewNotExistException(fromView);
+            }
+        }
+    }
+
+    @Override
+    public void alterView(Identifier view, List<ViewChange> viewChanges, boolean ignoreIfNotExists) throws ViewNotExistException, DialectAlreadyExistException, DialectNotExistException {
+        var schemaManager = getSchemaManager(view);
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, view, () -> {
+                var maybe = viewRepository.find(tx, view);
+                if (maybe.isEmpty()) {
+                    throw new ViewNotExistException(view);
+                }
+
+                // TODO
+                var current = maybe.get();
+                viewRepository.alter(tx, new ViewRecord(null, null, null, null, null, null));
+                return "";
+            }));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -271,18 +365,6 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     @Override
     public PagedList<Identifier> listViewsPagedGlobally(@Nullable String databaseNamePattern, @Nullable String viewNamePattern, @Nullable Integer maxResults, @Nullable String pageToken) {
         return super.listViewsPagedGlobally(databaseNamePattern, viewNamePattern, maxResults, pageToken);
-    }
-
-    @Override
-    public void renameView(Identifier fromView, Identifier toView, boolean ignoreIfNotExists) throws ViewNotExistException, ViewAlreadyExistException {
-        // TODO: lock (advisory locks)
-        super.renameView(fromView, toView, ignoreIfNotExists);
-    }
-
-    @Override
-    public void alterView(Identifier view, List<ViewChange> viewChanges, boolean ignoreIfNotExists) throws ViewNotExistException, DialectAlreadyExistException, DialectNotExistException {
-        // TODO: lock (advisory locks)
-        super.alterView(view, viewChanges, ignoreIfNotExists);
     }
 
     @Override
@@ -382,6 +464,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         return new SchemaManager(fileIO, getTableLocation(identifier));
     }
 
+    // todo: thor exception instead or runtimeException
     private  <T> T runWithLock(Handle handle, Identifier identifier, Callable<T> callable) {
         try {
             if (!lockEnabled()) {

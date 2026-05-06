@@ -15,4 +15,6 @@ public interface TableRepository<T> {
     void alter(T tx, TableRecord record);
 
     void rename(T tx, Identifier fromTable, Identifier toTable);
+
+    boolean exists(T tx, Identifier table);
 }
