@@ -1,6 +1,7 @@
 package kasanari.catalog.paimon;
 
 import kasanari.catalog.paimon.model.DatabaseRecord;
+import kasanari.catalog.paimon.model.FunctionRecord;
 import kasanari.catalog.paimon.model.TableRecord;
 import kasanari.catalog.paimon.model.ViewRecord;
 import kasanari.catalog.paimon.repository.BranchRepository;
@@ -32,6 +33,7 @@ import org.apache.paimon.schema.SchemaChange;
 import org.apache.paimon.schema.SchemaManager;
 import org.apache.paimon.schema.TableSchema;
 import org.apache.paimon.table.Table;
+import org.apache.paimon.table.TableSnapshot;
 import org.apache.paimon.utils.SnapshotNotExistException;
 import org.apache.paimon.view.View;
 import org.apache.paimon.view.ViewChange;
@@ -206,16 +208,12 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     @Override
     protected void alterTableImpl(Identifier identifier, List<SchemaChange> changes) throws TableNotExistException, ColumnAlreadyExistException, ColumnNotExistException {
         var schemaManager = getSchemaManager(identifier);
-        try {
-            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
-                var updatedSchema = schemaManager.commitChanges(changes);
-                var properties = collectTableProperties(updatedSchema);
-                tableRepository.alter(tx, new TableRecord(identifier, properties));
-                return updatedSchema;
-            }));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+            var updatedSchema = schemaManager.commitChanges(changes);
+            var properties = collectTableProperties(updatedSchema);
+            tableRepository.alter(tx, new TableRecord(identifier, properties));
+            return updatedSchema;
+        }));
     }
 
     @Override
@@ -334,22 +332,40 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
     @Override
     public void alterView(Identifier view, List<ViewChange> viewChanges, boolean ignoreIfNotExists) throws ViewNotExistException, DialectAlreadyExistException, DialectNotExistException {
-        var schemaManager = getSchemaManager(view);
-        try {
-            transactionManager.inTransaction(tx -> runWithLock(tx, view, () -> {
-                var maybe = viewRepository.find(tx, view);
-                if (maybe.isEmpty()) {
-                    throw new ViewNotExistException(view);
-                }
-
-                // TODO
-                var current = maybe.get();
-                viewRepository.alter(tx, new ViewRecord(null, null, null, null, null, null));
-                return "";
-            }));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        var maybe = transactionManager.inTransactionR(tx -> viewRepository.find(tx, view));
+        if (maybe.isEmpty()) {
+            throw new ViewNotExistException(view);
         }
+
+        var current = maybe.get();
+        var comment = current.comment();
+        var options = new HashMap<>(current.options());
+        var dialects = new HashMap<>(current.dialects());
+        var query = current.query();
+
+        viewChanges.forEach(change -> {
+            switch (change) {
+                case ViewChange.RemoveViewOption i -> {}
+                case ViewChange.SetViewOption i -> {}
+                case ViewChange.UpdateViewComment i -> {}
+                case ViewChange.AddDialect i -> {}
+                case ViewChange.DropDialect i -> {}
+                case ViewChange.UpdateDialect i -> {}
+                default -> {}
+            }
+        });
+
+        transactionManager.inTransaction(tx -> runWithLock(tx, view, () -> {
+            viewRepository.alter(tx, new ViewRecord(
+                    view.getDatabaseName(),
+                    view.getTableName(),
+                    query,
+                    dialects,
+                    options,
+                    comment
+            ));
+            return true;
+        }));
     }
 
     @Override
@@ -369,22 +385,57 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
     @Override
     public List<String> listFunctions(String databaseName) {
-        return super.listFunctions(databaseName);
-    }
-
-    @Override
-    public Function getFunction(Identifier identifier) throws FunctionNotExistException {
-        return super.getFunction(identifier);
+        return transactionManager.inTransactionR(tx -> functionRepository.findAll(tx, databaseName))
+                .stream().map(FunctionRecord::name)
+                .toList();
     }
 
     @Override
     public void createFunction(Identifier identifier, Function function, boolean ignoreIfExists) throws FunctionAlreadyExistException, DatabaseNotExistException {
-        super.createFunction(identifier, function, ignoreIfExists);
+        var database = identifier.getDatabaseName();
+        var functionName = identifier.getObjectName();
+
+        var inputParams = function.inputParams().orElse(List.of());
+        var inputParamsIdentifier = Identifier.create(database, functionName + "_input");
+        var inputParamsSchemaManager = getSchemaManager(inputParamsIdentifier);
+        var inputParamsSchema = new Schema(inputParams, List.of(), List.of(), Map.of(), null);
+
+        var returnParams = function.returnParams().orElse(List.of());
+        var returnParamsIdentifier = Identifier.create(database, functionName + "_return");
+        var returnParamsSchemaManager = getSchemaManager(returnParamsIdentifier);
+        var returnParamsSchema = new Schema(returnParams, List.of(), List.of(), Map.of(), null);
+
+        transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+            inputParamsSchemaManager.createTable(inputParamsSchema);
+            returnParamsSchemaManager.createTable(returnParamsSchema);
+
+            functionRepository.create(tx, new FunctionRecord(identifier, function));
+            return true;
+        }));
+    }
+
+    @Override
+    public Function getFunction(Identifier identifier) throws FunctionNotExistException {
+        var maybe = transactionManager.inTransactionR(tx -> functionRepository.find(tx, identifier));
+        if (maybe.isEmpty()) {
+            throw new FunctionNotExistException(identifier);
+        }
+
+        var func = maybe.get();
+
+        // TODO
+        return null;
     }
 
     @Override
     public void dropFunction(Identifier identifier, boolean ignoreIfNotExists) throws FunctionNotExistException {
-        super.dropFunction(identifier, ignoreIfNotExists);
+        var deleted = transactionManager.inTransactionR(tx -> functionRepository.delete(tx, identifier));
+
+        if (!deleted) {
+            if (!ignoreIfNotExists) {
+                throw new FunctionNotExistException(identifier);
+            }
+        }
     }
 
     @Override
@@ -446,6 +497,21 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     }
 
     @Override
+    public Optional<TableSnapshot> loadSnapshot(Identifier identifier) {
+        return super.loadSnapshot(identifier);
+    }
+
+    @Override
+    public Optional<Snapshot> loadSnapshot(Identifier identifier, String version) {
+        return super.loadSnapshot(identifier, version);
+    }
+
+    @Override
+    public PagedList<Snapshot> listSnapshotsPaged(Identifier identifier, @Nullable Integer maxResults, @Nullable String pageToken) {
+        return super.listSnapshotsPaged(identifier, maxResults, pageToken);
+    }
+
+    @Override
     public CatalogLoader catalogLoader() {
         return null;
     }
@@ -464,7 +530,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         return new SchemaManager(fileIO, getTableLocation(identifier));
     }
 
-    // todo: thor exception instead or runtimeException
+    // todo: throw exception instead or runtimeException
     private  <T> T runWithLock(Handle handle, Identifier identifier, Callable<T> callable) {
         try {
             if (!lockEnabled()) {
