@@ -25,6 +25,8 @@ import org.apache.paimon.fs.FileIO;
 import org.apache.paimon.fs.Path;
 import org.apache.paimon.function.Function;
 import org.apache.paimon.function.FunctionChange;
+import org.apache.paimon.function.FunctionDefinition;
+import org.apache.paimon.function.FunctionImpl;
 import org.apache.paimon.operation.Lock;
 import org.apache.paimon.partition.PartitionStatistics;
 import org.apache.paimon.rest.responses.GetTagResponse;
@@ -48,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class KasanariPaimonCatalog extends AbstractCatalog {
     private final TransactionManager<Handle> transactionManager;
@@ -423,8 +426,31 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
         var func = maybe.get();
 
-        // TODO
-        return null;
+        var database = identifier.getDatabaseName();
+        var functionName = identifier.getObjectName();
+
+        var inputParamsIdentifier = Identifier.create(database, functionName + "_input");
+        var inputParamsLocation = getTableLocation(inputParamsIdentifier);
+        var inputParamsSchema = tableSchemaInFileSystem(inputParamsLocation, inputParamsIdentifier.getBranchNameOrDefault())
+                .orElseThrow(() -> new RuntimeException("There is no paimon function in " + inputParamsLocation));
+
+        var returnParamsIdentifier = Identifier.create(database, functionName + "_return");
+        var returnParamsLocation = getTableLocation(returnParamsIdentifier);
+        var returnParamsSchema = tableSchemaInFileSystem(returnParamsLocation, returnParamsIdentifier.getBranchNameOrDefault())
+                .orElseThrow(() -> new RuntimeException("There is no paimon function in " + returnParamsLocation));
+
+        var funcDefinitions = new HashMap<String, FunctionDefinition>();
+        func.definitions().forEach((name, def) -> funcDefinitions.put(name, def.toPaimon()));
+
+        return new FunctionImpl(
+                identifier,
+                inputParamsSchema.fields(),
+                returnParamsSchema.fields(),
+                func.deterministic(),
+                funcDefinitions,
+                func.comment().orElse(null),
+                func.options()
+        );
     }
 
     @Override
@@ -440,8 +466,63 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
     @Override
     public void alterFunction(Identifier identifier, List<FunctionChange> changes, boolean ignoreIfNotExists) throws FunctionNotExistException, DefinitionAlreadyExistException, DefinitionNotExistException {
-        // TODO: lock (advisory locks)
-        super.alterFunction(identifier, changes, ignoreIfNotExists);
+        var maybe = transactionManager.inTransactionR(tx -> functionRepository.find(tx, identifier));
+        if (maybe.isEmpty()) {
+            if (!ignoreIfNotExists) {
+                throw new FunctionNotExistException(identifier);
+            } else {
+                return;
+            }
+        }
+
+        var func = maybe.get();
+
+        var definitions = new HashMap<>(func.definitions());
+        var options = new HashMap<>(func.options());
+        var comment = new AtomicReference<>(func.comment());
+
+        for (var change : changes) {
+            switch (change) {
+                case FunctionChange.RemoveFunctionOption c -> options.remove(c.key());
+                case FunctionChange.SetFunctionOption c -> options.put(c.key(), c.value());
+                case FunctionChange.UpdateFunctionComment c -> comment.set(Optional.ofNullable(c.comment()));
+                case FunctionChange.AddDefinition c -> {
+                    var def = definitions.get(c.name());
+                    if (def != null) {
+                        throw new DefinitionAlreadyExistException(identifier, c.name());
+                    }
+
+                    definitions.put(c.name(), FunctionRecord.fromPaimon(c.definition()));
+                }
+                case FunctionChange.DropDefinition c -> {
+                    var def = definitions.remove(c.name());
+                    if (def == null) {
+                        throw new DefinitionNotExistException(identifier, c.name());
+                    }
+                }
+                case FunctionChange.UpdateDefinition c -> {
+                    var def = definitions.get(c.name());
+                    if (def == null) {
+                        throw new DefinitionNotExistException(identifier, c.name());
+                    }
+
+                    definitions.put(c.name(), FunctionRecord.fromPaimon(c.definition()));
+                }
+                default -> {}
+            }
+        }
+
+        transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+            functionRepository.alter(tx, new FunctionRecord(
+                    func.database(),
+                    func.name(),
+                    func.deterministic(),
+                    definitions,
+                    comment.get(),
+                    options
+            ));
+            return true;
+        }));
     }
 
     @Override

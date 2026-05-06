@@ -14,4 +14,6 @@ public interface FunctionRepository<T> {
     boolean delete(T tx, Identifier identifier);
 
     void create(T tx, FunctionRecord record);
+
+    void alter(T tx, FunctionRecord record);
 }
