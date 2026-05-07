@@ -54,17 +54,7 @@ public class KasanariPaimonCatalogTest extends PaimonCatalogAdapterTest {
     }
 
     @Override
-    protected boolean supportListGlobally() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportRollbackSchema() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportRollbackTable() {
+    protected boolean supportRegisterTable() {
         return false;
     }
 }

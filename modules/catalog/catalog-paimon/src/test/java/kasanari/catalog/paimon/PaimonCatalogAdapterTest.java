@@ -3,6 +3,7 @@ package kasanari.catalog.paimon;
 import org.apache.paimon.Snapshot;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.consumer.ConsumerInfo;
+import org.apache.paimon.data.BinaryString;
 import org.apache.paimon.data.GenericRow;
 import org.apache.paimon.function.FunctionDefinition;
 import org.apache.paimon.partition.PartitionStatistics;
@@ -11,7 +12,6 @@ import org.apache.paimon.rest.requests.AlterFunctionRequest;
 import org.apache.paimon.rest.requests.AlterTableRequest;
 import org.apache.paimon.rest.requests.AlterViewRequest;
 import org.apache.paimon.rest.requests.AuthTableQueryRequest;
-import org.apache.paimon.rest.requests.CommitTableRequest;
 import org.apache.paimon.rest.requests.CreateBranchRequest;
 import org.apache.paimon.rest.requests.CreateDatabaseRequest;
 import org.apache.paimon.rest.requests.CreateFunctionRequest;
@@ -447,18 +447,14 @@ public abstract class PaimonCatalogAdapterTest {
         assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportCommit());
 
         createDatabaseAndTable();
+
+        // commitTable (commitSnapshot) is triggered internally via table.commit operation
+        var latestSnapshotBeforeCommit = catalog.getVersionSnapshot(prefix, database, table, "LATEST").getSnapshot();
         triggerTableSnapshot(database, table);
-        var latestSnapshot = catalog.getVersionSnapshot(prefix, database, table, "LATEST").getSnapshot();
-        var commitTableRequest = new CommitTableRequest(
-                catalog.getTable(prefix, database, table).getId(),
-                latestSnapshot,
-                Collections.emptyList()
-        );
+        var latestSnapshotAfterCommit = catalog.getVersionSnapshot(prefix, database, table, "LATEST").getSnapshot();
 
-        var result = catalog.commitTable(prefix, database, table, commitTableRequest);
-
-        assertNotNull(result);
-        assertTrue(result.isSuccess());
+        assertNull(latestSnapshotBeforeCommit);
+        assertNotNull(latestSnapshotAfterCommit);
     }
 
     @Test
@@ -774,11 +770,16 @@ public abstract class PaimonCatalogAdapterTest {
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         var createBranchRequest = new CreateBranchRequest(branch, null);
         var forwardBranchRequest = new ForwardBranchRequest();
+
         catalog.createDatabase(prefix, createDatabaseRequest);
         catalog.createTable(prefix, database, createTableRequest);
         triggerTableSnapshot(database, table);
+
         catalog.createBranch(prefix, database, table, createBranchRequest);
+        triggerTableSnapshotInBranch(database, table, branch);
+
         catalog.forwardBranch(prefix, database, table, branch, forwardBranchRequest);
+
         var branches = catalog.listBranches(prefix, database, table).branches();
 
         assertTrue(branches.contains(branch));
@@ -869,10 +870,17 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        var resetConsumerRequest = new ResetConsumerRequest(uniqueName("consumer"), null);
+
         catalog.createDatabase(prefix, createDatabaseRequest);
         catalog.createTable(prefix, database, createTableRequest);
+
+        triggerTableSnapshot(database, table);
+        var snapshot = catalog.getTableSnapshot(prefix, database, table);
+        var snapshotId = snapshot.getSnapshot().snapshot().id();
+        var resetConsumerRequest = new ResetConsumerRequest(uniqueName("consumer"), snapshotId);
+
         catalog.resetConsumer(prefix, database, table, resetConsumerRequest);
+
         var consumers = catalog.listConsumers(prefix, database, table, 100, null).getConsumers();
         var consumerIds = consumers.stream().map(ConsumerInfo::getConsumerId).toList();
 
@@ -1036,6 +1044,7 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createFunctionRequest = functionRequest(function);
+
         catalog.createDatabase(prefix, createDatabaseRequest);
         catalog.createFunction(prefix, database, createFunctionRequest);
 
@@ -1139,6 +1148,22 @@ public abstract class PaimonCatalogAdapterTest {
         }
     }
 
+    protected void triggerTableSnapshotInBranch(String database, String table, String branch) {
+        try {
+            var paimonCatalog = catalog.getUnderlyingCatalog();
+            var paimonTable = paimonCatalog.getTable(new Identifier(database, table, branch));
+            var writeBuilder = paimonTable.newBatchWriteBuilder();
+
+            try (var tableWrite = writeBuilder.newWrite();
+                 var tableCommit = writeBuilder.newCommit()) {
+                tableWrite.write(GenericRow.of(1));
+                tableCommit.commit(tableWrite.prepareCommit());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to trigger table snapshot for " + database + "." + table, e);
+        }
+    }
+
     protected String uniqueName(String prefix) {
         return prefix + "_" + UUID.randomUUID().toString().replace("-", "");
     }
@@ -1174,7 +1199,7 @@ public abstract class PaimonCatalogAdapterTest {
 
             try (var tableWrite = writeBuilder.newWrite();
                  var tableCommit = writeBuilder.newCommit()) {
-                tableWrite.write(GenericRow.of(id, dt));
+                tableWrite.write(GenericRow.of(id, BinaryString.fromString(dt)));
                 tableCommit.commit(tableWrite.prepareCommit());
             }
         } catch (Exception e) {

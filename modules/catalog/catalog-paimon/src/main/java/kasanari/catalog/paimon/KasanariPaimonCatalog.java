@@ -53,6 +53,7 @@ import org.apache.paimon.schema.Schema;
 import org.apache.paimon.schema.SchemaChange;
 import org.apache.paimon.schema.SchemaManager;
 import org.apache.paimon.schema.TableSchema;
+import org.apache.paimon.table.Instant;
 import org.apache.paimon.tag.Tag;
 import org.apache.paimon.table.Table;
 import org.apache.paimon.table.TableSnapshot;
@@ -468,6 +469,31 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         return transactionManager.inTransactionR(tx -> functionRepository.findAll(tx, databaseName))
                 .stream().map(FunctionRecord::name)
                 .toList();
+    }
+
+    @Override
+    public PagedList<String> listFunctionsPaged(String databaseName, @Nullable Integer maxResults, @Nullable String pageToken, @Nullable String functionNamePattern) throws DatabaseNotExistException {
+        return super.listFunctionsPaged(databaseName, maxResults, pageToken, functionNamePattern);
+    }
+
+    @Override
+    public PagedList<Identifier> listFunctionsPagedGlobally(@Nullable String databaseNamePattern, @Nullable String functionNamePattern, @Nullable Integer maxResults, @Nullable String pageToken) {
+        return super.listFunctionsPagedGlobally(databaseNamePattern, functionNamePattern, maxResults, pageToken);
+    }
+
+    @Override
+    public PagedList<Function> listFunctionDetailsPaged(String databaseName, @Nullable Integer maxResults, @Nullable String pageToken, @Nullable String functionNamePattern) throws DatabaseNotExistException {
+        return super.listFunctionDetailsPaged(databaseName, maxResults, pageToken, functionNamePattern);
+    }
+
+    @Override
+    public void rollbackTo(Identifier identifier, Instant instant, @Nullable Long fromSnapshot) throws TableNotExistException {
+        super.rollbackTo(identifier, instant, fromSnapshot);
+    }
+
+    @Override
+    public void rollbackSchema(Identifier identifier, long schemaId) throws TableNotExistException {
+        super.rollbackSchema(identifier, schemaId);
     }
 
     @Override
