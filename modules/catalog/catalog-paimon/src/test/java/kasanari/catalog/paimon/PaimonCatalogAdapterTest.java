@@ -5,6 +5,7 @@ import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.consumer.ConsumerInfo;
 import org.apache.paimon.data.GenericRow;
 import org.apache.paimon.function.FunctionDefinition;
+import org.apache.paimon.partition.PartitionStatistics;
 import org.apache.paimon.rest.requests.AlterDatabaseRequest;
 import org.apache.paimon.rest.requests.AlterFunctionRequest;
 import org.apache.paimon.rest.requests.AlterTableRequest;
@@ -47,6 +48,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -554,52 +556,150 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void listPartitions() {
-        // TODO: fix
         assumeTrue(supportsDatabases() && supportsTables() && supportsPartitions());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
-        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
         catalog.createDatabase(prefix, createDatabaseRequest);
         catalog.createTable(prefix, database, createTableRequest);
+        triggerPartitionedTableSnapshot(database, table, 1, "dt_a");
+        triggerPartitionedTableSnapshot(database, table, 2, "dt_b");
 
-        var expected = Collections.emptyList();
         var result = catalog.listPartitions(prefix, database, table, 100, null, null).getPartitions();
+        var specs = result.stream().map(PartitionStatistics::spec).toList();
 
-        assertEquals(expected, result);
+        assertEquals(2, result.size());
+        assertTrue(specs.contains(Map.of("dt", "dt_a")));
+        assertTrue(specs.contains(Map.of("dt", "dt_b")));
     }
 
     @Test
     void markDonePartitions() {
-        // TODO: fix
         assumeTrue(supportsDatabases() && supportsTables() && supportsPartitions());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
-        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        var markDonePartitionsRequest = new MarkDonePartitionsRequest(Collections.emptyList());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
+        var markDonePartitionsRequest = new MarkDonePartitionsRequest(List.of(Map.of("dt", "dt_a")));
         catalog.createDatabase(prefix, createDatabaseRequest);
         catalog.createTable(prefix, database, createTableRequest);
+        triggerPartitionedTableSnapshot(database, table, 1, "dt_a");
         catalog.markDonePartitions(prefix, database, table, markDonePartitionsRequest);
-        var expected = Collections.emptyList();
         var result = catalog.listPartitions(prefix, database, table, 100, null, null).getPartitions();
+        var partition = result.stream()
+                .filter(it -> Map.of("dt", "dt_a").equals(it.spec()))
+                .findFirst()
+                .orElse(null);
 
-        assertEquals(expected, result);
+        assertNotNull(partition);
+        assertTrue(partition.done());
     }
 
     @Test
     void listPartitionsByNames() {
-        // TODO: fix
         assumeTrue(supportsDatabases() && supportsTables() && supportsPartitions());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
-        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        var listPartitionsByNamesRequest = new ListPartitionsByNamesRequest(Collections.emptyList());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
+        var listPartitionsByNamesRequest = new ListPartitionsByNamesRequest(List.of(Map.of("dt", "dt_a")));
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+        triggerPartitionedTableSnapshot(database, table, 1, "dt_a");
+        triggerPartitionedTableSnapshot(database, table, 2, "dt_b");
+
+        var result = catalog.listPartitionsByNames(prefix, database, table, listPartitionsByNamesRequest).getPartitions();
+        var specs = result.stream().map(PartitionStatistics::spec).toList();
+
+        assertEquals(1, result.size());
+        assertEquals(List.of(Map.of("dt", "dt_a")), specs);
+    }
+
+    @Test
+    void createPartitions() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsPartitions());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
         catalog.createDatabase(prefix, createDatabaseRequest);
         catalog.createTable(prefix, database, createTableRequest);
 
-        var expected = Collections.emptyList();
-        var result = catalog.listPartitionsByNames(prefix, database, table, listPartitionsByNamesRequest).getPartitions();
+        try {
+            catalog.getUnderlyingCatalog().createPartitions(
+                    Identifier.create(database, table),
+                    List.of(Map.of("dt", "dt_created"))
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
-        assertEquals(expected, result);
+        var partitions = catalog.listPartitions(prefix, database, table, 100, null, null).getPartitions();
+        var specs = partitions.stream().map(PartitionStatistics::spec).toList();
+        assertTrue(specs.contains(Map.of("dt", "dt_created")));
+    }
+
+    @Test
+    void dropPartitions() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsPartitions());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        try {
+            var tableIdentifier = Identifier.create(database, table);
+            catalog.getUnderlyingCatalog().createPartitions(
+                    tableIdentifier,
+                    List.of(Map.of("dt", "dt_drop"))
+            );
+            catalog.getUnderlyingCatalog().dropPartitions(
+                    tableIdentifier,
+                    List.of(Map.of("dt", "dt_drop"))
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        var partitions = catalog.listPartitions(prefix, database, table, 100, null, null).getPartitions();
+        var specs = partitions.stream().map(PartitionStatistics::spec).toList();
+        assertFalse(specs.contains(Map.of("dt", "dt_drop")));
+    }
+
+    @Test
+    void alterPartitions() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsPartitions());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        try {
+            catalog.getUnderlyingCatalog().alterPartitions(
+                    Identifier.create(database, table),
+                    List.of(new PartitionStatistics(
+                            Map.of("dt", "dt_altered"),
+                            7L,
+                            70L,
+                            3L,
+                            123L,
+                            1
+                    ))
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        var partitions = catalog.listPartitions(prefix, database, table, 100, null, null).getPartitions();
+        var altered = partitions.stream()
+                .filter(partition -> Map.of("dt", "dt_altered").equals(partition.spec()))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(altered);
+        assertEquals(7L, altered.recordCount());
+        assertEquals(70L, altered.fileSizeInBytes());
+        assertEquals(3L, altered.fileCount());
+        assertEquals(123L, altered.lastFileCreationTime());
+        assertEquals(1, altered.totalBuckets());
     }
 
     @Test
@@ -1051,6 +1151,35 @@ public abstract class PaimonCatalogAdapterTest {
                 Collections.emptyMap(),
                 "test"
         );
+    }
+
+    protected Schema partitionedTableSchema() {
+        return new Schema(
+                List.of(
+                        new DataField(0, "id", DataTypes.INT()),
+                        new DataField(1, "dt", DataTypes.STRING())
+                ),
+                List.of("dt"),
+                Collections.emptyList(),
+                Collections.emptyMap(),
+                "partitioned-test"
+        );
+    }
+
+    protected void triggerPartitionedTableSnapshot(String database, String table, int id, String dt) {
+        try {
+            var paimonCatalog = catalog.getUnderlyingCatalog();
+            var paimonTable = paimonCatalog.getTable(Identifier.create(database, table));
+            var writeBuilder = paimonTable.newBatchWriteBuilder();
+
+            try (var tableWrite = writeBuilder.newWrite();
+                 var tableCommit = writeBuilder.newCommit()) {
+                tableWrite.write(GenericRow.of(id, dt));
+                tableCommit.commit(tableWrite.prepareCommit());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to trigger partitioned table snapshot for " + database + "." + table, e);
+        }
     }
 
     protected ViewSchema viewSchema() {

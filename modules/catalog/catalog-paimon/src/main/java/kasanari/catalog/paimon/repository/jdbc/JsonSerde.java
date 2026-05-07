@@ -5,9 +5,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kasanari.catalog.paimon.model.FunctionRecord;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public final class JsonSerde {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -25,6 +29,35 @@ public final class JsonSerde {
         }
         return readJson(payload, new TypeReference<>() {
         });
+    }
+
+    public static String encodeSpec(Map<String, String> spec) {
+        return writeJson(normalizeSpec(spec));
+    }
+
+    public static Map<String, String> decodeSpec(String payload) {
+        if (payload == null || payload.isBlank()) {
+            return new LinkedHashMap<>();
+        }
+        return normalizeSpec(readJson(payload, new TypeReference<Map<String, String>>() {
+        }));
+    }
+
+    // TODO
+    public static String hashSpec(Map<String, String> spec) {
+        var normalized = normalizeSpec(spec);
+        var payload = writeJson(normalized);
+        try {
+            var digest = MessageDigest.getInstance("SHA-256");
+            var bytes = digest.digest(payload.getBytes(StandardCharsets.UTF_8));
+            var hex = new StringBuilder(bytes.length * 2);
+            for (var b : bytes) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 digest is not available", e);
+        }
     }
 
     public static String encodeDefinitions(Map<String, FunctionRecord.FunctionDefinition> definitions) {
@@ -100,6 +133,14 @@ public final class JsonSerde {
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Failed to deserialize JSON payload", e);
         }
+    }
+
+    private static Map<String, String> normalizeSpec(Map<String, String> spec) {
+        var normalized = new TreeMap<String, String>();
+        if (spec != null) {
+            normalized.putAll(spec);
+        }
+        return new LinkedHashMap<>(normalized);
     }
 
     private record StoredFunctionDefinition(

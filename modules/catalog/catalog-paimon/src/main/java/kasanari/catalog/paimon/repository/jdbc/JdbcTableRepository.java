@@ -6,6 +6,7 @@ import org.apache.paimon.catalog.Identifier;
 import org.jdbi.v3.core.Handle;
 
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTableRepository implements TableRepository<Handle> {
     private final String catalogKey;
@@ -23,7 +24,8 @@ public class JdbcTableRepository implements TableRepository<Handle> {
                 .map((rs, ctx) -> new TableRecord(
                         database,
                         rs.getString("table_name"),
-                        JsonSerde.decodeMap(rs.getString("properties_payload"))
+                        JsonSerde.decodeMap(rs.getString("properties_payload")),
+                        Optional.ofNullable(rs.getString("table_uuid"))
                 ))
                 .list();
     }
@@ -43,7 +45,8 @@ public class JdbcTableRepository implements TableRepository<Handle> {
         query.bind(0, catalogKey);
         query.bind(1, record.database());
         query.bind(2, record.name());
-        query.bind(3, JsonSerde.encodeMap(record.properties()));
+        query.bind(3, record.tableUuid().orElse(null));
+        query.bind(4, JsonSerde.encodeMap(record.properties()));
         query.execute();
     }
 
@@ -75,5 +78,36 @@ public class JdbcTableRepository implements TableRepository<Handle> {
         query.bind(1, table.getDatabaseName());
         query.bind(2, table.getTableName());
         return query.mapTo(Boolean.class).first();
+    }
+
+    @Override
+    public Optional<TableRecord> find(Handle tx, Identifier table) {
+        var query = tx.createQuery(JdbcQueries.SELECT_TABLE);
+        query.bind(0, catalogKey);
+        query.bind(1, table.getDatabaseName());
+        query.bind(2, table.getTableName());
+        return query
+                .map((rs, ctx) -> new TableRecord(
+                        table.getDatabaseName(),
+                        rs.getString("table_name"),
+                        JsonSerde.decodeMap(rs.getString("properties_payload")),
+                        Optional.ofNullable(rs.getString("table_uuid"))
+                ))
+                .findFirst();
+    }
+
+    @Override
+    public Optional<TableRecord> findByUuid(Handle tx, String tableUuid) {
+        var query = tx.createQuery(JdbcQueries.SELECT_TABLE_BY_UUID);
+        query.bind(0, catalogKey);
+        query.bind(1, tableUuid);
+        return query
+                .map((rs, ctx) -> new TableRecord(
+                        rs.getString("database_name"),
+                        rs.getString("table_name"),
+                        JsonSerde.decodeMap(rs.getString("properties_payload")),
+                        Optional.ofNullable(rs.getString("table_uuid"))
+                ))
+                .findFirst();
     }
 }

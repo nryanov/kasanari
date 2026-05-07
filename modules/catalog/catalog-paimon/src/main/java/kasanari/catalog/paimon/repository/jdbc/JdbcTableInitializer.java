@@ -15,6 +15,8 @@ public class JdbcTableInitializer {
             tx.createUpdate(JdbcQueries.CREATE_FUNCTIONS_DDL).execute();
             tx.createUpdate(JdbcQueries.CREATE_BRANCHES_DDL).execute();
             tx.createUpdate(JdbcQueries.CREATE_TAGS_DDL).execute();
+            tx.createUpdate(JdbcQueries.CREATE_PARTITION_STATS_DELTAS_DDL).execute();
+            tx.createUpdate(JdbcQueries.CREATE_PARTITION_STATES_DDL).execute();
         });
     }
 }

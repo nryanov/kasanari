@@ -3,15 +3,18 @@ package kasanari.catalog.paimon;
 import kasanari.catalog.paimon.model.BranchRecord;
 import kasanari.catalog.paimon.model.DatabaseRecord;
 import kasanari.catalog.paimon.model.FunctionRecord;
+import kasanari.catalog.paimon.model.PartitionStateRecord;
 import kasanari.catalog.paimon.model.TableRecord;
 import kasanari.catalog.paimon.model.TagRecord;
 import kasanari.catalog.paimon.model.ViewRecord;
 import kasanari.catalog.paimon.repository.BranchRepository;
 import kasanari.catalog.paimon.repository.DatabaseRepository;
 import kasanari.catalog.paimon.repository.FunctionRepository;
+import kasanari.catalog.paimon.repository.PartitionStateRepository;
 import kasanari.catalog.paimon.repository.jdbc.JdbcBranchRepository;
 import kasanari.catalog.paimon.repository.jdbc.JdbcDatabaseRepository;
 import kasanari.catalog.paimon.repository.jdbc.JdbcFunctionRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcPartitionStateRepository;
 import kasanari.catalog.paimon.repository.jdbc.JdbcTableInitializer;
 import kasanari.catalog.paimon.repository.jdbc.JdbcTableRepository;
 import kasanari.catalog.paimon.repository.jdbc.JdbcTagRepository;
@@ -32,6 +35,10 @@ import org.apache.paimon.catalog.CatalogLoader;
 import org.apache.paimon.catalog.Database;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.catalog.PropertyChange;
+import org.apache.paimon.catalog.TableMetadata;
+import org.apache.paimon.consumer.Consumer;
+import org.apache.paimon.consumer.ConsumerManager;
+import org.apache.paimon.consumer.ConsumerInfo;
 import org.apache.paimon.fs.FileIO;
 import org.apache.paimon.fs.Path;
 import org.apache.paimon.function.Function;
@@ -39,6 +46,7 @@ import org.apache.paimon.function.FunctionChange;
 import org.apache.paimon.function.FunctionDefinition;
 import org.apache.paimon.function.FunctionImpl;
 import org.apache.paimon.operation.Lock;
+import org.apache.paimon.partition.Partition;
 import org.apache.paimon.partition.PartitionStatistics;
 import org.apache.paimon.rest.responses.GetTagResponse;
 import org.apache.paimon.schema.Schema;
@@ -67,7 +75,9 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -82,6 +92,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     private final FunctionRepository<Handle> functionRepository;
     private final TagRepository<Handle> tagRepository;
     private final BranchRepository<Handle> branchRepository;
+    private final PartitionStateRepository<Handle> partitionStateRepository;
 
     private final FileIO fileIO;
     private final String catalogKey;
@@ -99,6 +110,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         this.functionRepository = new JdbcFunctionRepository(catalogKey);
         this.tagRepository = new JdbcTagRepository(catalogKey);
         this.branchRepository = new JdbcBranchRepository(catalogKey);
+        this.partitionStateRepository = new JdbcPartitionStateRepository(catalogKey);
         new JdbcTableInitializer(dataSource).initialize();
 
         this.fileIO = fileIO;
@@ -206,7 +218,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
             transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
                 var tableSchema = schemaManager.createTable(schema);
                 var properties = collectTableProperties(tableSchema);
-                tableRepository.create(tx, new TableRecord(identifier, properties));
+                tableRepository.create(tx, new TableRecord(identifier, properties, Optional.of(UUID.randomUUID().toString())));
                 return tableSchema;
             }));
         } catch (Exception e) {
@@ -268,9 +280,30 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     }
 
     @Override
+    protected TableMetadata loadTableMetadata(Identifier identifier) throws TableNotExistException {
+        var schema = loadTableSchema(identifier);
+        var tableRecord = transactionManager.inTransactionR(tx -> tableRepository.find(tx, identifier))
+                .orElseThrow(() -> new TableNotExistException(identifier));
+        return new TableMetadata(schema, false, tableRecord.tableUuid().orElse(null));
+    }
+
+    @Override
     public Table getTableById(String tableId) throws TableIdNotExistException {
-        // TODO: implement?
-        return super.getTableById(tableId);
+        var maybeRecord = transactionManager.inTransactionR(tx -> tableRepository.findByUuid(tx, tableId));
+        if (maybeRecord.isPresent()) {
+            var record = maybeRecord.get();
+            try {
+                return getTable(Identifier.create(record.database(), record.name()));
+            } catch (TableNotExistException e) {
+                throw new TableIdNotExistException(tableId, e);
+            }
+        }
+
+        try {
+            return getTable(Identifier.fromString(tableId));
+        } catch (Exception err) {
+            throw new TableIdNotExistException(tableId, err);
+        }
     }
 
     @Override
@@ -576,31 +609,61 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
             @Nullable String tableUuid,
             Snapshot snapshot,
             List<PartitionStatistics> statistics) {
-        return transactionManager.inTransactionR(tx -> runWithLock(tx, identifier, () -> {
-            try {
-                ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
-            } catch (TableNotExistException e) {
-                throw new RuntimeException(e);
-            }
+        try {
+            return transactionManager.inTransactionR(tx -> runWithLock(tx, identifier, () -> {
+                var tableRecord = tableRepository.find(tx, identifier)
+                        .orElseThrow(() -> new RuntimeException(new TableNotExistException(identifier)));
 
-            var snapshotManager = snapshotManager(identifier);
-            var newSnapshotPath = snapshotManager.snapshotPath(snapshot.id());
-
-            try {
-                if (fileIO.exists(newSnapshotPath)) {
-                    return false;
+                try {
+                    ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                } catch (TableNotExistException e) {
+                    throw new RuntimeException(e);
                 }
 
-                var committed = fileIO.tryToWriteAtomic(newSnapshotPath, snapshot.toJson());
-
-                if (committed) {
-                    snapshotManager.commitLatestHint(snapshot.id());
+                if (tableUuid != null && tableRecord.tableUuid().isPresent() && !tableUuid.equals(tableRecord.tableUuid().get())) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Table id mismatch for %s. Expected '%s' but got '%s'.",
+                                    identifier.getFullName(),
+                                    tableRecord.tableUuid().get(),
+                                    tableUuid));
                 }
-                return committed;
-            } catch (IOException e) {
-                throw new RuntimeException(String.format("Failed to commit snapshot %s for table %s.", snapshot.id(), identifier.getFullName()), e);
+
+                var snapshotManager = snapshotManager(identifier);
+                var newSnapshotPath = snapshotManager.snapshotPath(snapshot.id());
+
+                try {
+                    if (fileIO.exists(newSnapshotPath)) {
+                        return false;
+                    }
+
+                    var committed = fileIO.tryToWriteAtomic(newSnapshotPath, snapshot.toJson());
+
+                    if (committed) {
+                        snapshotManager.commitLatestHint(snapshot.id());
+                        partitionStateRepository.persistCommitStatistics(
+                                tx,
+                                identifier,
+                                identifier.getBranchNameOrDefault(),
+                                snapshot.id(),
+                                statistics
+                        );
+                    }
+
+                    return committed;
+                } catch (IOException e) {
+                    throw new RuntimeException(
+                            String.format("Failed to commit snapshot %s for table %s.", snapshot.id(), identifier.getFullName()),
+                            e);
+                }
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw new RuntimeException(tableNotExistException);
             }
-        }));
+            throw e;
+        }
     }
 
     @Override
@@ -939,8 +1002,195 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         dataSource.close();
     }
 
-    // TODO: add partition modification support?
-    // TODO: add consumers support?
+    @Override
+    public PagedList<ConsumerInfo> listConsumersPaged(Identifier identifier, @Nullable Integer maxResults, @Nullable String pageToken) throws TableNotExistException {
+        ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+
+        var manager = consumerManager(identifier);
+        var consumers = manager.listAllIds().stream()
+                .sorted()
+                .map(consumerId -> manager.consumer(consumerId)
+                        .map(consumer -> new ConsumerInfo(consumerId, consumer.nextSnapshot()))
+                        .orElse(null))
+                .filter(Objects::nonNull)
+                .toList();
+
+        int start = decodePageToken(pageToken);
+        if (start >= consumers.size()) {
+            return new PagedList<>(List.of(), null);
+        }
+
+        int pageSize = maxResults == null || maxResults <= 0 ? consumers.size() : maxResults;
+        int end = Math.min(consumers.size(), start + pageSize);
+        String nextPageToken = end < consumers.size() ? String.valueOf(end) : null;
+        return new PagedList<>(consumers.subList(start, end), nextPageToken);
+    }
+
+    @Override
+    public void resetConsumer(Identifier identifier, String consumerId, @Nullable Long nextSnapshotId) throws TableNotExistException {
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                try {
+                    ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                } catch (TableNotExistException e) {
+                    throw new RuntimeException(e);
+                }
+
+                var consumerManager = consumerManager(identifier);
+                if (nextSnapshotId == null) {
+                    consumerManager.deleteConsumer(consumerId);
+                    return true;
+                }
+
+                consumerManager.resetConsumer(consumerId, new Consumer(nextSnapshotId));
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public void markDonePartitions(Identifier identifier, List<Map<String, String>> partitions) throws TableNotExistException {
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                try {
+                    ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                } catch (TableNotExistException e) {
+                    throw new RuntimeException(e);
+                }
+                partitionStateRepository.markDone(tx, identifier, identifier.getBranchNameOrDefault(), partitions);
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public List<Partition> listPartitions(Identifier identifier) throws TableNotExistException {
+        ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+        return transactionManager.inTransactionR(tx -> partitionStateRepository.findAll(tx, identifier, identifier.getBranchNameOrDefault()))
+                .stream()
+                .map(PartitionStateRecord::toPartition)
+                .toList();
+    }
+
+    @Override
+    public PagedList<Partition> listPartitionsPaged(Identifier identifier, Integer maxResults, String pageToken, String partitionNamePattern) throws TableNotExistException {
+        if (partitionNamePattern != null && !partitionNamePattern.isBlank()) {
+            throw new UnsupportedOperationException("Current catalog does not support partition name pattern filter.");
+        }
+
+        var partitions = listPartitions(identifier);
+        int start = decodePageToken(pageToken);
+        if (start >= partitions.size()) {
+            return new PagedList<>(List.of(), null);
+        }
+
+        int pageSize = maxResults == null || maxResults <= 0 ? partitions.size() : maxResults;
+        int end = Math.min(partitions.size(), start + pageSize);
+        String nextPageToken = end < partitions.size() ? String.valueOf(end) : null;
+        return new PagedList<>(partitions.subList(start, end), nextPageToken);
+    }
+
+    @Override
+    public List<Partition> listPartitionsByNames(Identifier identifier, List<Map<String, String>> partitions) throws TableNotExistException {
+        if (partitions.size() > 1000) {
+            throw new IllegalArgumentException(
+                    String.format("The number of partition specs to list should not exceed 1000, but is %d", partitions.size()));
+        }
+        if (partitions.isEmpty()) {
+            return List.of();
+        }
+
+        ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+        return transactionManager.inTransactionR(tx -> partitionStateRepository.findBySpecs(
+                        tx,
+                        identifier,
+                        identifier.getBranchNameOrDefault(),
+                        partitions
+                ))
+                .stream()
+                .map(PartitionStateRecord::toPartition)
+                .toList();
+    }
+
+    @Override
+    public void createPartitions(Identifier identifier, List<Map<String, String>> partitions) throws TableNotExistException {
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                try {
+                    ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                } catch (TableNotExistException e) {
+                    throw new RuntimeException(e);
+                }
+                partitionStateRepository.createPartitions(tx, identifier, identifier.getBranchNameOrDefault(), partitions);
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public void dropPartitions(Identifier identifier, List<Map<String, String>> partitions) throws TableNotExistException {
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                try {
+                    ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                } catch (TableNotExistException e) {
+                    throw new RuntimeException(e);
+                }
+                partitionStateRepository.dropPartitions(tx, identifier, identifier.getBranchNameOrDefault(), partitions);
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public void alterPartitions(Identifier identifier, List<PartitionStatistics> partitions) throws TableNotExistException {
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                try {
+                    ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                } catch (TableNotExistException e) {
+                    throw new RuntimeException(e);
+                }
+                partitionStateRepository.alterPartitions(tx, identifier, identifier.getBranchNameOrDefault(), partitions);
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public boolean supportsPartitionModification() {
+        return true;
+    }
 
     private SchemaManager getSchemaManager(Identifier identifier) {
         return new SchemaManager(fileIO, getTableLocation(identifier));
@@ -997,6 +1247,10 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
                 null,
                 null
         );
+    }
+
+    private ConsumerManager consumerManager(Identifier identifier) {
+        return new ConsumerManager(fileIO, getTableLocation(identifier), identifier.getBranchNameOrDefault());
     }
 
     private TagManager tagManager(Identifier identifier) {

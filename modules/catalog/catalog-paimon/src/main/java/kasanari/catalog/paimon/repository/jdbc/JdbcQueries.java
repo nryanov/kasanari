@@ -23,12 +23,66 @@ public final class JdbcQueries {
                 catalog_key       TEXT,
                 database_name     TEXT,
                 table_name        TEXT,
+                table_uuid        TEXT,
                 properties_payload JSONB                    NOT NULL,
                 created_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 CONSTRAINT kasanari_paimon_tables_pk PRIMARY KEY (catalog_key, database_name, table_name),
                 CONSTRAINT kasanari_paimon_tables_db_fk FOREIGN KEY (catalog_key, database_name)
                     REFERENCES kasanari_paimon_databases (catalog_key, database_name) ON DELETE CASCADE
+            )
+            """;
+
+    public static final String CREATE_PARTITION_STATS_DELTAS_DDL = """
+            CREATE TABLE IF NOT EXISTS kasanari_paimon_partition_stats_deltas
+            (
+                catalog_key             TEXT,
+                database_name           TEXT,
+                table_name              TEXT,
+                branch_name             TEXT,
+                snapshot_id             BIGINT                   NOT NULL,
+                spec_hash               TEXT,
+                spec_payload            JSONB                    NOT NULL,
+                record_count_delta      BIGINT                   NOT NULL,
+                file_size_delta         BIGINT                   NOT NULL,
+                file_count_delta        BIGINT                   NOT NULL,
+                last_file_creation_time BIGINT                   NOT NULL,
+                total_buckets           INT                      NOT NULL,
+                created_at              TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at              TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT kasanari_paimon_partition_stats_deltas_pk PRIMARY KEY (
+                    catalog_key, database_name, table_name, branch_name, snapshot_id, spec_hash
+                ),
+                CONSTRAINT kasanari_paimon_partition_stats_deltas_table_fk FOREIGN KEY (catalog_key, database_name, table_name)
+                    REFERENCES kasanari_paimon_tables (catalog_key, database_name, table_name)
+                    ON UPDATE CASCADE ON DELETE CASCADE
+            )
+            """;
+
+    public static final String CREATE_PARTITION_STATES_DDL = """
+            CREATE TABLE IF NOT EXISTS kasanari_paimon_partition_states
+            (
+                catalog_key             TEXT,
+                database_name           TEXT,
+                table_name              TEXT,
+                branch_name             TEXT,
+                spec_hash               TEXT,
+                spec_payload            JSONB                    NOT NULL,
+                record_count            BIGINT                   NOT NULL,
+                file_size_in_bytes      BIGINT                   NOT NULL,
+                file_count              BIGINT                   NOT NULL,
+                last_file_creation_time BIGINT                   NOT NULL,
+                total_buckets           INT                      NOT NULL,
+                done                    BOOLEAN                  NOT NULL DEFAULT FALSE,
+                options_payload         JSONB                    NOT NULL DEFAULT '{}'::jsonb,
+                created_at              TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at              TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT kasanari_paimon_partition_states_pk PRIMARY KEY (
+                    catalog_key, database_name, table_name, branch_name, spec_hash
+                ),
+                CONSTRAINT kasanari_paimon_partition_states_table_fk FOREIGN KEY (catalog_key, database_name, table_name)
+                    REFERENCES kasanari_paimon_tables (catalog_key, database_name, table_name)
+                    ON UPDATE CASCADE ON DELETE CASCADE
             )
             """;
 
@@ -130,14 +184,14 @@ public final class JdbcQueries {
             """;
 
     public static final String LIST_TABLES = """
-            SELECT table_name, properties_payload
+            SELECT table_name, properties_payload, table_uuid
             FROM kasanari_paimon_tables
             WHERE catalog_key = ? AND database_name = ?
             ORDER BY table_name
             """;
     public static final String INSERT_TABLE = """
-            INSERT INTO kasanari_paimon_tables(catalog_key, database_name, table_name, properties_payload)
-            VALUES (?, ?, ?, ?::jsonb)
+            INSERT INTO kasanari_paimon_tables(catalog_key, database_name, table_name, table_uuid, properties_payload)
+            VALUES (?, ?, ?, ?, ?::jsonb)
             """;
     public static final String UPDATE_TABLE = """
             UPDATE kasanari_paimon_tables
@@ -158,6 +212,128 @@ public final class JdbcQueries {
                 SELECT 1 FROM kasanari_paimon_tables
                 WHERE catalog_key = ? AND database_name = ? AND table_name = ?
             )
+            """;
+    public static final String SELECT_TABLE = """
+            SELECT table_name, properties_payload, table_uuid
+            FROM kasanari_paimon_tables
+            WHERE catalog_key = ? AND database_name = ? AND table_name = ?
+            """;
+    public static final String SELECT_TABLE_BY_UUID = """
+            SELECT database_name, table_name, properties_payload, table_uuid
+            FROM kasanari_paimon_tables
+            WHERE catalog_key = ? AND table_uuid = ?
+            """;
+    public static final String UPSERT_PARTITION_STATE = """
+            INSERT INTO kasanari_paimon_partition_states(
+                catalog_key,
+                database_name,
+                table_name,
+                branch_name,
+                spec_hash,
+                spec_payload,
+                record_count,
+                file_size_in_bytes,
+                file_count,
+                last_file_creation_time,
+                total_buckets,
+                done,
+                options_payload
+            )
+            VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, FALSE, ?::jsonb)
+            ON CONFLICT (catalog_key, database_name, table_name, branch_name, spec_hash) DO UPDATE SET
+                record_count = kasanari_paimon_partition_states.record_count + EXCLUDED.record_count,
+                file_size_in_bytes = kasanari_paimon_partition_states.file_size_in_bytes + EXCLUDED.file_size_in_bytes,
+                file_count = kasanari_paimon_partition_states.file_count + EXCLUDED.file_count,
+                last_file_creation_time = GREATEST(
+                    kasanari_paimon_partition_states.last_file_creation_time,
+                    EXCLUDED.last_file_creation_time
+                ),
+                total_buckets = EXCLUDED.total_buckets,
+                done = FALSE,
+                updated_at = CURRENT_TIMESTAMP
+            """;
+    public static final String DELETE_EMPTY_PARTITION_STATES = """
+            DELETE FROM kasanari_paimon_partition_states
+            WHERE catalog_key = ? AND database_name = ? AND table_name = ? AND branch_name = ? AND file_count <= 0
+            """;
+    public static final String INSERT_PARTITION_STATS_DELTA = """
+            INSERT INTO kasanari_paimon_partition_stats_deltas(
+                catalog_key,
+                database_name,
+                table_name,
+                branch_name,
+                snapshot_id,
+                spec_hash,
+                spec_payload,
+                record_count_delta,
+                file_size_delta,
+                file_count_delta,
+                last_file_creation_time,
+                total_buckets
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)
+            ON CONFLICT (catalog_key, database_name, table_name, branch_name, snapshot_id, spec_hash) DO NOTHING
+            """;
+    public static final String LIST_PARTITION_STATES = """
+            SELECT spec_payload, record_count, file_size_in_bytes, file_count, last_file_creation_time, total_buckets, done, options_payload
+            FROM kasanari_paimon_partition_states
+            WHERE catalog_key = ? AND database_name = ? AND table_name = ? AND branch_name = ?
+            ORDER BY spec_hash
+            """;
+    public static final String MARK_DONE_PARTITION_STATE = """
+            UPDATE kasanari_paimon_partition_states
+            SET done = TRUE, updated_at = CURRENT_TIMESTAMP
+            WHERE catalog_key = ? AND database_name = ? AND table_name = ? AND branch_name = ? AND spec_hash = ?
+            """;
+    public static final String INSERT_PARTITION_STATE_IF_ABSENT = """
+            INSERT INTO kasanari_paimon_partition_states(
+                catalog_key,
+                database_name,
+                table_name,
+                branch_name,
+                spec_hash,
+                spec_payload,
+                record_count,
+                file_size_in_bytes,
+                file_count,
+                last_file_creation_time,
+                total_buckets,
+                done,
+                options_payload
+            )
+            VALUES (?, ?, ?, ?, ?, ?::jsonb, 0, 0, 0, 0, 0, FALSE, '{}'::jsonb)
+            ON CONFLICT (catalog_key, database_name, table_name, branch_name, spec_hash) DO NOTHING
+            """;
+    public static final String DELETE_PARTITION_STATE_BY_HASH = """
+            DELETE FROM kasanari_paimon_partition_states
+            WHERE catalog_key = ? AND database_name = ? AND table_name = ? AND branch_name = ? AND spec_hash = ?
+            """;
+    public static final String UPSERT_PARTITION_STATE_ABSOLUTE = """
+            INSERT INTO kasanari_paimon_partition_states(
+                catalog_key,
+                database_name,
+                table_name,
+                branch_name,
+                spec_hash,
+                spec_payload,
+                record_count,
+                file_size_in_bytes,
+                file_count,
+                last_file_creation_time,
+                total_buckets,
+                done,
+                options_payload
+            )
+            VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, FALSE, '{}'::jsonb)
+            ON CONFLICT (catalog_key, database_name, table_name, branch_name, spec_hash) DO UPDATE SET
+                spec_payload = EXCLUDED.spec_payload,
+                record_count = EXCLUDED.record_count,
+                file_size_in_bytes = EXCLUDED.file_size_in_bytes,
+                file_count = EXCLUDED.file_count,
+                last_file_creation_time = EXCLUDED.last_file_creation_time,
+                total_buckets = EXCLUDED.total_buckets,
+                done = FALSE,
+                updated_at = CURRENT_TIMESTAMP
             """;
 
     public static final String LIST_VIEWS = """

@@ -54,11 +54,6 @@ public class KasanariPaimonCatalogTest extends PaimonCatalogAdapterTest {
     }
 
     @Override
-    protected boolean supportsConsumers() {
-        return false;
-    }
-
-    @Override
     protected boolean supportListGlobally() {
         return false;
     }

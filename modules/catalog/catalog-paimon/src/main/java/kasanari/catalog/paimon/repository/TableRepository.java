@@ -4,6 +4,7 @@ import kasanari.catalog.paimon.model.TableRecord;
 import org.apache.paimon.catalog.Identifier;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TableRepository<T> {
     List<TableRecord> findAll(T tx, String database);
@@ -17,4 +18,8 @@ public interface TableRepository<T> {
     void rename(T tx, Identifier fromTable, Identifier toTable);
 
     boolean exists(T tx, Identifier table);
+
+    Optional<TableRecord> find(T tx, Identifier table);
+
+    Optional<TableRecord> findByUuid(T tx, String tableUuid);
 }
