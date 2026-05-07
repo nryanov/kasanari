@@ -342,11 +342,10 @@ public abstract class PaimonCatalogAdapterTest {
         catalog.createDatabase(prefix, createDatabaseRequest);
         catalog.createTable(prefix, database, createTableRequest);
 
-        var result = catalog.listTablesGlobally(prefix, database, table, 100, null)
-                .getTables()
-                .contains(Identifier.create(database, table));
+        var expected = List.of(Identifier.create(database, table));
+        var result = catalog.listTablesGlobally(prefix, database, table, 100, null).getTables();
 
-        assertTrue(result);
+        assertEquals(expected, result);
     }
 
     @Test

@@ -259,8 +259,43 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     }
 
     @Override
-    public PagedList<Identifier> listTablesPagedGlobally(@Nullable String databaseNamePattern, @Nullable String tableNamePattern, @Nullable Integer maxResults, @Nullable String pageToken) {
-        return super.listTablesPagedGlobally(databaseNamePattern, tableNamePattern, maxResults, pageToken);
+    public PagedList<Identifier> listTablesPagedGlobally(
+            @Nullable String databaseNamePattern,
+            @Nullable String tableNamePattern,
+            @Nullable Integer maxResults,
+            @Nullable String pageToken) {
+        CatalogUtils.validateNamePattern(this, databaseNamePattern);
+        CatalogUtils.validateNamePattern(this, tableNamePattern);
+        var identifiers = new ArrayList<Identifier>();
+        for (var db : listDatabases()) {
+            if (!matchesSqlLikePrefix(db, databaseNamePattern)) {
+                continue;
+            }
+            List<String> tableNames;
+            try {
+                tableNames = listTables(db);
+            } catch (DatabaseNotExistException e) {
+                continue;
+            }
+            for (var table : tableNames) {
+                if (matchesSqlLikePrefix(table, tableNamePattern)) {
+                    identifiers.add(Identifier.create(db, table));
+                }
+            }
+        }
+
+        identifiers.sort(Comparator.comparing(Identifier::getDatabaseName).thenComparing(Identifier::getObjectName));
+
+        var start = decodePageToken(pageToken);
+        if (start >= identifiers.size()) {
+            return new PagedList<>(List.of(), null);
+        }
+
+        var pageSize = maxResults == null || maxResults <= 0 ? identifiers.size() : maxResults;
+        var end = Math.min(identifiers.size(), start + pageSize);
+        var nextPageToken = end < identifiers.size() ? String.valueOf(end) : null;
+
+        return new PagedList<>(identifiers.subList(start, end), nextPageToken);
     }
 
     @Override
