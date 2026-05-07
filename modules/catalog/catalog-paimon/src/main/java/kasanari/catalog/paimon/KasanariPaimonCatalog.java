@@ -594,12 +594,12 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
     @Override
     public CatalogLoader catalogLoader() {
-        return null;
+        return new KasanariCatalogLoader(fileIO, catalogKey, context, warehouse);
     }
 
     @Override
     public boolean caseSensitive() {
-        return false;
+        return true;
     }
 
     @Override
