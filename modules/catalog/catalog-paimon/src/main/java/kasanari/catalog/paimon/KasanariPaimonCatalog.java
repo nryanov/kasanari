@@ -30,7 +30,6 @@ import org.apache.paimon.function.FunctionChange;
 import org.apache.paimon.function.FunctionDefinition;
 import org.apache.paimon.function.FunctionImpl;
 import org.apache.paimon.operation.Lock;
-import org.apache.paimon.partition.Partition;
 import org.apache.paimon.partition.PartitionStatistics;
 import org.apache.paimon.rest.responses.GetTagResponse;
 import org.apache.paimon.schema.Schema;
@@ -353,29 +352,42 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         }
 
         var current = maybe.get();
-        var comment = current.comment();
+        var comment = new AtomicReference<>(current.comment());
         var options = new HashMap<>(current.options());
         var dialects = new HashMap<>(current.dialects());
         var query = current.query();
-        //TODO
-        viewChanges.forEach(change -> {
+
+        for (var change : viewChanges) {
             switch (change) {
-                case ViewChange.RemoveViewOption i -> {
-                }
-                case ViewChange.SetViewOption i -> {
-                }
-                case ViewChange.UpdateViewComment i -> {
-                }
+                case ViewChange.RemoveViewOption i -> options.remove(i.key());
+                case ViewChange.SetViewOption i -> options.put(i.key(), i.value());
+                case ViewChange.UpdateViewComment i -> comment.set(Optional.ofNullable(i.comment()));
                 case ViewChange.AddDialect i -> {
+                    var currentDialect = dialects.get(i.dialect());
+                    if (currentDialect != null) {
+                        throw new DialectAlreadyExistException(view, i.dialect());
+                    }
+
+                    dialects.put(i.dialect(), i.query());
                 }
                 case ViewChange.DropDialect i -> {
+                    var currentDialect = dialects.remove(i.dialect());
+                    if (currentDialect == null) {
+                        throw new DialectNotExistException(view, i.dialect());
+                    }
                 }
                 case ViewChange.UpdateDialect i -> {
+                    var currentDialect = dialects.get(i.dialect());
+                    if (currentDialect == null) {
+                        throw new DialectNotExistException(view, i.dialect());
+                    }
+
+                    dialects.put(i.dialect(), i.query());
                 }
                 default -> {
                 }
             }
-        });
+        }
 
         transactionManager.inTransaction(tx -> runWithLock(tx, view, () -> {
             viewRepository.alter(tx, new ViewRecord(
@@ -384,7 +396,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
                     query,
                     dialects,
                     options,
-                    comment
+                    comment.get()
             ));
             return true;
         }));
@@ -918,45 +930,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
     }
 
-    @Override
-    public void alterPartitions(Identifier identifier, List<PartitionStatistics> partitions) throws TableNotExistException {
-        super.alterPartitions(identifier, partitions);
-    }
-
-    @Override
-    public void dropPartitions(Identifier identifier, List<Map<String, String>> partitions) throws TableNotExistException {
-        super.dropPartitions(identifier, partitions);
-    }
-
-    @Override
-    public void createPartitions(Identifier identifier, List<Map<String, String>> partitions) throws TableNotExistException {
-        super.createPartitions(identifier, partitions);
-    }
-
-    @Override
-    public boolean supportsPartitionModification() {
-        return super.supportsPartitionModification();
-    }
-
-    @Override
-    public List<Partition> listPartitionsByNames(Identifier identifier, List<Map<String, String>> partitions) throws TableNotExistException {
-        return super.listPartitionsByNames(identifier, partitions);
-    }
-
-    @Override
-    public PagedList<Partition> listPartitionsPaged(Identifier identifier, Integer maxResults, String pageToken, String partitionNamePattern) throws TableNotExistException {
-        return super.listPartitionsPaged(identifier, maxResults, pageToken, partitionNamePattern);
-    }
-
-    @Override
-    public List<Partition> listPartitions(Identifier identifier) throws TableNotExistException {
-        return super.listPartitions(identifier);
-    }
-
-    @Override
-    public void markDonePartitions(Identifier identifier, List<Map<String, String>> partitions) throws TableNotExistException {
-        super.markDonePartitions(identifier, partitions);
-    }
+    // TODO: add partition modification support?
 
     private SchemaManager getSchemaManager(Identifier identifier) {
         return new SchemaManager(fileIO, getTableLocation(identifier));
