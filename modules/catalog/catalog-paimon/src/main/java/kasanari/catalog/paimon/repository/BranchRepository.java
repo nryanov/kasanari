@@ -1,12 +1,13 @@
 package kasanari.catalog.paimon.repository;
 
+import kasanari.catalog.paimon.model.BranchRecord;
 import org.apache.paimon.catalog.Identifier;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
 public interface BranchRepository<T> {
-    void create(T tx, Identifier identifier, String branch, @Nullable String fromTag);
+    void create(T tx, BranchRecord record);
 
     boolean delete(T tx, Identifier identifier, String branch);
 
@@ -14,7 +15,5 @@ public interface BranchRepository<T> {
 
     boolean fastForward(T tx, Identifier identifier, String branch);
 
-    boolean exists(T tx, Identifier identifier, String branch);
-
-    List<String> findAll(T tx, Identifier identifier);
+    List<BranchRecord> findAll(T tx, Identifier identifier);
 }

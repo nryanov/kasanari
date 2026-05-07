@@ -1,5 +1,6 @@
 package kasanari.catalog.paimon;
 
+import kasanari.catalog.paimon.model.BranchRecord;
 import kasanari.catalog.paimon.model.DatabaseRecord;
 import kasanari.catalog.paimon.model.FunctionRecord;
 import kasanari.catalog.paimon.model.TableRecord;
@@ -597,7 +598,9 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
                 } else {
                     branchManager(identifier).createBranch(branch, fromTag);
                 }
-                branchRepository.create(tx, identifier, branch, fromTag);
+
+                var branchRecord = new BranchRecord(identifier.getDatabaseName(), identifier.getTableName(), branch, Optional.ofNullable(fromTag));
+                branchRepository.create(tx, branchRecord);
                 return true;
             }));
         } catch (RuntimeException e) {
@@ -677,8 +680,9 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
         var branches = new HashSet<String>();
         branches.add(Identifier.DEFAULT_MAIN_BRANCH);
-        branches.addAll(branchManager(identifier).branches());
-        branches.addAll(transactionManager.inTransactionR(tx -> branchRepository.findAll(tx, identifier)));
+        var existingBranches = transactionManager.inTransactionR(tx -> branchRepository.findAll(tx, identifier))
+                        .stream().map(BranchRecord::branchName).toList();
+        branches.addAll(existingBranches);
 
         return branches.stream().sorted().toList();
     }
