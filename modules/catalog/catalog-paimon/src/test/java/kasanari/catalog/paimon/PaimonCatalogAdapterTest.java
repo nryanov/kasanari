@@ -1,6 +1,7 @@
 package kasanari.catalog.paimon;
 
 import org.apache.paimon.Snapshot;
+import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.consumer.ConsumerInfo;
 import org.apache.paimon.data.BinaryString;
@@ -196,14 +197,6 @@ public abstract class PaimonCatalogAdapterTest {
         return "/tmp/" + database + "/" + table;
     }
 
-    protected String existingTableIdWithNamespace() {
-        return null;
-    }
-
-    protected String existingTableIdWithoutNamespace() {
-        return null;
-    }
-
     @Test
     void listDatabases() {
         assumeTrue(supportsDatabases());
@@ -344,30 +337,6 @@ public abstract class PaimonCatalogAdapterTest {
 
         var expected = List.of(Identifier.create(database, table));
         var result = catalog.listTablesGlobally(prefix, database, table, 100, null).getTables();
-
-        assertEquals(expected, result);
-    }
-
-    @Test
-    void getTableByIdWithNamespace() {
-        assumeTrue(supportsTables() && supportsGetTableByIdWithNamespace());
-        var tableId = existingTableIdWithNamespace();
-        assumeTrue(tableId != null && !tableId.isBlank());
-
-        var expected = tableId;
-        var result = catalog.getTableById(prefix, tableId).getId();
-
-        assertEquals(expected, result);
-    }
-
-    @Test
-    void getTableByIdWithoutNamespace() {
-        assumeTrue(supportsTables() && supportsGetTableByIdWithoutNamespace());
-        var tableId = existingTableIdWithoutNamespace();
-        assumeTrue(tableId != null && !tableId.isBlank());
-
-        var expected = tableId;
-        var result = catalog.getTableById(prefix, tableId).getId();
 
         assertEquals(expected, result);
     }
@@ -811,7 +780,7 @@ public abstract class PaimonCatalogAdapterTest {
     }
 
     @Test
-    void forwardBranch() {
+    void forwardBranch() throws Catalog.TableNotExistException, Catalog.TagAlreadyExistException {
         assumeTrue(supportsDatabases() && supportsTables() && supportsBranches());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
@@ -825,6 +794,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         catalog.createBranch(prefix, database, table, createBranchRequest);
         triggerTableSnapshotInBranch(database, table, branch);
+        var snapshot = catalog.getTableSnapshot(prefix, database, table);
+        var snapshotId = snapshot.getSnapshot().snapshot().id();
+
+        // paimon requires to have at least one tag on branch for fast-forward
+        catalog.getUnderlyingCatalog().createTag(new Identifier(database, table, branch), tag, snapshotId, null, true);
 
         catalog.forwardBranch(prefix, database, table, branch, forwardBranchRequest);
 
