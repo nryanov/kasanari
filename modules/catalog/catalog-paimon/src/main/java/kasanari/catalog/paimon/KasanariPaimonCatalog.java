@@ -259,6 +259,11 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     }
 
     @Override
+    public PagedList<Identifier> listTablesPagedGlobally(@Nullable String databaseNamePattern, @Nullable String tableNamePattern, @Nullable Integer maxResults, @Nullable String pageToken) {
+        return super.listTablesPagedGlobally(databaseNamePattern, tableNamePattern, maxResults, pageToken);
+    }
+
+    @Override
     protected void createTableImpl(Identifier identifier, Schema schema) {
         var schemaManager = getSchemaManager(identifier);
         var path = getTableLocation(identifier);

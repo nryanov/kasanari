@@ -30,6 +30,7 @@ import org.apache.paimon.rest.requests.RollbackTableRequest;
 import org.apache.paimon.rest.responses.GetFunctionResponse;
 import org.apache.paimon.rest.responses.GetViewResponse;
 import org.apache.paimon.schema.Schema;
+import org.apache.paimon.schema.SchemaChange;
 import org.apache.paimon.table.Instant;
 import org.apache.paimon.types.DataField;
 import org.apache.paimon.types.DataTypes;
@@ -45,10 +46,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -472,17 +475,63 @@ public abstract class PaimonCatalogAdapterTest {
 
     @Test
     void rollbackSchema() {
-        // TODO: fix
         assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportRollbackSchema());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        var rollbackSchemaRequest = new RollbackSchemaRequest(1L);
+        var alterTableRequest = new AlterTableRequest(List.of(
+                SchemaChange.addColumn("newField", DataTypes.INT())
+        ));
+
+        var rollbackSchemaRequest = new RollbackSchemaRequest(0L);
         catalog.createDatabase(prefix, createDatabaseRequest);
         catalog.createTable(prefix, database, createTableRequest);
+        catalog.alterTable(prefix, database, table, alterTableRequest);
         catalog.rollbackSchema(prefix, database, table, rollbackSchemaRequest);
 
         assertEquals(table, catalog.getTable(prefix, database, table).getName());
+    }
+
+    @Test
+    void rollbackSchemaShouldFailOnAttemptToRollbackOnDeletedSchema() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportRollbackSchema());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var alterTableRequest = new AlterTableRequest(List.of(
+                SchemaChange.addColumn("newField", DataTypes.INT())
+        ));
+
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        // 2 schemas (0, 1) existing
+        catalog.alterTable(prefix, database, table, alterTableRequest);
+
+        // 1 schemas (0) existing
+        assertDoesNotThrow(() -> catalog.rollbackSchema(prefix, database, table, new RollbackSchemaRequest(0L)));
+        assertThrows(RuntimeException.class, () -> catalog.rollbackSchema(prefix, database, table, new RollbackSchemaRequest(1L)));
+    }
+
+    @Test
+    void rollbackSchemaShouldFailOnAttemptToRollbackToPreviousSchemaIfNewOneAlreadyHasRelatedSnapshot() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportRollbackSchema());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var alterTableRequest = new AlterTableRequest(List.of(
+                SchemaChange.addColumn("newField", DataTypes.INT())
+        ));
+
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+
+        // 2 schemas (0, 1) existing
+        catalog.alterTable(prefix, database, table, alterTableRequest);
+        triggerTableSnapshotAltered(database, table);
+
+        // failed attempt to roll back to previous schema
+        assertThrows(RuntimeException.class, () -> catalog.rollbackSchema(prefix, database, table, new RollbackSchemaRequest(0L)));
     }
 
     @Test
@@ -791,10 +840,13 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        var createTagRequest = new CreateTagRequest(tag, null, null);
         catalog.createDatabase(prefix, createDatabaseRequest);
         catalog.createTable(prefix, database, createTableRequest);
+        triggerTableSnapshot(database, table);
+        catalog.createTag(prefix, database, table, createTagRequest);
 
-        var expected = Collections.emptyList();
+        var expected = List.of(tag);
         var result = catalog.listTags(prefix, database, table, 100, null, null).tags();
 
         assertEquals(expected, result);
@@ -850,7 +902,7 @@ public abstract class PaimonCatalogAdapterTest {
     }
 
     @Test
-    void listConsumers() {
+    void listEmptyConsumers() {
         assumeTrue(supportsDatabases() && supportsTables() && supportsConsumers());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
@@ -1141,6 +1193,22 @@ public abstract class PaimonCatalogAdapterTest {
             try (var tableWrite = writeBuilder.newWrite();
                  var tableCommit = writeBuilder.newCommit()) {
                 tableWrite.write(GenericRow.of(1));
+                tableCommit.commit(tableWrite.prepareCommit());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to trigger table snapshot for " + database + "." + table, e);
+        }
+    }
+
+    protected void triggerTableSnapshotAltered(String database, String table) {
+        try {
+            var paimonCatalog = catalog.getUnderlyingCatalog();
+            var paimonTable = paimonCatalog.getTable(Identifier.create(database, table));
+            var writeBuilder = paimonTable.newBatchWriteBuilder();
+
+            try (var tableWrite = writeBuilder.newWrite();
+                 var tableCommit = writeBuilder.newCommit()) {
+                tableWrite.write(GenericRow.of(1, 2));
                 tableCommit.commit(tableWrite.prepareCommit());
             }
         } catch (Exception e) {
