@@ -9,6 +9,15 @@ import kasanari.catalog.paimon.model.ViewRecord;
 import kasanari.catalog.paimon.repository.BranchRepository;
 import kasanari.catalog.paimon.repository.DatabaseRepository;
 import kasanari.catalog.paimon.repository.FunctionRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcBranchRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcDatabaseRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcFunctionRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcTableInitializer;
+import kasanari.catalog.paimon.repository.jdbc.JdbcTableRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcTagRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcTransactionManager;
+import kasanari.catalog.paimon.repository.jdbc.JdbcViewRepository;
+import kasanari.catalog.paimon.repository.jdbc.KasanariDataSource;
 import kasanari.catalog.paimon.repository.jdbc.KasanariCatalogLock;
 import kasanari.catalog.paimon.repository.TableRepository;
 import kasanari.catalog.paimon.repository.TagRepository;
@@ -63,6 +72,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class KasanariPaimonCatalog extends AbstractCatalog {
+    private final KasanariDataSource dataSource;
     private final TransactionManager<Handle> transactionManager;
     // TODO: each repository should also accept catalogKey (or warehouse)?
     // TODO: check that current branch is main in each operation?
@@ -80,13 +90,16 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     public KasanariPaimonCatalog(FileIO fileIO, String catalogKey, CatalogContext context, String warehouse) {
         super(fileIO, context);
 
-        this.transactionManager = null;
-        this.databaseRepository = null;
-        this.tableRepository = null;
-        this.viewRepository = null;
-        this.functionRepository = null;
-        this.tagRepository = null;
-        this.branchRepository = null;
+        var options = context.options().toMap();
+        this.dataSource = new KasanariDataSource(options);
+        this.transactionManager = new JdbcTransactionManager(dataSource);
+        this.databaseRepository = new JdbcDatabaseRepository(catalogKey);
+        this.tableRepository = new JdbcTableRepository(catalogKey);
+        this.viewRepository = new JdbcViewRepository(catalogKey);
+        this.functionRepository = new JdbcFunctionRepository(catalogKey);
+        this.tagRepository = new JdbcTagRepository(catalogKey);
+        this.branchRepository = new JdbcBranchRepository(catalogKey);
+        new JdbcTableInitializer(dataSource).initialize();
 
         this.fileIO = fileIO;
         this.catalogKey = catalogKey;
@@ -927,7 +940,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
     @Override
     public void close() throws Exception {
-
+        dataSource.close();
     }
 
     // TODO: add partition modification support?

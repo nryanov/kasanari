@@ -281,11 +281,7 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
 
     @Override
     public AuthTableQueryResponse authTableQuery(String prefix, String database, String table, AuthTableQueryRequest request) {
-        var result = call(() -> catalog.authTableQuery(
-                Identifier.create(database, table),
-                request.select()
-        ));
-        return new AuthTableQueryResponse(result.filter(), result.columnMasking());
+        throw new UnsupportedOperationException("Current catalog does not support loading table token.");
     }
 
     @Override
