@@ -277,5 +277,5 @@ public final class JdbcQueries {
             ORDER BY tag_name
             """;
 
-    public static final String ACQUIRE_TRANSACTIONAL_ADVISORY_LOCK = "SELECT pg_advisory_xact_lock(?)";
+    public static final String ACQUIRE_TRANSACTIONAL_ADVISORY_LOCK = "SELECT pg_advisory_xact_lock(hashtextextended(?, 0))";
 }

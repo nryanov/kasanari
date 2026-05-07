@@ -1,7 +1,6 @@
 package kasanari.catalog.paimon;
 
 import kasanari.fixtures.postgres.PostgresFixtureContainer;
-import kasanari.fixtures.postgres.PostgresHelper;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 
@@ -11,7 +10,6 @@ public class KasanariPaimonCatalogTest extends PaimonCatalogAdapterTest {
     private final PostgresFixtureContainer postgres = new PostgresFixtureContainer();
     private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
-    private PostgresHelper postgresHelper;
 
     @Override
     protected PaimonCatalogAdapter setupCatalogAdapter() {
@@ -21,8 +19,6 @@ public class KasanariPaimonCatalogTest extends PaimonCatalogAdapterTest {
         s3Helper = new S3Helper(s3Container);
         s3Helper.createBucket("warehouse");
 
-        postgresHelper = new PostgresHelper(postgres);
-
         var config = new HashMap<String, String>();
         config.put("fs.s3a.access.key", s3Container.username());
         config.put("fs.s3a.secret.key", s3Container.password());
@@ -31,10 +27,13 @@ public class KasanariPaimonCatalogTest extends PaimonCatalogAdapterTest {
         config.put("fs.s3a.endpoint", s3Container.url());
 
         var options = new HashMap<String, String>();
-        options.put("type", "rest");
         options.put("warehouse", "s3a://warehouse");
+        options.put("kasanari.catalog.key", "kasanari-test");
+        options.put("kasanari.jdbc.uri", postgres.jdbcUrl());
+        options.put("kasanari.jdbc.user", postgres.username());
+        options.put("kasanari.jdbc.password", postgres.password());
 
-        var factory = new ProxyPaimonCatalogFactory();
+        var factory = new KasanariPaimonCatalogFactory();
         return factory.create(config, options);
     }
 
@@ -47,5 +46,10 @@ public class KasanariPaimonCatalogTest extends PaimonCatalogAdapterTest {
     protected void close() {
         postgres.stop();
         s3Container.stop();
+    }
+
+    @Override
+    protected boolean supportAuthTable() {
+        return false;
     }
 }

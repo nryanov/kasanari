@@ -944,6 +944,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     }
 
     // TODO: add partition modification support?
+    // TODO: add consumers support?
 
     private SchemaManager getSchemaManager(Identifier identifier) {
         return new SchemaManager(fileIO, getTableLocation(identifier));
