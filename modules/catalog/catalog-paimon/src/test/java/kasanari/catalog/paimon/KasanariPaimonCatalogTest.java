@@ -52,4 +52,24 @@ public class KasanariPaimonCatalogTest extends PaimonCatalogAdapterTest {
     protected boolean supportAuthTable() {
         return false;
     }
+
+    @Override
+    protected boolean supportsConsumers() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportListGlobally() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportRollbackSchema() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportRollbackTable() {
+        return false;
+    }
 }

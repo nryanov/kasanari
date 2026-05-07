@@ -585,24 +585,20 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
             var snapshotManager = snapshotManager(identifier);
             var newSnapshotPath = snapshotManager.snapshotPath(snapshot.id());
+
             try {
                 if (fileIO.exists(newSnapshotPath)) {
                     return false;
                 }
 
-                var committed =
-                        fileIO.tryToWriteAtomic(
-                                newSnapshotPath, snapshot.toJson());
+                var committed = fileIO.tryToWriteAtomic(newSnapshotPath, snapshot.toJson());
+
                 if (committed) {
                     snapshotManager.commitLatestHint(snapshot.id());
                 }
                 return committed;
             } catch (IOException e) {
-                throw new RuntimeException(
-                        String.format(
-                                "Failed to commit snapshot %s for table %s.",
-                                snapshot.id(), identifier.getFullName()),
-                        e);
+                throw new RuntimeException(String.format("Failed to commit snapshot %s for table %s.", snapshot.id(), identifier.getFullName()), e);
             }
         }));
     }
