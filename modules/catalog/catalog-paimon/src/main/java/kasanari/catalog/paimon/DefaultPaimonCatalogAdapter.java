@@ -608,4 +608,9 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     private interface CatalogSupplier<T> {
         T get() throws Exception;
     }
+
+    @Override
+    public Catalog getUnderlyingCatalog() {
+        return catalog;
+    }
 }
