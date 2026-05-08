@@ -60,7 +60,7 @@ public record FunctionRecord(
 
         record File(List<Resource> fileResources, String language, String className,
                     String functionName) implements FunctionDefinition {
-            record Resource(String resourceType, String uri) {
+            public record Resource(String resourceType, String uri) {
             }
 
             @Override

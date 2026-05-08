@@ -15,11 +15,16 @@ public class KasanariCatalogLock implements CatalogLock {
 
     @Override
     public <T> T runWithLock(String database, String table, Callable<T> callable) throws Exception {
-        return null;
+        var lockId = database + "." + table;
+        handle.createCall(JdbcQueries.ACQUIRE_TRANSACTIONAL_ADVISORY_LOCK)
+                .bind(0, lockId)
+                .invoke();
+        return callable.call();
     }
 
     @Override
     public void close() throws IOException {
-
+        // PostgreSQL transactional advisory locks are released automatically
+        // at transaction end, so no explicit unlock is needed here.
     }
 }

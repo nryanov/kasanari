@@ -1,6 +1,7 @@
 package kasanari.catalog.paimon;
 
 
+import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.rest.requests.AlterDatabaseRequest;
 import org.apache.paimon.rest.requests.AlterFunctionRequest;
 import org.apache.paimon.rest.requests.AlterTableRequest;
@@ -226,4 +227,7 @@ public interface PaimonCatalogAdapter {
     void alterFunction(String prefix, String database, String function, AlterFunctionRequest request);
 
     void dropFunction(String prefix, String database, String function);
+
+    // for testing only
+    Catalog getUnderlyingCatalog();
 }

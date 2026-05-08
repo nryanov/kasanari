@@ -3,12 +3,24 @@ package kasanari.catalog.paimon;
 import kasanari.catalog.paimon.model.BranchRecord;
 import kasanari.catalog.paimon.model.DatabaseRecord;
 import kasanari.catalog.paimon.model.FunctionRecord;
+import kasanari.catalog.paimon.model.PartitionStateRecord;
 import kasanari.catalog.paimon.model.TableRecord;
 import kasanari.catalog.paimon.model.TagRecord;
 import kasanari.catalog.paimon.model.ViewRecord;
 import kasanari.catalog.paimon.repository.BranchRepository;
 import kasanari.catalog.paimon.repository.DatabaseRepository;
 import kasanari.catalog.paimon.repository.FunctionRepository;
+import kasanari.catalog.paimon.repository.PartitionStateRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcBranchRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcDatabaseRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcFunctionRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcPartitionStateRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcTableInitializer;
+import kasanari.catalog.paimon.repository.jdbc.JdbcTableRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcTagRepository;
+import kasanari.catalog.paimon.repository.jdbc.JdbcTransactionManager;
+import kasanari.catalog.paimon.repository.jdbc.JdbcViewRepository;
+import kasanari.catalog.paimon.repository.jdbc.KasanariDataSource;
 import kasanari.catalog.paimon.repository.jdbc.KasanariCatalogLock;
 import kasanari.catalog.paimon.repository.TableRepository;
 import kasanari.catalog.paimon.repository.TagRepository;
@@ -18,11 +30,16 @@ import org.apache.paimon.CoreOptions;
 import org.apache.paimon.PagedList;
 import org.apache.paimon.Snapshot;
 import org.apache.paimon.catalog.AbstractCatalog;
+import org.apache.paimon.catalog.CatalogUtils;
 import org.apache.paimon.catalog.CatalogContext;
 import org.apache.paimon.catalog.CatalogLoader;
 import org.apache.paimon.catalog.Database;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.catalog.PropertyChange;
+import org.apache.paimon.catalog.TableMetadata;
+import org.apache.paimon.consumer.Consumer;
+import org.apache.paimon.consumer.ConsumerManager;
+import org.apache.paimon.consumer.ConsumerInfo;
 import org.apache.paimon.fs.FileIO;
 import org.apache.paimon.fs.Path;
 import org.apache.paimon.function.Function;
@@ -30,15 +47,19 @@ import org.apache.paimon.function.FunctionChange;
 import org.apache.paimon.function.FunctionDefinition;
 import org.apache.paimon.function.FunctionImpl;
 import org.apache.paimon.operation.Lock;
+import org.apache.paimon.partition.Partition;
 import org.apache.paimon.partition.PartitionStatistics;
 import org.apache.paimon.rest.responses.GetTagResponse;
 import org.apache.paimon.schema.Schema;
 import org.apache.paimon.schema.SchemaChange;
 import org.apache.paimon.schema.SchemaManager;
 import org.apache.paimon.schema.TableSchema;
+import org.apache.paimon.table.Instant;
+import org.apache.paimon.table.RollbackHelper;
 import org.apache.paimon.tag.Tag;
 import org.apache.paimon.table.Table;
 import org.apache.paimon.table.TableSnapshot;
+import org.apache.paimon.utils.ChangelogManager;
 import org.apache.paimon.utils.FileSystemBranchManager;
 import org.apache.paimon.utils.SnapshotManager;
 import org.apache.paimon.utils.SnapshotNotExistException;
@@ -51,18 +72,23 @@ import org.jdbi.v3.core.Handle;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class KasanariPaimonCatalog extends AbstractCatalog {
+    private final KasanariDataSource dataSource;
     private final TransactionManager<Handle> transactionManager;
     // TODO: each repository should also accept catalogKey (or warehouse)?
     // TODO: check that current branch is main in each operation?
@@ -72,6 +98,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     private final FunctionRepository<Handle> functionRepository;
     private final TagRepository<Handle> tagRepository;
     private final BranchRepository<Handle> branchRepository;
+    private final PartitionStateRepository<Handle> partitionStateRepository;
 
     private final FileIO fileIO;
     private final String catalogKey;
@@ -80,13 +107,17 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     public KasanariPaimonCatalog(FileIO fileIO, String catalogKey, CatalogContext context, String warehouse) {
         super(fileIO, context);
 
-        this.transactionManager = null;
-        this.databaseRepository = null;
-        this.tableRepository = null;
-        this.viewRepository = null;
-        this.functionRepository = null;
-        this.tagRepository = null;
-        this.branchRepository = null;
+        var options = context.options().toMap();
+        this.dataSource = new KasanariDataSource(options);
+        this.transactionManager = new JdbcTransactionManager(dataSource);
+        this.databaseRepository = new JdbcDatabaseRepository(catalogKey);
+        this.tableRepository = new JdbcTableRepository(catalogKey);
+        this.viewRepository = new JdbcViewRepository(catalogKey);
+        this.functionRepository = new JdbcFunctionRepository(catalogKey);
+        this.tagRepository = new JdbcTagRepository(catalogKey);
+        this.branchRepository = new JdbcBranchRepository(catalogKey);
+        this.partitionStateRepository = new JdbcPartitionStateRepository(catalogKey);
+        new JdbcTableInitializer(dataSource).initialize();
 
         this.fileIO = fileIO;
         this.catalogKey = catalogKey;
@@ -156,6 +187,33 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     }
 
     @Override
+    public PagedList<String> listTablesPaged(
+            String databaseName,
+            Integer maxResults,
+            String pageToken,
+            String tableNamePattern,
+            String tableType)
+            throws DatabaseNotExistException {
+        CatalogUtils.validateNamePattern(this, tableNamePattern);
+        CatalogUtils.validateTableType(this, tableType);
+
+        var filtered = listTables(databaseName).stream()
+                .filter(n -> matchesSqlLikePrefix(n, tableNamePattern))
+                .toList();
+
+        var start = decodePageToken(pageToken);
+        if (start >= filtered.size()) {
+            return new PagedList<>(List.of(), null);
+        }
+
+        var pageSize = maxResults == null || maxResults <= 0 ? filtered.size() : maxResults;
+        var end = Math.min(filtered.size(), start + pageSize);
+        var nextPageToken = end < filtered.size() ? String.valueOf(end) : null;
+
+        return new PagedList<>(filtered.subList(start, end), nextPageToken);
+    }
+
+    @Override
     protected void dropTableImpl(Identifier identifier, List<Path> externalPaths) {
         var dropped = transactionManager.inTransactionR(tx -> tableRepository.delete(tx, identifier));
 
@@ -181,8 +239,63 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
     @Override
     public void repairDatabase(String databaseName) {
-        // TODO
-        super.repairDatabase(databaseName);
+        CatalogUtils.checkNotSystemDatabase(databaseName);
+
+        try {
+            getDatabase(databaseName);
+            var tables = listTablesInFileSystem(newDatabasePath(databaseName));
+            for (var table : tables) {
+                try {
+                    repairTable(Identifier.create(databaseName, table));
+                } catch (TableNotExistException e) {
+                    // ignore
+                }
+            }
+        } catch (DatabaseNotExistException e) {
+            createDatabaseImpl(databaseName, Map.of());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public PagedList<Identifier> listTablesPagedGlobally(
+            @Nullable String databaseNamePattern,
+            @Nullable String tableNamePattern,
+            @Nullable Integer maxResults,
+            @Nullable String pageToken) {
+        CatalogUtils.validateNamePattern(this, databaseNamePattern);
+        CatalogUtils.validateNamePattern(this, tableNamePattern);
+        var identifiers = new ArrayList<Identifier>();
+        for (var db : listDatabases()) {
+            if (!matchesSqlLikePrefix(db, databaseNamePattern)) {
+                continue;
+            }
+            List<String> tableNames;
+            try {
+                tableNames = listTables(db);
+            } catch (DatabaseNotExistException e) {
+                continue;
+            }
+            for (var table : tableNames) {
+                if (matchesSqlLikePrefix(table, tableNamePattern)) {
+                    identifiers.add(Identifier.create(db, table));
+                }
+            }
+        }
+
+        identifiers.sort(Comparator.comparing(Identifier::getDatabaseName).thenComparing(Identifier::getObjectName));
+
+        var start = decodePageToken(pageToken);
+        if (start >= identifiers.size()) {
+            return new PagedList<>(List.of(), null);
+        }
+
+        var pageSize = maxResults == null || maxResults <= 0 ? identifiers.size() : maxResults;
+        var end = Math.min(identifiers.size(), start + pageSize);
+        var nextPageToken = end < identifiers.size() ? String.valueOf(end) : null;
+
+        return new PagedList<>(identifiers.subList(start, end), nextPageToken);
     }
 
     @Override
@@ -193,7 +306,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
             transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
                 var tableSchema = schemaManager.createTable(schema);
                 var properties = collectTableProperties(tableSchema);
-                tableRepository.create(tx, new TableRecord(identifier, properties));
+                tableRepository.create(tx, new TableRecord(identifier, properties, Optional.of(UUID.randomUUID().toString())));
                 return tableSchema;
             }));
         } catch (Exception e) {
@@ -232,13 +345,44 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
     @Override
     public void repairCatalog() {
-        // TODO
-        super.repairCatalog();
+        try {
+            var databases = listDatabasesInFileSystem(new Path(warehouse()));
+
+            for (var database : databases) {
+                repairDatabase(database);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
     public void repairTable(Identifier identifier) throws TableNotExistException {
-        super.repairTable(identifier);
+        CatalogUtils.checkNotBranch(identifier, "repairTable");
+        CatalogUtils.checkNotSystemTable(identifier, "repairTable");
+
+        var location = getTableLocation(identifier);
+        var tableSchema = tableSchemaInFileSystem(location, Identifier.DEFAULT_MAIN_BRANCH)
+                .orElseThrow(() -> new TableNotExistException(identifier));
+
+        var properties = collectTableProperties(tableSchema);
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                var existing = tableRepository.find(tx, identifier);
+                if (existing.isPresent()) {
+                    tableRepository.alter(tx, new TableRecord(identifier, properties, existing.get().tableUuid()));
+                } else {
+                    tableRepository.create(tx, new TableRecord(identifier, properties, Optional.of(UUID.randomUUID().toString())));
+                }
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -250,14 +394,34 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
         var location = getTableLocation(identifier);
         return tableSchemaInFileSystem(location, identifier.getBranchNameOrDefault())
-                .orElseThrow(
-                        () -> new RuntimeException("There is no paimon table in " + location));
+                .orElseThrow(() -> new RuntimeException("There is no paimon table in " + location));
+    }
+
+    @Override
+    protected TableMetadata loadTableMetadata(Identifier identifier) throws TableNotExistException {
+        var schema = loadTableSchema(identifier);
+        var tableRecord = transactionManager.inTransactionR(tx -> tableRepository.find(tx, identifier))
+                .orElseThrow(() -> new TableNotExistException(identifier));
+        return new TableMetadata(schema, false, tableRecord.tableUuid().orElse(null));
     }
 
     @Override
     public Table getTableById(String tableId) throws TableIdNotExistException {
-        // TODO: implement?
-        return super.getTableById(tableId);
+        var maybeRecord = transactionManager.inTransactionR(tx -> tableRepository.findByUuid(tx, tableId));
+        if (maybeRecord.isPresent()) {
+            var record = maybeRecord.get();
+            try {
+                return getTable(Identifier.create(record.database(), record.name()));
+            } catch (TableNotExistException e) {
+                throw new TableIdNotExistException(tableId, e);
+            }
+        }
+
+        try {
+            return getTable(Identifier.fromString(tableId));
+        } catch (Exception err) {
+            throw new TableIdNotExistException(tableId, err);
+        }
     }
 
     @Override
@@ -403,18 +567,94 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     }
 
     @Override
-    public PagedList<String> listViewsPaged(String databaseName, @Nullable Integer maxResults, @Nullable String pageToken, @Nullable String viewNamePattern) throws DatabaseNotExistException {
-        return super.listViewsPaged(databaseName, maxResults, pageToken, viewNamePattern);
+    public PagedList<String> listViewsPaged(
+            String databaseName,
+            @Nullable Integer maxResults,
+            @Nullable String pageToken,
+            @Nullable String viewNamePattern)
+            throws DatabaseNotExistException {
+        CatalogUtils.validateNamePattern(this, viewNamePattern);
+
+        var filtered = listViews(databaseName).stream()
+                .filter(n -> matchesSqlLikePrefix(n, viewNamePattern))
+                .sorted()
+                .toList();
+
+        var start = decodePageToken(pageToken);
+        if (start >= filtered.size()) {
+            return new PagedList<>(List.of(), null);
+        }
+        var pageSize = maxResults == null || maxResults <= 0 ? filtered.size() : maxResults;
+        var end = Math.min(filtered.size(), start + pageSize);
+        var nextPageToken = end < filtered.size() ? String.valueOf(end) : null;
+
+        return new PagedList<>(filtered.subList(start, end), nextPageToken);
     }
 
     @Override
-    public PagedList<View> listViewDetailsPaged(String databaseName, @Nullable Integer maxResults, @Nullable String pageToken, @Nullable String viewNamePattern) throws DatabaseNotExistException {
-        return super.listViewDetailsPaged(databaseName, maxResults, pageToken, viewNamePattern);
+    public PagedList<View> listViewDetailsPaged(
+            String databaseName,
+            @Nullable Integer maxResults,
+            @Nullable String pageToken,
+            @Nullable String viewNamePattern)
+            throws DatabaseNotExistException {
+        CatalogUtils.validateNamePattern(this, viewNamePattern);
+
+        var pagedNames = listViewsPaged(databaseName, maxResults, pageToken, viewNamePattern);
+        var details = pagedNames.getElements().stream()
+                .map(
+                        name -> {
+                            try {
+                                return getView(Identifier.create(databaseName, name));
+                            } catch (ViewNotExistException ignored) {
+                                return null;
+                            }
+                        })
+                .filter(Objects::nonNull)
+                .toList();
+
+        return new PagedList<>(details, pagedNames.getNextPageToken());
     }
 
     @Override
-    public PagedList<Identifier> listViewsPagedGlobally(@Nullable String databaseNamePattern, @Nullable String viewNamePattern, @Nullable Integer maxResults, @Nullable String pageToken) {
-        return super.listViewsPagedGlobally(databaseNamePattern, viewNamePattern, maxResults, pageToken);
+    public PagedList<Identifier> listViewsPagedGlobally(
+            @Nullable String databaseNamePattern,
+            @Nullable String viewNamePattern,
+            @Nullable Integer maxResults,
+            @Nullable String pageToken) {
+        CatalogUtils.validateNamePattern(this, databaseNamePattern);
+        CatalogUtils.validateNamePattern(this, viewNamePattern);
+        var identifiers = new ArrayList<Identifier>();
+        for (var db : listDatabases()) {
+            if (!matchesSqlLikePrefix(db, databaseNamePattern)) {
+                continue;
+            }
+            List<String> viewNames;
+            try {
+                viewNames = listViews(db);
+            } catch (DatabaseNotExistException e) {
+                continue;
+            }
+            for (var view : viewNames) {
+                if (matchesSqlLikePrefix(view, viewNamePattern)) {
+                    identifiers.add(Identifier.create(db, view));
+                }
+            }
+        }
+
+        identifiers.sort(Comparator.comparing(Identifier::getDatabaseName).thenComparing(Identifier::getObjectName));
+
+        var start = decodePageToken(pageToken);
+
+        if (start >= identifiers.size()) {
+            return new PagedList<>(List.of(), null);
+        }
+
+        var pageSize = maxResults == null || maxResults <= 0 ? identifiers.size() : maxResults;
+        var end = Math.min(identifiers.size(), start + pageSize);
+        var nextPageToken = end < identifiers.size() ? String.valueOf(end) : null;
+
+        return new PagedList<>(identifiers.subList(start, end), nextPageToken);
     }
 
     @Override
@@ -422,6 +662,171 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         return transactionManager.inTransactionR(tx -> functionRepository.findAll(tx, databaseName))
                 .stream().map(FunctionRecord::name)
                 .toList();
+    }
+
+    @Override
+    public PagedList<String> listFunctionsPaged(
+            String databaseName,
+            @Nullable Integer maxResults,
+            @Nullable String pageToken,
+            @Nullable String functionNamePattern)
+            throws DatabaseNotExistException {
+        CatalogUtils.validateNamePattern(this, functionNamePattern);
+
+        var filtered = listFunctions(databaseName).stream()
+                .filter(n -> matchesSqlLikePrefix(n, functionNamePattern))
+                .sorted()
+                .toList();
+
+        var start = decodePageToken(pageToken);
+        if (start >= filtered.size()) {
+            return new PagedList<>(List.of(), null);
+        }
+
+        var pageSize = maxResults == null || maxResults <= 0 ? filtered.size() : maxResults;
+        var end = Math.min(filtered.size(), start + pageSize);
+        var nextPageToken = end < filtered.size() ? String.valueOf(end) : null;
+
+        return new PagedList<>(filtered.subList(start, end), nextPageToken);
+    }
+
+    @Override
+    public PagedList<Identifier> listFunctionsPagedGlobally(
+            @Nullable String databaseNamePattern,
+            @Nullable String functionNamePattern,
+            @Nullable Integer maxResults,
+            @Nullable String pageToken) {
+        CatalogUtils.validateNamePattern(this, databaseNamePattern);
+        CatalogUtils.validateNamePattern(this, functionNamePattern);
+        var identifiers = new ArrayList<Identifier>();
+        for (var db : listDatabases()) {
+            if (!matchesSqlLikePrefix(db, databaseNamePattern)) {
+                continue;
+            }
+            for (var fn : listFunctions(db)) {
+                if (matchesSqlLikePrefix(fn, functionNamePattern)) {
+                    identifiers.add(Identifier.create(db, fn));
+                }
+            }
+        }
+        identifiers.sort(Comparator.comparing(Identifier::getDatabaseName).thenComparing(Identifier::getObjectName));
+
+        var start = decodePageToken(pageToken);
+        if (start >= identifiers.size()) {
+            return new PagedList<>(List.of(), null);
+        }
+        var pageSize = maxResults == null || maxResults <= 0 ? identifiers.size() : maxResults;
+        var end = Math.min(identifiers.size(), start + pageSize);
+        var nextPageToken = end < identifiers.size() ? String.valueOf(end) : null;
+        return new PagedList<>(identifiers.subList(start, end), nextPageToken);
+    }
+
+    @Override
+    public PagedList<Function> listFunctionDetailsPaged(
+            String databaseName,
+            @Nullable Integer maxResults,
+            @Nullable String pageToken,
+            @Nullable String functionNamePattern)
+            throws DatabaseNotExistException {
+        CatalogUtils.validateNamePattern(this, functionNamePattern);
+        var pagedNames = listFunctionsPaged(databaseName, maxResults, pageToken, functionNamePattern);
+        var details = pagedNames.getElements().stream()
+                .map(
+                        name -> {
+                            try {
+                                return getFunction(Identifier.create(databaseName, name));
+                            } catch (FunctionNotExistException ignored) {
+                                return null;
+                            }
+                        })
+                .filter(Objects::nonNull)
+                .toList();
+        return new PagedList<>(details, pagedNames.getNextPageToken());
+    }
+
+    @Override
+    public void rollbackTo(Identifier identifier, Instant instant, @Nullable Long fromSnapshot) throws TableNotExistException {
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                var snapshotManager = snapshotManager(identifier);
+                var latestId = snapshotManager.latestSnapshotId();
+
+                if (fromSnapshot != null && !fromSnapshot.equals(latestId)) {
+                    throw new IllegalArgumentException(String.format(
+                            "Rollback requires current latest snapshot to be %s but was %s.",
+                            fromSnapshot,
+                            latestId)
+                    );
+                }
+
+                Snapshot retained;
+
+                switch (instant) {
+                    case Instant.SnapshotInstant i -> {
+                        var id = i.getSnapshotId();
+                        if (!snapshotManager.snapshotExists(id)) {
+                            throw new IllegalArgumentException(String.format("Rollback snapshot '%s' doesn't exist.", id));
+                        }
+                        retained = snapshotManager.snapshot(id);
+                    }
+                    case Instant.TagInstant i ->
+                            retained = tagManager(identifier).getOrThrow(i.getTagName()).trimToSnapshot();
+                    default -> throw new IllegalArgumentException("Unsupported rollback instant: " + instant);
+                }
+
+                var branch = identifier.getBranchNameOrDefault();
+                var tablePath = getTableLocation(identifier);
+                var rollbackHelper = new RollbackHelper(
+                        snapshotManager,
+                        new ChangelogManager(fileIO, tablePath, branch),
+                        tagManager(identifier),
+                        fileIO
+                );
+
+                rollbackHelper.cleanLargerThan(retained);
+                if (instant instanceof Instant.TagInstant) {
+                    rollbackHelper.createSnapshotFileIfNeeded(retained);
+                }
+
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public void rollbackSchema(Identifier identifier, long schemaId) throws TableNotExistException {
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                var branch = identifier.getBranchNameOrDefault();
+                var tablePath = getTableLocation(identifier);
+                var schemaManager = new SchemaManager(fileIO, tablePath, branch);
+                try {
+                    schemaManager.rollbackTo(
+                            schemaId,
+                            snapshotManager(identifier),
+                            tagManager(identifier),
+                            new ChangelogManager(fileIO, tablePath, branch)
+                    );
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -563,35 +968,61 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
             @Nullable String tableUuid,
             Snapshot snapshot,
             List<PartitionStatistics> statistics) {
-        return transactionManager.inTransactionR(tx -> runWithLock(tx, identifier, () -> {
-            try {
-                ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
-            } catch (TableNotExistException e) {
-                throw new RuntimeException(e);
-            }
+        try {
+            return transactionManager.inTransactionR(tx -> runWithLock(tx, identifier, () -> {
+                var tableRecord = tableRepository.find(tx, identifier)
+                        .orElseThrow(() -> new RuntimeException(new TableNotExistException(identifier)));
 
-            var snapshotManager = snapshotManager(identifier);
-            var newSnapshotPath = snapshotManager.snapshotPath(snapshot.id());
-            try {
-                if (fileIO.exists(newSnapshotPath)) {
-                    return false;
+                try {
+                    ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                } catch (TableNotExistException e) {
+                    throw new RuntimeException(e);
                 }
 
-                var committed =
-                        fileIO.tryToWriteAtomic(
-                                newSnapshotPath, snapshot.toJson());
-                if (committed) {
-                    snapshotManager.commitLatestHint(snapshot.id());
+                if (tableUuid != null && tableRecord.tableUuid().isPresent() && !tableUuid.equals(tableRecord.tableUuid().get())) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Table id mismatch for %s. Expected '%s' but got '%s'.",
+                                    identifier.getFullName(),
+                                    tableRecord.tableUuid().get(),
+                                    tableUuid));
                 }
-                return committed;
-            } catch (IOException e) {
-                throw new RuntimeException(
-                        String.format(
-                                "Failed to commit snapshot %s for table %s.",
-                                snapshot.id(), identifier.getFullName()),
-                        e);
+
+                var snapshotManager = snapshotManager(identifier);
+                var newSnapshotPath = snapshotManager.snapshotPath(snapshot.id());
+
+                try {
+                    if (fileIO.exists(newSnapshotPath)) {
+                        return false;
+                    }
+
+                    var committed = fileIO.tryToWriteAtomic(newSnapshotPath, snapshot.toJson());
+
+                    if (committed) {
+                        snapshotManager.commitLatestHint(snapshot.id());
+                        partitionStateRepository.persistCommitStatistics(
+                                tx,
+                                identifier,
+                                identifier.getBranchNameOrDefault(),
+                                snapshot.id(),
+                                statistics
+                        );
+                    }
+
+                    return committed;
+                } catch (IOException e) {
+                    throw new RuntimeException(
+                            String.format("Failed to commit snapshot %s for table %s.", snapshot.id(), identifier.getFullName()),
+                            e);
+                }
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw new RuntimeException(tableNotExistException);
             }
-        }));
+            throw e;
+        }
     }
 
     @Override
@@ -693,7 +1124,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         var branches = new HashSet<String>();
         branches.add(Identifier.DEFAULT_MAIN_BRANCH);
         var existingBranches = transactionManager.inTransactionR(tx -> branchRepository.findAll(tx, identifier))
-                        .stream().map(BranchRecord::branchName).toList();
+                .stream().map(BranchRecord::branchName).toList();
         branches.addAll(existingBranches);
 
         return branches.stream().sorted().toList();
@@ -921,16 +1352,214 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     }
 
     @Override
+    public boolean supportsListObjectsPaged() {
+        return true;
+    }
+
+    @Override
+    public boolean supportsListByPattern() {
+        return true;
+    }
+
+    @Override
     public boolean supportsVersionManagement() {
         return true;
     }
 
     @Override
     public void close() throws Exception {
-
+        dataSource.close();
     }
 
-    // TODO: add partition modification support?
+    @Override
+    public PagedList<ConsumerInfo> listConsumersPaged(Identifier identifier, @Nullable Integer maxResults, @Nullable String pageToken) throws TableNotExistException {
+        ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+
+        var manager = consumerManager(identifier);
+        var consumers = manager.listAllIds().stream()
+                .sorted()
+                .map(consumerId -> manager.consumer(consumerId)
+                        .map(consumer -> new ConsumerInfo(consumerId, consumer.nextSnapshot()))
+                        .orElse(null))
+                .filter(Objects::nonNull)
+                .toList();
+
+        int start = decodePageToken(pageToken);
+        if (start >= consumers.size()) {
+            return new PagedList<>(List.of(), null);
+        }
+
+        int pageSize = maxResults == null || maxResults <= 0 ? consumers.size() : maxResults;
+        int end = Math.min(consumers.size(), start + pageSize);
+        String nextPageToken = end < consumers.size() ? String.valueOf(end) : null;
+        return new PagedList<>(consumers.subList(start, end), nextPageToken);
+    }
+
+    @Override
+    public void resetConsumer(Identifier identifier, String consumerId, @Nullable Long nextSnapshotId) throws TableNotExistException {
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                try {
+                    ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                } catch (TableNotExistException e) {
+                    throw new RuntimeException(e);
+                }
+
+                var consumerManager = consumerManager(identifier);
+                if (nextSnapshotId == null) {
+                    consumerManager.deleteConsumer(consumerId);
+                    return true;
+                }
+
+                consumerManager.resetConsumer(consumerId, new Consumer(nextSnapshotId));
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public void markDonePartitions(Identifier identifier, List<Map<String, String>> partitions) throws TableNotExistException {
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                try {
+                    ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                } catch (TableNotExistException e) {
+                    throw new RuntimeException(e);
+                }
+                partitionStateRepository.markDone(tx, identifier, identifier.getBranchNameOrDefault(), partitions);
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public List<Partition> listPartitions(Identifier identifier) throws TableNotExistException {
+        ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+        return transactionManager.inTransactionR(tx -> partitionStateRepository.findAll(tx, identifier, identifier.getBranchNameOrDefault()))
+                .stream()
+                .map(PartitionStateRecord::toPartition)
+                .toList();
+    }
+
+    @Override
+    public PagedList<Partition> listPartitionsPaged(Identifier identifier, Integer maxResults, String pageToken, String partitionNamePattern) throws TableNotExistException {
+        if (partitionNamePattern != null && !partitionNamePattern.isBlank()) {
+            throw new UnsupportedOperationException("Current catalog does not support partition name pattern filter.");
+        }
+
+        var partitions = listPartitions(identifier);
+        int start = decodePageToken(pageToken);
+        if (start >= partitions.size()) {
+            return new PagedList<>(List.of(), null);
+        }
+
+        int pageSize = maxResults == null || maxResults <= 0 ? partitions.size() : maxResults;
+        int end = Math.min(partitions.size(), start + pageSize);
+        String nextPageToken = end < partitions.size() ? String.valueOf(end) : null;
+        return new PagedList<>(partitions.subList(start, end), nextPageToken);
+    }
+
+    @Override
+    public List<Partition> listPartitionsByNames(Identifier identifier, List<Map<String, String>> partitions) throws TableNotExistException {
+        if (partitions.size() > 1000) {
+            throw new IllegalArgumentException(
+                    String.format("The number of partition specs to list should not exceed 1000, but is %d", partitions.size()));
+        }
+        if (partitions.isEmpty()) {
+            return List.of();
+        }
+
+        ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+        return transactionManager.inTransactionR(tx -> partitionStateRepository.findBySpecs(
+                        tx,
+                        identifier,
+                        identifier.getBranchNameOrDefault(),
+                        partitions
+                ))
+                .stream()
+                .map(PartitionStateRecord::toPartition)
+                .toList();
+    }
+
+    @Override
+    public void createPartitions(Identifier identifier, List<Map<String, String>> partitions) throws TableNotExistException {
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                try {
+                    ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                } catch (TableNotExistException e) {
+                    throw new RuntimeException(e);
+                }
+                partitionStateRepository.createPartitions(tx, identifier, identifier.getBranchNameOrDefault(), partitions);
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public void dropPartitions(Identifier identifier, List<Map<String, String>> partitions) throws TableNotExistException {
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                try {
+                    ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                } catch (TableNotExistException e) {
+                    throw new RuntimeException(e);
+                }
+                partitionStateRepository.dropPartitions(tx, identifier, identifier.getBranchNameOrDefault(), partitions);
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public void alterPartitions(Identifier identifier, List<PartitionStatistics> partitions) throws TableNotExistException {
+        try {
+            transactionManager.inTransaction(tx -> runWithLock(tx, identifier, () -> {
+                try {
+                    ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+                } catch (TableNotExistException e) {
+                    throw new RuntimeException(e);
+                }
+                partitionStateRepository.alterPartitions(tx, identifier, identifier.getBranchNameOrDefault(), partitions);
+                return true;
+            }));
+        } catch (RuntimeException e) {
+            var cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof TableNotExistException tableNotExistException) {
+                throw tableNotExistException;
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public boolean supportsPartitionModification() {
+        return true;
+    }
 
     private SchemaManager getSchemaManager(Identifier identifier) {
         return new SchemaManager(fileIO, getTableLocation(identifier));
@@ -989,6 +1618,10 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         );
     }
 
+    private ConsumerManager consumerManager(Identifier identifier) {
+        return new ConsumerManager(fileIO, getTableLocation(identifier), identifier.getBranchNameOrDefault());
+    }
+
     private TagManager tagManager(Identifier identifier) {
         return new TagManager(fileIO, getTableLocation(identifier), identifier.getBranchNameOrDefault());
     }
@@ -1013,6 +1646,19 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         var tagTimeRetained = tag.getTagTimeRetained() == null ? null : TimeUtils.formatWithHighestUnit(tag.getTagTimeRetained());
 
         return new GetTagResponse(tagName, tag.trimToSnapshot(), tagCreateTime, tagTimeRetained);
+    }
+
+    /**
+     * SQL LIKE-style prefix pattern as described in {@link org.apache.paimon.catalog.Catalog} list
+     * methods (optional trailing {@code %}).
+     */
+    private static boolean matchesSqlLikePrefix(String name, @Nullable String sqlLikePattern) {
+        if (sqlLikePattern == null || sqlLikePattern.isEmpty()) {
+            return true;
+        }
+        var pct = sqlLikePattern.indexOf('%');
+        String prefix = pct < 0 ? sqlLikePattern : sqlLikePattern.substring(0, pct);
+        return prefix.isEmpty() || name.startsWith(prefix);
     }
 
     private int decodePageToken(@Nullable String pageToken) {
