@@ -43,6 +43,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -193,6 +194,10 @@ public abstract class PaimonCatalogAdapterTest {
         return false;
     }
 
+    protected boolean supportsPaginatedMethods() {
+        return false;
+    }
+
     protected String registeredTablePath(String database, String table) {
         return "/tmp/" + database + "/" + table;
     }
@@ -298,6 +303,31 @@ public abstract class PaimonCatalogAdapterTest {
     }
 
     @Test
+    void listTablesPaged() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsPaginatedMethods());
+
+        var secondTable = uniqueName("table");
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, new CreateTableRequest(Identifier.create(database, table), tableSchema()));
+        catalog.createTable(prefix, database, new CreateTableRequest(Identifier.create(database, secondTable), tableSchema()));
+
+        var firstPage = catalog.listTables(prefix, database, 1, null, null);
+        var nextPageToken = firstPage.getNextPageToken();
+        var secondPage = catalog.listTables(prefix, database, 1, nextPageToken, null);
+
+        assertEquals(1, firstPage.getTables().size());
+        assertNotNull(nextPageToken);
+        assertEquals(1, secondPage.getTables().size());
+
+        var names = new HashSet<String>();
+        names.addAll(firstPage.getTables());
+        names.addAll(secondPage.getTables());
+        assertTrue(names.contains(table));
+        assertTrue(names.contains(secondTable));
+    }
+
+    @Test
     void createTable() {
         assumeTrue(supportsDatabases() && supportsTables());
 
@@ -339,6 +369,31 @@ public abstract class PaimonCatalogAdapterTest {
         var result = catalog.listTablesGlobally(prefix, database, table, 100, null).getTables();
 
         assertEquals(expected, result);
+    }
+
+    @Test
+    void listTablesGloballyPaged() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportListGlobally() && supportsPaginatedMethods());
+
+        var secondTable = uniqueName("table");
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, new CreateTableRequest(Identifier.create(database, table), tableSchema()));
+        catalog.createTable(prefix, database, new CreateTableRequest(Identifier.create(database, secondTable), tableSchema()));
+
+        var firstPage = catalog.listTablesGlobally(prefix, database, null, 1, null);
+        var nextPageToken = firstPage.getNextPageToken();
+        var secondPage = catalog.listTablesGlobally(prefix, database, null, 1, nextPageToken);
+
+        assertEquals(1, firstPage.getTables().size());
+        assertNotNull(nextPageToken);
+        assertEquals(1, secondPage.getTables().size());
+
+        var names = new HashSet<String>();
+        names.addAll(firstPage.getTables().stream().map(Identifier::getTableName).toList());
+        names.addAll(secondPage.getTables().stream().map(Identifier::getTableName).toList());
+        assertTrue(names.contains(table));
+        assertTrue(names.contains(secondTable));
     }
 
     @Test
@@ -587,6 +642,32 @@ public abstract class PaimonCatalogAdapterTest {
     }
 
     @Test
+    void listPartitionsPaged() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsPartitions() && supportsPaginatedMethods());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+        triggerPartitionedTableSnapshot(database, table, 1, "dt_a");
+        triggerPartitionedTableSnapshot(database, table, 2, "dt_b");
+
+        var firstPage = catalog.listPartitions(prefix, database, table, 1, null, null);
+        var nextPageToken = firstPage.getNextPageToken();
+        var secondPage = catalog.listPartitions(prefix, database, table, 1, nextPageToken, null);
+
+        assertEquals(1, firstPage.getPartitions().size());
+        assertNotNull(nextPageToken);
+        assertEquals(1, secondPage.getPartitions().size());
+
+        var specs = new HashSet<Map<String, String>>();
+        specs.add(firstPage.getPartitions().get(0).spec());
+        specs.add(secondPage.getPartitions().get(0).spec());
+        assertTrue(specs.contains(Map.of("dt", "dt_a")));
+        assertTrue(specs.contains(Map.of("dt", "dt_b")));
+    }
+
+    @Test
     void markDonePartitions() {
         assumeTrue(supportsDatabases() && supportsTables() && supportsPartitions());
 
@@ -826,6 +907,34 @@ public abstract class PaimonCatalogAdapterTest {
     }
 
     @Test
+    void listTagsPaged() {
+        assumeTrue(supportsDatabases() && supportsTables() && supportsTags() && supportsPaginatedMethods());
+
+        var secondTag = uniqueName("tag");
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createTable(prefix, database, createTableRequest);
+        triggerTableSnapshot(database, table);
+        catalog.createTag(prefix, database, table, new CreateTagRequest(tag, null, null));
+        catalog.createTag(prefix, database, table, new CreateTagRequest(secondTag, null, null));
+
+        var firstPage = catalog.listTags(prefix, database, table, 1, null, null);
+        var nextPageToken = firstPage.getNextPageToken();
+        var secondPage = catalog.listTags(prefix, database, table, 1, nextPageToken, null);
+
+        assertEquals(1, firstPage.tags().size());
+        assertNotNull(nextPageToken);
+        assertEquals(1, secondPage.tags().size());
+
+        var tags = new HashSet<String>();
+        tags.addAll(firstPage.tags());
+        tags.addAll(secondPage.tags());
+        assertTrue(tags.contains(tag));
+        assertTrue(tags.contains(secondTag));
+    }
+
+    @Test
     void createTag() {
         assumeTrue(supportsDatabases() && supportsTables() && supportsTags());
 
@@ -930,6 +1039,31 @@ public abstract class PaimonCatalogAdapterTest {
     }
 
     @Test
+    void listViewsPaged() {
+        assumeTrue(supportsDatabases() && supportsViews() && supportsPaginatedMethods());
+
+        var secondView = uniqueName("view");
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createView(prefix, database, new CreateViewRequest(Identifier.create(database, view), viewSchema()));
+        catalog.createView(prefix, database, new CreateViewRequest(Identifier.create(database, secondView), viewSchema()));
+
+        var firstPage = catalog.listViews(prefix, database, 1, null, null);
+        var nextPageToken = firstPage.getNextPageToken();
+        var secondPage = catalog.listViews(prefix, database, 1, nextPageToken, null);
+
+        assertEquals(1, firstPage.getViews().size());
+        assertNotNull(nextPageToken);
+        assertEquals(1, secondPage.getViews().size());
+
+        var views = new HashSet<String>();
+        views.addAll(firstPage.getViews());
+        views.addAll(secondPage.getViews());
+        assertTrue(views.contains(view));
+        assertTrue(views.contains(secondView));
+    }
+
+    @Test
     void createView() {
         assumeTrue(supportsDatabases() && supportsViews());
 
@@ -974,6 +1108,31 @@ public abstract class PaimonCatalogAdapterTest {
         var result = catalog.listViewsGlobally(prefix, database, view, 100, null).getViews();
 
         assertEquals(expected, result);
+    }
+
+    @Test
+    void listViewsGloballyPaged() {
+        assumeTrue(supportsDatabases() && supportsViews() && supportListGlobally() && supportsPaginatedMethods());
+
+        var secondView = uniqueName("view");
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createView(prefix, database, new CreateViewRequest(Identifier.create(database, view), viewSchema()));
+        catalog.createView(prefix, database, new CreateViewRequest(Identifier.create(database, secondView), viewSchema()));
+
+        var firstPage = catalog.listViewsGlobally(prefix, database, null, 1, null);
+        var nextPageToken = firstPage.getNextPageToken();
+        var secondPage = catalog.listViewsGlobally(prefix, database, null, 1, nextPageToken);
+
+        assertEquals(1, firstPage.getViews().size());
+        assertNotNull(nextPageToken);
+        assertEquals(1, secondPage.getViews().size());
+
+        var views = new HashSet<String>();
+        views.addAll(firstPage.getViews().stream().map(Identifier::getTableName).toList());
+        views.addAll(secondPage.getViews().stream().map(Identifier::getTableName).toList());
+        assertTrue(views.contains(view));
+        assertTrue(views.contains(secondView));
     }
 
     @Test
@@ -1052,6 +1211,31 @@ public abstract class PaimonCatalogAdapterTest {
     }
 
     @Test
+    void listFunctionsPaged() {
+        assumeTrue(supportsDatabases() && supportsFunctions() && supportsPaginatedMethods());
+
+        var secondFunction = uniqueName("fn");
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createFunction(prefix, database, functionRequest(function));
+        catalog.createFunction(prefix, database, functionRequest(secondFunction));
+
+        var firstPage = catalog.listFunctions(prefix, database, 1, null, null);
+        var nextPageToken = firstPage.getNextPageToken();
+        var secondPage = catalog.listFunctions(prefix, database, 1, nextPageToken, null);
+
+        assertEquals(1, firstPage.functions().size());
+        assertNotNull(nextPageToken);
+        assertEquals(1, secondPage.functions().size());
+
+        var functions = new HashSet<String>();
+        functions.addAll(firstPage.functions());
+        functions.addAll(secondPage.functions());
+        assertTrue(functions.contains(function));
+        assertTrue(functions.contains(secondFunction));
+    }
+
+    @Test
     void createFunction() {
         assumeTrue(supportsDatabases() && supportsFunctions());
 
@@ -1096,6 +1280,31 @@ public abstract class PaimonCatalogAdapterTest {
         var result = catalog.listFunctionsGlobally(prefix, database, function, 100, null).functions();
 
         assertEquals(expected, result);
+    }
+
+    @Test
+    void listFunctionsGloballyPaged() {
+        assumeTrue(supportsDatabases() && supportsFunctions() && supportListGlobally() && supportsPaginatedMethods());
+
+        var secondFunction = uniqueName("fn");
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
+        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createFunction(prefix, database, functionRequest(function));
+        catalog.createFunction(prefix, database, functionRequest(secondFunction));
+
+        var firstPage = catalog.listFunctionsGlobally(prefix, database, null, 1, null);
+        var nextPageToken = firstPage.getNextPageToken();
+        var secondPage = catalog.listFunctionsGlobally(prefix, database, null, 1, nextPageToken);
+
+        assertEquals(1, firstPage.functions().size());
+        assertNotNull(nextPageToken);
+        assertEquals(1, secondPage.functions().size());
+
+        var functions = new HashSet<String>();
+        functions.addAll(firstPage.functions().stream().map(Identifier::getTableName).toList());
+        functions.addAll(secondPage.functions().stream().map(Identifier::getTableName).toList());
+        assertTrue(functions.contains(function));
+        assertTrue(functions.contains(secondFunction));
     }
 
     @Test

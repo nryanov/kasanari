@@ -57,4 +57,9 @@ public class KasanariPaimonCatalogTest extends PaimonCatalogAdapterTest {
     protected boolean supportRegisterTable() {
         return false;
     }
+
+    @Override
+    protected boolean supportsPaginatedMethods() {
+        return true;
+    }
 }
