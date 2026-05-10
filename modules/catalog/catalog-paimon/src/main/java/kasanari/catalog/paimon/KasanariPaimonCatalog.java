@@ -1227,7 +1227,6 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
 
         var tags = new HashSet<String>();
-        tags.addAll(tagManager(identifier).allTagNames().stream().filter(tag -> tagNamePrefix == null || tag.startsWith(tagNamePrefix)).toList());
         tags.addAll(transactionManager.inTransactionR(tx -> tagRepository.findAll(tx, identifier, Optional.ofNullable(tagNamePrefix))));
 
         var sortedTags = tags.stream().sorted().toList();
