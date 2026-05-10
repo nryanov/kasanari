@@ -75,7 +75,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -196,21 +195,17 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
             throws DatabaseNotExistException {
         CatalogUtils.validateNamePattern(this, tableNamePattern);
         CatalogUtils.validateTableType(this, tableType);
-
-        var filtered = listTables(databaseName).stream()
-                .filter(n -> matchesSqlLikePrefix(n, tableNamePattern))
-                .toList();
-
-        var start = decodePageToken(pageToken);
-        if (start >= filtered.size()) {
-            return new PagedList<>(List.of(), null);
-        }
-
-        var pageSize = maxResults == null || maxResults <= 0 ? filtered.size() : maxResults;
-        var end = Math.min(filtered.size(), start + pageSize);
-        var nextPageToken = end < filtered.size() ? String.valueOf(end) : null;
-
-        return new PagedList<>(filtered.subList(start, end), nextPageToken);
+        var idAfter = decodePageToken(pageToken);
+        var pageSize = defaultPageSize(maxResults);
+        var rows = transactionManager.inTransactionR(tx -> tableRepository.findPage(
+                tx,
+                databaseName,
+                toSqlLikePattern(tableNamePattern),
+                idAfter,
+                pageSize
+        ));
+        var nextPageToken = rows.size() < pageSize ? null : String.valueOf(rows.getLast().id());
+        return new PagedList<>(rows.stream().map(TableRecord::name).toList(), nextPageToken);
     }
 
     @Override
@@ -266,36 +261,20 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
             @Nullable String pageToken) {
         CatalogUtils.validateNamePattern(this, databaseNamePattern);
         CatalogUtils.validateNamePattern(this, tableNamePattern);
-        var identifiers = new ArrayList<Identifier>();
-        for (var db : listDatabases()) {
-            if (!matchesSqlLikePrefix(db, databaseNamePattern)) {
-                continue;
-            }
-            List<String> tableNames;
-            try {
-                tableNames = listTables(db);
-            } catch (DatabaseNotExistException e) {
-                continue;
-            }
-            for (var table : tableNames) {
-                if (matchesSqlLikePrefix(table, tableNamePattern)) {
-                    identifiers.add(Identifier.create(db, table));
-                }
-            }
-        }
-
-        identifiers.sort(Comparator.comparing(Identifier::getDatabaseName).thenComparing(Identifier::getObjectName));
-
-        var start = decodePageToken(pageToken);
-        if (start >= identifiers.size()) {
-            return new PagedList<>(List.of(), null);
-        }
-
-        var pageSize = maxResults == null || maxResults <= 0 ? identifiers.size() : maxResults;
-        var end = Math.min(identifiers.size(), start + pageSize);
-        var nextPageToken = end < identifiers.size() ? String.valueOf(end) : null;
-
-        return new PagedList<>(identifiers.subList(start, end), nextPageToken);
+        var idAfter = decodePageToken(pageToken);
+        var pageSize = defaultPageSize(maxResults);
+        var rows = transactionManager.inTransactionR(tx -> tableRepository.findPageGlobally(
+                tx,
+                toSqlLikePattern(databaseNamePattern),
+                toSqlLikePattern(tableNamePattern),
+                idAfter,
+                pageSize
+        ));
+        var nextPageToken = rows.size() < pageSize ? null : String.valueOf(rows.getLast().id());
+        return new PagedList<>(
+                rows.stream().map(it -> Identifier.create(it.database(), it.name())).toList(),
+                nextPageToken
+        );
     }
 
     @Override
@@ -574,21 +553,17 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
             @Nullable String viewNamePattern)
             throws DatabaseNotExistException {
         CatalogUtils.validateNamePattern(this, viewNamePattern);
-
-        var filtered = listViews(databaseName).stream()
-                .filter(n -> matchesSqlLikePrefix(n, viewNamePattern))
-                .sorted()
-                .toList();
-
-        var start = decodePageToken(pageToken);
-        if (start >= filtered.size()) {
-            return new PagedList<>(List.of(), null);
-        }
-        var pageSize = maxResults == null || maxResults <= 0 ? filtered.size() : maxResults;
-        var end = Math.min(filtered.size(), start + pageSize);
-        var nextPageToken = end < filtered.size() ? String.valueOf(end) : null;
-
-        return new PagedList<>(filtered.subList(start, end), nextPageToken);
+        var idAfter = decodePageToken(pageToken);
+        var pageSize = defaultPageSize(maxResults);
+        var rows = transactionManager.inTransactionR(tx -> viewRepository.findPage(
+                tx,
+                databaseName,
+                toSqlLikePattern(viewNamePattern),
+                idAfter,
+                pageSize
+        ));
+        var nextPageToken = rows.size() < pageSize ? null : String.valueOf(rows.getLast().id());
+        return new PagedList<>(rows.stream().map(ViewRecord::name).toList(), nextPageToken);
     }
 
     @Override
@@ -624,37 +599,20 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
             @Nullable String pageToken) {
         CatalogUtils.validateNamePattern(this, databaseNamePattern);
         CatalogUtils.validateNamePattern(this, viewNamePattern);
-        var identifiers = new ArrayList<Identifier>();
-        for (var db : listDatabases()) {
-            if (!matchesSqlLikePrefix(db, databaseNamePattern)) {
-                continue;
-            }
-            List<String> viewNames;
-            try {
-                viewNames = listViews(db);
-            } catch (DatabaseNotExistException e) {
-                continue;
-            }
-            for (var view : viewNames) {
-                if (matchesSqlLikePrefix(view, viewNamePattern)) {
-                    identifiers.add(Identifier.create(db, view));
-                }
-            }
-        }
-
-        identifiers.sort(Comparator.comparing(Identifier::getDatabaseName).thenComparing(Identifier::getObjectName));
-
-        var start = decodePageToken(pageToken);
-
-        if (start >= identifiers.size()) {
-            return new PagedList<>(List.of(), null);
-        }
-
-        var pageSize = maxResults == null || maxResults <= 0 ? identifiers.size() : maxResults;
-        var end = Math.min(identifiers.size(), start + pageSize);
-        var nextPageToken = end < identifiers.size() ? String.valueOf(end) : null;
-
-        return new PagedList<>(identifiers.subList(start, end), nextPageToken);
+        var idAfter = decodePageToken(pageToken);
+        var pageSize = defaultPageSize(maxResults);
+        var rows = transactionManager.inTransactionR(tx -> viewRepository.findPageGlobally(
+                tx,
+                toSqlLikePattern(databaseNamePattern),
+                toSqlLikePattern(viewNamePattern),
+                idAfter,
+                pageSize
+        ));
+        var nextPageToken = rows.size() < pageSize ? null : String.valueOf(rows.getLast().id());
+        return new PagedList<>(
+                rows.stream().map(it -> Identifier.create(it.database(), it.name())).toList(),
+                nextPageToken
+        );
     }
 
     @Override
@@ -672,22 +630,17 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
             @Nullable String functionNamePattern)
             throws DatabaseNotExistException {
         CatalogUtils.validateNamePattern(this, functionNamePattern);
-
-        var filtered = listFunctions(databaseName).stream()
-                .filter(n -> matchesSqlLikePrefix(n, functionNamePattern))
-                .sorted()
-                .toList();
-
-        var start = decodePageToken(pageToken);
-        if (start >= filtered.size()) {
-            return new PagedList<>(List.of(), null);
-        }
-
-        var pageSize = maxResults == null || maxResults <= 0 ? filtered.size() : maxResults;
-        var end = Math.min(filtered.size(), start + pageSize);
-        var nextPageToken = end < filtered.size() ? String.valueOf(end) : null;
-
-        return new PagedList<>(filtered.subList(start, end), nextPageToken);
+        var idAfter = decodePageToken(pageToken);
+        var pageSize = defaultPageSize(maxResults);
+        var rows = transactionManager.inTransactionR(tx -> functionRepository.findPage(
+                tx,
+                databaseName,
+                toSqlLikePattern(functionNamePattern),
+                idAfter,
+                pageSize
+        ));
+        var nextPageToken = rows.size() < pageSize ? null : String.valueOf(rows.getLast().id());
+        return new PagedList<>(rows.stream().map(FunctionRecord::name).toList(), nextPageToken);
     }
 
     @Override
@@ -698,27 +651,20 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
             @Nullable String pageToken) {
         CatalogUtils.validateNamePattern(this, databaseNamePattern);
         CatalogUtils.validateNamePattern(this, functionNamePattern);
-        var identifiers = new ArrayList<Identifier>();
-        for (var db : listDatabases()) {
-            if (!matchesSqlLikePrefix(db, databaseNamePattern)) {
-                continue;
-            }
-            for (var fn : listFunctions(db)) {
-                if (matchesSqlLikePrefix(fn, functionNamePattern)) {
-                    identifiers.add(Identifier.create(db, fn));
-                }
-            }
-        }
-        identifiers.sort(Comparator.comparing(Identifier::getDatabaseName).thenComparing(Identifier::getObjectName));
-
-        var start = decodePageToken(pageToken);
-        if (start >= identifiers.size()) {
-            return new PagedList<>(List.of(), null);
-        }
-        var pageSize = maxResults == null || maxResults <= 0 ? identifiers.size() : maxResults;
-        var end = Math.min(identifiers.size(), start + pageSize);
-        var nextPageToken = end < identifiers.size() ? String.valueOf(end) : null;
-        return new PagedList<>(identifiers.subList(start, end), nextPageToken);
+        var idAfter = decodePageToken(pageToken);
+        var pageSize = defaultPageSize(maxResults);
+        var rows = transactionManager.inTransactionR(tx -> functionRepository.findPageGlobally(
+                tx,
+                toSqlLikePattern(databaseNamePattern),
+                toSqlLikePattern(functionNamePattern),
+                idAfter,
+                pageSize
+        ));
+        var nextPageToken = rows.size() < pageSize ? null : String.valueOf(rows.getLast().id());
+        return new PagedList<>(
+                rows.stream().map(it -> Identifier.create(it.database(), it.name())).toList(),
+                nextPageToken
+        );
     }
 
     @Override
@@ -1225,22 +1171,18 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
             @Nullable String tagNamePrefix)
             throws TableNotExistException {
         ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+        var idAfter = decodePageToken(pageToken);
+        var pageSize = defaultPageSize(maxResults);
+        var rows = transactionManager.inTransactionR(tx -> tagRepository.findPage(
+                tx,
+                identifier,
+                toSqlLikePattern(tagNamePrefix),
+                idAfter,
+                pageSize
+        ));
 
-        var tags = new HashSet<String>();
-        tags.addAll(tagManager(identifier).allTagNames().stream().filter(tag -> tagNamePrefix == null || tag.startsWith(tagNamePrefix)).toList());
-        tags.addAll(transactionManager.inTransactionR(tx -> tagRepository.findAll(tx, identifier, Optional.ofNullable(tagNamePrefix))));
-
-        var sortedTags = tags.stream().sorted().toList();
-
-        int start = decodePageToken(pageToken);
-        if (start >= sortedTags.size()) {
-            return new PagedList<>(List.of(), null);
-        }
-
-        int pageSize = maxResults == null || maxResults <= 0 ? sortedTags.size() : maxResults;
-        int end = Math.min(sortedTags.size(), start + pageSize);
-        String nextPageToken = end < sortedTags.size() ? String.valueOf(end) : null;
-        return new PagedList<>(sortedTags.subList(start, end), nextPageToken);
+        var nextPageToken = rows.size() < pageSize ? null : String.valueOf(rows.getLast().id());
+        return new PagedList<>(rows.stream().map(TagRecord::tagName).toList(), nextPageToken);
     }
 
     @Override
@@ -1384,13 +1326,14 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
                 .filter(Objects::nonNull)
                 .toList();
 
-        int start = decodePageToken(pageToken);
+        var start = decodePageToken(pageToken);
+
         if (start >= consumers.size()) {
             return new PagedList<>(List.of(), null);
         }
 
-        int pageSize = maxResults == null || maxResults <= 0 ? consumers.size() : maxResults;
-        int end = Math.min(consumers.size(), start + pageSize);
+        var pageSize = maxResults == null || maxResults <= 0 ? consumers.size() : maxResults;
+        var end = Math.min(consumers.size(), start + pageSize);
         String nextPageToken = end < consumers.size() ? String.valueOf(end) : null;
         return new PagedList<>(consumers.subList(start, end), nextPageToken);
     }
@@ -1458,17 +1401,20 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         if (partitionNamePattern != null && !partitionNamePattern.isBlank()) {
             throw new UnsupportedOperationException("Current catalog does not support partition name pattern filter.");
         }
-
-        var partitions = listPartitions(identifier);
-        int start = decodePageToken(pageToken);
-        if (start >= partitions.size()) {
-            return new PagedList<>(List.of(), null);
-        }
-
-        int pageSize = maxResults == null || maxResults <= 0 ? partitions.size() : maxResults;
-        int end = Math.min(partitions.size(), start + pageSize);
-        String nextPageToken = end < partitions.size() ? String.valueOf(end) : null;
-        return new PagedList<>(partitions.subList(start, end), nextPageToken);
+        ensureTableExistsInFileSystem(identifier, identifier.getBranchNameOrDefault());
+        var idAfter = decodePageToken(pageToken);
+        var pageSize = defaultPageSize(maxResults);
+        var rows = transactionManager.inTransactionR(tx -> partitionStateRepository.findPage(
+                tx,
+                identifier,
+                identifier.getBranchNameOrDefault(),
+                idAfter,
+                pageSize
+        ));
+        var nextPageToken = rows.size() < pageSize
+                ? null
+                : String.valueOf(rows.get(rows.size() - 1).id());
+        return new PagedList<>(rows.stream().map(PartitionStateRecord::toPartition).toList(), nextPageToken);
     }
 
     @Override
@@ -1648,26 +1594,28 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         return new GetTagResponse(tagName, tag.trimToSnapshot(), tagCreateTime, tagTimeRetained);
     }
 
-    /**
-     * SQL LIKE-style prefix pattern as described in {@link org.apache.paimon.catalog.Catalog} list
-     * methods (optional trailing {@code %}).
-     */
-    private static boolean matchesSqlLikePrefix(String name, @Nullable String sqlLikePattern) {
+    private static String toSqlLikePattern(@Nullable String sqlLikePattern) {
         if (sqlLikePattern == null || sqlLikePattern.isEmpty()) {
-            return true;
+            return "%";
         }
         var pct = sqlLikePattern.indexOf('%');
-        String prefix = pct < 0 ? sqlLikePattern : sqlLikePattern.substring(0, pct);
-        return prefix.isEmpty() || name.startsWith(prefix);
+        var prefix = pct < 0 ? sqlLikePattern : sqlLikePattern.substring(0, pct);
+        if (prefix.isEmpty()) {
+            return "%";
+        }
+        return prefix + "%";
     }
 
-    private int decodePageToken(@Nullable String pageToken) {
+    private static int defaultPageSize(@Nullable Integer maxResults) {
+        return maxResults == null || maxResults <= 0 ? 50 : maxResults;
+    }
+
+    private static int decodePageToken(@Nullable String pageToken) {
         if (pageToken == null || pageToken.isBlank()) {
             return 0;
         }
-
         try {
-            int token = Integer.parseInt(pageToken);
+            var token = Integer.parseInt(pageToken);
             if (token < 0) {
                 throw new IllegalArgumentException("Invalid page token: " + pageToken);
             }

@@ -52,7 +52,8 @@ public class JdbcTagRepository implements TagRepository<Handle> {
                         rs.getString("tag_name"),
                         rs.getLong("snapshot_id"),
                         Optional.ofNullable((Long) rs.getObject("tag_create_time")),
-                        Optional.ofNullable(rs.getString("tag_time_retained"))
+                        Optional.ofNullable(rs.getString("tag_time_retained")),
+                        0L
                 ))
                 .findFirst();
     }
@@ -75,5 +76,32 @@ public class JdbcTagRepository implements TagRepository<Handle> {
         query.bind(2, identifier.getTableName());
         tagNamePrefix.ifPresent(prefix -> query.bind(3, prefix + "%"));
         return query.mapTo(String.class).list();
+    }
+
+    @Override
+    public List<TagRecord> findPage(
+            Handle tx,
+            Identifier identifier,
+            String tagNamePatternLike,
+            long idAfter,
+            int pageSize) {
+        var query = tx.createQuery(JdbcQueries.LIST_TAGS_PAGE);
+        query.bind(0, catalogKey);
+        query.bind(1, identifier.getDatabaseName());
+        query.bind(2, identifier.getTableName());
+        query.bind(3, idAfter);
+        query.bind(4, tagNamePatternLike);
+        query.bind(5, pageSize);
+        return query
+                .map((rs, ctx) -> new TagRecord(
+                        identifier.getDatabaseName(),
+                        identifier.getTableName(),
+                        rs.getString("tag_name"),
+                        rs.getLong("snapshot_id"),
+                        Optional.ofNullable((Long) rs.getObject("tag_create_time")),
+                        Optional.ofNullable(rs.getString("tag_time_retained")),
+                        rs.getLong("id")
+                ))
+                .list();
     }
 }

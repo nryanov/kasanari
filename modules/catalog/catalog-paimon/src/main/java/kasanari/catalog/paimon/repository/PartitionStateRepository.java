@@ -18,6 +18,8 @@ public interface PartitionStateRepository<T> {
 
     List<PartitionStateRecord> findAll(T tx, Identifier identifier, String branch);
 
+    List<PartitionStateRecord> findPage(T tx, Identifier identifier, String branch, long idAfter, int pageSize);
+
     List<PartitionStateRecord> findBySpecs(T tx, Identifier identifier, String branch, List<Map<String, String>> specs);
 
     void markDone(T tx, Identifier identifier, String branch, List<Map<String, String>> specs);

@@ -9,6 +9,10 @@ import java.util.Optional;
 public interface TableRepository<T> {
     List<TableRecord> findAll(T tx, String database);
 
+    List<TableRecord> findPage(T tx, String database, String tableNamePatternLike, long idAfter, int pageSize);
+
+    List<TableRecord> findPageGlobally(T tx, String databaseNamePatternLike, String tableNamePatternLike, long idAfter, int pageSize);
+
     boolean delete(T tx, Identifier identifier);
 
     void create(T tx, TableRecord record);

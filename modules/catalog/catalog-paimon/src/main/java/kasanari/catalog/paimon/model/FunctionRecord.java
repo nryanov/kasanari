@@ -14,8 +14,19 @@ public record FunctionRecord(
         boolean deterministic,
         Map<String, FunctionDefinition> definitions,
         Optional<String> comment,
-        Map<String, String> options
+        Map<String, String> options,
+        long id
 ) {
+    public FunctionRecord(
+            String database,
+            String name,
+            boolean deterministic,
+            Map<String, FunctionDefinition> definitions,
+            Optional<String> comment,
+            Map<String, String> options
+    ) {
+        this(database, name, deterministic, definitions, comment, options, 0L);
+    }
 
     public FunctionRecord(Identifier identifier, Function function) {
         this(
@@ -24,7 +35,8 @@ public record FunctionRecord(
                 function.isDeterministic(),
                 resolveDefinitions(function),
                 Optional.ofNullable(function.comment()),
-                function.options()
+                function.options(),
+                0L
         );
     }
 

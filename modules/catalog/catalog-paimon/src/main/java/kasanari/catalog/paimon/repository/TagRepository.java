@@ -16,4 +16,6 @@ public interface TagRepository<T> {
     boolean exists(T tx, Identifier identifier, String tagName);
 
     List<String> findAll(T tx, Identifier identifier, Optional<String> tagNamePrefix);
+
+    List<TagRecord> findPage(T tx, Identifier identifier, String tagNamePatternLike, long idAfter, int pageSize);
 }

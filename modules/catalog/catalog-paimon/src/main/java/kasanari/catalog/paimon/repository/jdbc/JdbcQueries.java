@@ -20,6 +20,7 @@ public final class JdbcQueries {
     public static final String CREATE_TABLES_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_paimon_tables
             (
+                id                BIGINT GENERATED ALWAYS AS IDENTITY,
                 catalog_key       TEXT,
                 database_name     TEXT,
                 table_name        TEXT,
@@ -27,6 +28,7 @@ public final class JdbcQueries {
                 properties_payload JSONB                    NOT NULL,
                 created_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT kasanari_paimon_tables_id_uq UNIQUE (id),
                 CONSTRAINT kasanari_paimon_tables_pk PRIMARY KEY (catalog_key, database_name, table_name),
                 CONSTRAINT kasanari_paimon_tables_db_fk FOREIGN KEY (catalog_key, database_name)
                     REFERENCES kasanari_paimon_databases (catalog_key, database_name) ON DELETE CASCADE
@@ -62,6 +64,7 @@ public final class JdbcQueries {
     public static final String CREATE_PARTITION_STATES_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_paimon_partition_states
             (
+                id                      BIGINT GENERATED ALWAYS AS IDENTITY,
                 catalog_key             TEXT,
                 database_name           TEXT,
                 table_name              TEXT,
@@ -77,6 +80,7 @@ public final class JdbcQueries {
                 options_payload         JSONB                    NOT NULL DEFAULT '{}'::jsonb,
                 created_at              TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at              TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT kasanari_paimon_partition_states_id_uq UNIQUE (id),
                 CONSTRAINT kasanari_paimon_partition_states_pk PRIMARY KEY (
                     catalog_key, database_name, table_name, branch_name, spec_hash
                 ),
@@ -89,6 +93,7 @@ public final class JdbcQueries {
     public static final String CREATE_VIEWS_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_paimon_views
             (
+                id               BIGINT GENERATED ALWAYS AS IDENTITY,
                 catalog_key      TEXT,
                 database_name    TEXT,
                 view_name        TEXT,
@@ -98,6 +103,7 @@ public final class JdbcQueries {
                 comment          TEXT,
                 created_at       TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at       TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT kasanari_paimon_views_id_uq UNIQUE (id),
                 CONSTRAINT kasanari_paimon_views_pk PRIMARY KEY (catalog_key, database_name, view_name),
                 CONSTRAINT kasanari_paimon_views_db_fk FOREIGN KEY (catalog_key, database_name)
                     REFERENCES kasanari_paimon_databases (catalog_key, database_name) ON DELETE CASCADE
@@ -107,6 +113,7 @@ public final class JdbcQueries {
     public static final String CREATE_FUNCTIONS_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_paimon_functions
             (
+                id                  BIGINT GENERATED ALWAYS AS IDENTITY,
                 catalog_key         TEXT,
                 database_name       TEXT,
                 function_name       TEXT,
@@ -116,6 +123,7 @@ public final class JdbcQueries {
                 comment             TEXT,
                 created_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT kasanari_paimon_functions_id_uq UNIQUE (id),
                 CONSTRAINT kasanari_paimon_functions_pk PRIMARY KEY (catalog_key, database_name, function_name),
                 CONSTRAINT kasanari_paimon_functions_db_fk FOREIGN KEY (catalog_key, database_name)
                     REFERENCES kasanari_paimon_databases (catalog_key, database_name) ON DELETE CASCADE
@@ -142,6 +150,7 @@ public final class JdbcQueries {
     public static final String CREATE_TAGS_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_paimon_tags
             (
+                id                BIGINT GENERATED ALWAYS AS IDENTITY,
                 catalog_key       TEXT,
                 database_name     TEXT,
                 table_name        TEXT,
@@ -151,6 +160,7 @@ public final class JdbcQueries {
                 tag_time_retained TEXT,
                 created_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT kasanari_paimon_tags_id_uq UNIQUE (id),
                 CONSTRAINT kasanari_paimon_tags_pk PRIMARY KEY (catalog_key, database_name, table_name, tag_name),
                 CONSTRAINT kasanari_paimon_tags_table_fk FOREIGN KEY (catalog_key, database_name, table_name)
                     REFERENCES kasanari_paimon_tables (catalog_key, database_name, table_name)
@@ -188,6 +198,20 @@ public final class JdbcQueries {
             FROM kasanari_paimon_tables
             WHERE catalog_key = ? AND database_name = ?
             ORDER BY table_name
+            """;
+    public static final String LIST_TABLES_PAGE = """
+            SELECT id, table_name, properties_payload, table_uuid
+            FROM kasanari_paimon_tables
+            WHERE catalog_key = ? AND database_name = ? AND id > ? AND table_name LIKE ?
+            ORDER BY id
+            LIMIT ?
+            """;
+    public static final String LIST_TABLES_PAGE_GLOBALLY = """
+            SELECT id, database_name, table_name, properties_payload, table_uuid
+            FROM kasanari_paimon_tables
+            WHERE catalog_key = ? AND id > ? AND database_name LIKE ? AND table_name LIKE ?
+            ORDER BY id
+            LIMIT ?
             """;
     public static final String INSERT_TABLE = """
             INSERT INTO kasanari_paimon_tables(catalog_key, database_name, table_name, table_uuid, properties_payload)
@@ -280,6 +304,13 @@ public final class JdbcQueries {
             WHERE catalog_key = ? AND database_name = ? AND table_name = ? AND branch_name = ?
             ORDER BY spec_hash
             """;
+    public static final String LIST_PARTITION_STATES_PAGE = """
+            SELECT id, spec_payload, record_count, file_size_in_bytes, file_count, last_file_creation_time, total_buckets, done, options_payload
+            FROM kasanari_paimon_partition_states
+            WHERE catalog_key = ? AND database_name = ? AND table_name = ? AND branch_name = ? AND id > ?
+            ORDER BY id
+            LIMIT ?
+            """;
     public static final String MARK_DONE_PARTITION_STATE = """
             UPDATE kasanari_paimon_partition_states
             SET done = TRUE, updated_at = CURRENT_TIMESTAMP
@@ -342,6 +373,20 @@ public final class JdbcQueries {
             WHERE catalog_key = ? AND database_name = ?
             ORDER BY view_name
             """;
+    public static final String LIST_VIEWS_PAGE = """
+            SELECT id, view_name, query, dialects_payload, options_payload, comment
+            FROM kasanari_paimon_views
+            WHERE catalog_key = ? AND database_name = ? AND id > ? AND view_name LIKE ?
+            ORDER BY id
+            LIMIT ?
+            """;
+    public static final String LIST_VIEWS_PAGE_GLOBALLY = """
+            SELECT id, database_name, view_name, query, dialects_payload, options_payload, comment
+            FROM kasanari_paimon_views
+            WHERE catalog_key = ? AND id > ? AND database_name LIKE ? AND view_name LIKE ?
+            ORDER BY id
+            LIMIT ?
+            """;
     public static final String SELECT_VIEW = """
             SELECT view_name, query, dialects_payload, options_payload, comment
             FROM kasanari_paimon_views
@@ -371,6 +416,20 @@ public final class JdbcQueries {
             FROM kasanari_paimon_functions
             WHERE catalog_key = ? AND database_name = ?
             ORDER BY function_name
+            """;
+    public static final String LIST_FUNCTIONS_PAGE = """
+            SELECT id, function_name, deterministic, definitions_payload, options_payload, comment
+            FROM kasanari_paimon_functions
+            WHERE catalog_key = ? AND database_name = ? AND id > ? AND function_name LIKE ?
+            ORDER BY id
+            LIMIT ?
+            """;
+    public static final String LIST_FUNCTIONS_PAGE_GLOBALLY = """
+            SELECT id, database_name, function_name, deterministic, definitions_payload, options_payload, comment
+            FROM kasanari_paimon_functions
+            WHERE catalog_key = ? AND id > ? AND database_name LIKE ? AND function_name LIKE ?
+            ORDER BY id
+            LIMIT ?
             """;
     public static final String SELECT_FUNCTION = """
             SELECT function_name, deterministic, definitions_payload, options_payload, comment
@@ -451,6 +510,13 @@ public final class JdbcQueries {
             FROM kasanari_paimon_tags
             WHERE catalog_key = ? AND database_name = ? AND table_name = ? AND tag_name LIKE ?
             ORDER BY tag_name
+            """;
+    public static final String LIST_TAGS_PAGE = """
+            SELECT id, tag_name, snapshot_id, tag_create_time, tag_time_retained
+            FROM kasanari_paimon_tags
+            WHERE catalog_key = ? AND database_name = ? AND table_name = ? AND id > ? AND tag_name LIKE ?
+            ORDER BY id
+            LIMIT ?
             """;
 
     public static final String ACQUIRE_TRANSACTIONAL_ADVISORY_LOCK = "SELECT pg_advisory_xact_lock(hashtextextended(?, 0))";

@@ -91,7 +91,35 @@ public class JdbcPartitionStateRepository implements PartitionStateRepository<Ha
                 rs.getLong("last_file_creation_time"),
                 rs.getInt("total_buckets"),
                 rs.getBoolean("done"),
-                JsonSerde.decodeMap(rs.getString("options_payload"))
+                JsonSerde.decodeMap(rs.getString("options_payload")),
+                0L
+        )).list();
+    }
+
+    @Override
+    public List<PartitionStateRecord> findPage(
+            Handle tx,
+            Identifier identifier,
+            String branch,
+            long idAfter,
+            int pageSize) {
+        var query = tx.createQuery(JdbcQueries.LIST_PARTITION_STATES_PAGE);
+        query.bind(0, catalogKey);
+        query.bind(1, identifier.getDatabaseName());
+        query.bind(2, identifier.getTableName());
+        query.bind(3, branch);
+        query.bind(4, idAfter);
+        query.bind(5, pageSize);
+        return query.map((rs, ctx) -> new PartitionStateRecord(
+                JsonSerde.decodeSpec(rs.getString("spec_payload")),
+                rs.getLong("record_count"),
+                rs.getLong("file_size_in_bytes"),
+                rs.getLong("file_count"),
+                rs.getLong("last_file_creation_time"),
+                rs.getInt("total_buckets"),
+                rs.getBoolean("done"),
+                JsonSerde.decodeMap(rs.getString("options_payload")),
+                rs.getLong("id")
         )).list();
     }
 

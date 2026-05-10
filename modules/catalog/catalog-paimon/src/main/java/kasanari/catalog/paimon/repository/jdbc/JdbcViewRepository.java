@@ -34,6 +34,53 @@ public class JdbcViewRepository implements ViewRepository<Handle> {
     }
 
     @Override
+    public List<ViewRecord> findPage(Handle tx, String database, String viewNamePatternLike, long idAfter, int pageSize) {
+        var query = tx.createQuery(JdbcQueries.LIST_VIEWS_PAGE);
+        query.bind(0, catalogKey);
+        query.bind(1, database);
+        query.bind(2, idAfter);
+        query.bind(3, viewNamePatternLike);
+        query.bind(4, pageSize);
+        return query
+                .map((rs, ctx) -> new ViewRecord(
+                        database,
+                        rs.getString("view_name"),
+                        rs.getString("query"),
+                        JsonSerde.decodeMap(rs.getString("dialects_payload")),
+                        JsonSerde.decodeMap(rs.getString("options_payload")),
+                        Optional.ofNullable(rs.getString("comment")),
+                        rs.getLong("id")
+                ))
+                .list();
+    }
+
+    @Override
+    public List<ViewRecord> findPageGlobally(
+            Handle tx,
+            String databaseNamePatternLike,
+            String viewNamePatternLike,
+            long idAfter,
+            int pageSize) {
+        var query = tx.createQuery(JdbcQueries.LIST_VIEWS_PAGE_GLOBALLY);
+        query.bind(0, catalogKey);
+        query.bind(1, idAfter);
+        query.bind(2, databaseNamePatternLike);
+        query.bind(3, viewNamePatternLike);
+        query.bind(4, pageSize);
+        return query
+                .map((rs, ctx) -> new ViewRecord(
+                        rs.getString("database_name"),
+                        rs.getString("view_name"),
+                        rs.getString("query"),
+                        JsonSerde.decodeMap(rs.getString("dialects_payload")),
+                        JsonSerde.decodeMap(rs.getString("options_payload")),
+                        Optional.ofNullable(rs.getString("comment")),
+                        rs.getLong("id")
+                ))
+                .list();
+    }
+
+    @Override
     public boolean delete(Handle tx, Identifier identifier) {
         var query = tx.createUpdate(JdbcQueries.DELETE_VIEW);
         query.bind(0, catalogKey);
