@@ -11,8 +11,20 @@ public record ViewRecord(String database,
                          String query,
                          Map<String, String> dialects,
                          Map<String, String> options,
-                         Optional<String> comment
+                         Optional<String> comment,
+                         long id
 ) {
+    public ViewRecord(
+            String database,
+            String name,
+            String query,
+            Map<String, String> dialects,
+            Map<String, String> options,
+            Optional<String> comment
+    ) {
+        this(database, name, query, dialects, options, comment, 0L);
+    }
+
     public ViewRecord(Identifier identifier, View view) {
         this(
                 identifier.getDatabaseName(),
@@ -20,7 +32,8 @@ public record ViewRecord(String database,
                 view.query(),
                 view.dialects(),
                 view.options(),
-                view.comment()
+                view.comment(),
+                0L
         );
     }
 }

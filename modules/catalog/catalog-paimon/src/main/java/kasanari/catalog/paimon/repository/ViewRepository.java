@@ -9,6 +9,10 @@ import java.util.Optional;
 public interface ViewRepository<T> {
     List<ViewRecord> findAll(T tx, String database);
 
+    List<ViewRecord> findPage(T tx, String database, String viewNamePatternLike, long idAfter, int pageSize);
+
+    List<ViewRecord> findPageGlobally(T tx, String databaseNamePatternLike, String viewNamePatternLike, long idAfter, int pageSize);
+
     boolean delete(T tx, Identifier identifier);
 
     void create(T tx, ViewRecord record);

@@ -31,6 +31,49 @@ public class JdbcTableRepository implements TableRepository<Handle> {
     }
 
     @Override
+    public List<TableRecord> findPage(Handle tx, String database, String tableNamePatternLike, long idAfter, int pageSize) {
+        var query = tx.createQuery(JdbcQueries.LIST_TABLES_PAGE);
+        query.bind(0, catalogKey);
+        query.bind(1, database);
+        query.bind(2, idAfter);
+        query.bind(3, tableNamePatternLike);
+        query.bind(4, pageSize);
+        return query
+                .map((rs, ctx) -> new TableRecord(
+                        database,
+                        rs.getString("table_name"),
+                        JsonSerde.decodeMap(rs.getString("properties_payload")),
+                        Optional.ofNullable(rs.getString("table_uuid")),
+                        rs.getLong("id")
+                ))
+                .list();
+    }
+
+    @Override
+    public List<TableRecord> findPageGlobally(
+            Handle tx,
+            String databaseNamePatternLike,
+            String tableNamePatternLike,
+            long idAfter,
+            int pageSize) {
+        var query = tx.createQuery(JdbcQueries.LIST_TABLES_PAGE_GLOBALLY);
+        query.bind(0, catalogKey);
+        query.bind(1, idAfter);
+        query.bind(2, databaseNamePatternLike);
+        query.bind(3, tableNamePatternLike);
+        query.bind(4, pageSize);
+        return query
+                .map((rs, ctx) -> new TableRecord(
+                        rs.getString("database_name"),
+                        rs.getString("table_name"),
+                        JsonSerde.decodeMap(rs.getString("properties_payload")),
+                        Optional.ofNullable(rs.getString("table_uuid")),
+                        rs.getLong("id")
+                ))
+                .list();
+    }
+
+    @Override
     public boolean delete(Handle tx, Identifier identifier) {
         var query = tx.createUpdate(JdbcQueries.DELETE_TABLE);
         query.bind(0, catalogKey);

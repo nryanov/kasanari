@@ -9,8 +9,18 @@ public record TableRecord(
         String database,
         String name,
         Map<String, String> properties,
-        Optional<String> tableUuid
+        Optional<String> tableUuid,
+        long id
 ) {
+    public TableRecord(
+            String database,
+            String name,
+            Map<String, String> properties,
+            Optional<String> tableUuid
+    ) {
+        this(database, name, properties, tableUuid, 0L);
+    }
+
     public TableRecord(Identifier identifier, Map<String, String> properties) {
         this(identifier, properties, Optional.empty());
     }

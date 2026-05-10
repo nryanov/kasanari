@@ -9,6 +9,10 @@ import java.util.Optional;
 public interface FunctionRepository<T> {
     List<FunctionRecord> findAll(T tx, String database);
 
+    List<FunctionRecord> findPage(T tx, String database, String functionNamePatternLike, long idAfter, int pageSize);
+
+    List<FunctionRecord> findPageGlobally(T tx, String databaseNamePatternLike, String functionNamePatternLike, long idAfter, int pageSize);
+
     Optional<FunctionRecord> find(T tx, Identifier function);
 
     boolean delete(T tx, Identifier identifier);

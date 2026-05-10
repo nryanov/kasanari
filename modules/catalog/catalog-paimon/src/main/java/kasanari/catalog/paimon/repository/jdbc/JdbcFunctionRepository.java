@@ -34,6 +34,58 @@ public class JdbcFunctionRepository implements FunctionRepository<Handle> {
     }
 
     @Override
+    public List<FunctionRecord> findPage(
+            Handle tx,
+            String database,
+            String functionNamePatternLike,
+            long idAfter,
+            int pageSize) {
+        var query = tx.createQuery(JdbcQueries.LIST_FUNCTIONS_PAGE);
+        query.bind(0, catalogKey);
+        query.bind(1, database);
+        query.bind(2, idAfter);
+        query.bind(3, functionNamePatternLike);
+        query.bind(4, pageSize);
+        return query
+                .map((rs, ctx) -> new FunctionRecord(
+                        database,
+                        rs.getString("function_name"),
+                        rs.getBoolean("deterministic"),
+                        JsonSerde.decodeDefinitions(rs.getString("definitions_payload")),
+                        Optional.ofNullable(rs.getString("comment")),
+                        JsonSerde.decodeMap(rs.getString("options_payload")),
+                        rs.getLong("id")
+                ))
+                .list();
+    }
+
+    @Override
+    public List<FunctionRecord> findPageGlobally(
+            Handle tx,
+            String databaseNamePatternLike,
+            String functionNamePatternLike,
+            long idAfter,
+            int pageSize) {
+        var query = tx.createQuery(JdbcQueries.LIST_FUNCTIONS_PAGE_GLOBALLY);
+        query.bind(0, catalogKey);
+        query.bind(1, idAfter);
+        query.bind(2, databaseNamePatternLike);
+        query.bind(3, functionNamePatternLike);
+        query.bind(4, pageSize);
+        return query
+                .map((rs, ctx) -> new FunctionRecord(
+                        rs.getString("database_name"),
+                        rs.getString("function_name"),
+                        rs.getBoolean("deterministic"),
+                        JsonSerde.decodeDefinitions(rs.getString("definitions_payload")),
+                        Optional.ofNullable(rs.getString("comment")),
+                        JsonSerde.decodeMap(rs.getString("options_payload")),
+                        rs.getLong("id")
+                ))
+                .list();
+    }
+
+    @Override
     public Optional<FunctionRecord> find(Handle tx, Identifier function) {
         var query = tx.createQuery(JdbcQueries.SELECT_FUNCTION);
         query.bind(0, catalogKey);
