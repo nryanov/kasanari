@@ -7,11 +7,13 @@ import kasanari.catalog.iceberg.operations.KasanariViewOperations;
 import kasanari.catalog.iceberg.repository.CatalogRepository;
 import kasanari.catalog.iceberg.repository.NamespaceRepository;
 import kasanari.catalog.iceberg.repository.TableRepository;
+import kasanari.catalog.iceberg.repository.TransactionManager;
 import kasanari.catalog.iceberg.repository.ViewRepository;
 import kasanari.catalog.iceberg.repository.jdbc.JdbcCatalogRepository;
 import kasanari.catalog.iceberg.repository.jdbc.JdbcNamespaceRepository;
 import kasanari.catalog.iceberg.repository.jdbc.JdbcTableInitializer;
 import kasanari.catalog.iceberg.repository.jdbc.JdbcTableRepository;
+import kasanari.catalog.iceberg.repository.jdbc.JdbcTransactionManager;
 import kasanari.catalog.iceberg.repository.jdbc.JdbcViewRepository;
 import kasanari.catalog.iceberg.repository.jdbc.KasanariDataSource;
 import kasanari.catalog.iceberg.utils.IcebergUtils;
@@ -31,6 +33,7 @@ import org.apache.iceberg.hadoop.Configurable;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.view.BaseMetastoreViewCatalog;
 import org.apache.iceberg.view.ViewOperations;
+import org.jdbi.v3.core.Handle;
 
 import java.io.IOException;
 import java.util.List;
@@ -42,10 +45,11 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
     private String warehouse;
     private KasanariDataSource dataSource;
 
-    private CatalogRepository catalogRepository;
-    private NamespaceRepository namespaceRepository;
-    private TableRepository tableRepository;
-    private ViewRepository viewRepository;
+    private TransactionManager<Handle> transactionManager;
+    private CatalogRepository<Handle> catalogRepository;
+    private NamespaceRepository<Handle> namespaceRepository;
+    private TableRepository<Handle> tableRepository;
+    private ViewRepository<Handle> viewRepository;
 
     private FileIO io;
     private Object hadoopConfig;
@@ -60,10 +64,11 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
             throw new IllegalArgumentException("Warehouse location is not set");
         }
 
-        this.catalogRepository = new JdbcCatalogRepository(this.dataSource, this.catalogName);
-        this.namespaceRepository = new JdbcNamespaceRepository(this.dataSource, this.catalogName);
-        this.tableRepository = new JdbcTableRepository(this.dataSource, this.catalogName);
-        this.viewRepository = new JdbcViewRepository(this.dataSource, this.catalogName);
+        this.transactionManager = new JdbcTransactionManager(dataSource);
+        this.catalogRepository = new JdbcCatalogRepository(this.catalogName);
+        this.namespaceRepository = new JdbcNamespaceRepository(this.catalogName);
+        this.tableRepository = new JdbcTableRepository(this.catalogName);
+        this.viewRepository = new JdbcViewRepository(this.catalogName);
 
         initializeCatalog();
         initializeFileIO(properties);
@@ -74,9 +79,11 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
         initializer.initialize();
 
         // todo: change to upsert ?
-        if (catalogRepository.notExists()) {
-            catalogRepository.register();
-        }
+        transactionManager.inTransaction(tx -> {
+            if (catalogRepository.notExists(tx)) {
+                catalogRepository.register(tx);
+            }
+        });
     }
 
     private void initializeFileIO(Map<String, String> properties) {
@@ -102,25 +109,35 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
 
     @Override
     protected ViewOperations newViewOps(TableIdentifier viewIdentifier) {
-        return new KasanariViewOperations(namespaceRepository, tableRepository, viewRepository, io, viewIdentifier, catalogName);
+        return new KasanariViewOperations(
+                transactionManager,
+                namespaceRepository,
+                tableRepository,
+                viewRepository,
+                io,
+                viewIdentifier,
+                catalogName
+        );
     }
 
     @Override
     public List<TableIdentifier> listViews(Namespace namespace) {
-        if (namespaceRepository.notExists(namespace)) {
-            throw new NoSuchNamespaceException(
-                    "Namespace `%s` does not exist in catalog `%s`",
-                    IcebergUtils.namespaceName(namespace),
-                    catalogName
-            );
-        }
+        return transactionManager.inTransactionR(tx -> {
+            if (namespaceRepository.notExists(tx, namespace)) {
+                throw new NoSuchNamespaceException(
+                        "Namespace `%s` does not exist in catalog `%s`",
+                        IcebergUtils.namespaceName(namespace),
+                        catalogName
+                );
+            }
 
-        return viewRepository.findByNamespace(namespace);
+            return viewRepository.findByNamespace(tx, namespace);
+        });
     }
 
     @Override
     public boolean dropView(TableIdentifier identifier) {
-        return viewRepository.delete(identifier);
+        return transactionManager.inTransactionR(tx -> viewRepository.delete(tx, identifier));
     }
 
     @Override
@@ -129,44 +146,56 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
             return;
         }
 
-        if (namespaceRepository.notExists(to.namespace())) {
-            throw new NoSuchNamespaceException("Cannot rename table because namespace `%s` does not exist", to.namespace());
-        }
+        transactionManager.inTransaction(tx -> {
+            if (namespaceRepository.notExists(tx, to.namespace())) {
+                throw new NoSuchNamespaceException("Cannot rename table because namespace `%s` does not exist", to.namespace());
+            }
 
-        if (viewRepository.notExists(from)) {
-            throw new NoSuchTableException("View `%s` does not exist", from);
-        }
+            if (viewRepository.notExists(tx, from)) {
+                throw new NoSuchTableException("View `%s` does not exist", from);
+            }
 
-        if (tableRepository.exists(to)) {
-            throw new NoSuchTableException("Cannot rename table, because table `%s` is already exists", to);
-        }
+            if (tableRepository.exists(tx, to)) {
+                throw new NoSuchTableException("Cannot rename table, because table `%s` is already exists", to);
+            }
 
-        if (viewRepository.exists(to)) {
-            throw new NoSuchTableException("Cannot rename table, because view `%s` is already exists", to);
-        }
+            if (viewRepository.exists(tx, to)) {
+                throw new NoSuchTableException("Cannot rename table, because view `%s` is already exists", to);
+            }
 
-        var result = viewRepository.rename(from, to);
-        if (!result) {
-            throw new NoSuchTableException("View `%s` wasn't renamed because it does not exist", from);
-        }
+            var result = viewRepository.rename(tx, from, to);
+            if (!result) {
+                throw new NoSuchTableException("View `%s` wasn't renamed because it does not exist", from);
+            }
+        });
     }
 
     @Override
     protected TableOperations newTableOps(TableIdentifier tableIdentifier) {
-        return new KasanariTableOperations(namespaceRepository, tableRepository, viewRepository, io, tableIdentifier, catalogName);
+        return new KasanariTableOperations(
+                transactionManager,
+                namespaceRepository,
+                tableRepository,
+                viewRepository,
+                io,
+                tableIdentifier,
+                catalogName
+        );
     }
 
     @Override
     public List<TableIdentifier> listTables(Namespace namespace) {
-        if (!namespace.isEmpty() && namespaceRepository.notExists(namespace)) {
-            throw new NoSuchNamespaceException(
-                    "Namespace `%s` does not exist in catalog `%s`",
-                    IcebergUtils.namespaceName(namespace),
-                    catalogName
-            );
-        }
+        return transactionManager.inTransactionR(tx -> {
+            if (!namespace.isEmpty() && namespaceRepository.notExists(tx, namespace)) {
+                throw new NoSuchNamespaceException(
+                        "Namespace `%s` does not exist in catalog `%s`",
+                        IcebergUtils.namespaceName(namespace),
+                        catalogName
+                );
+            }
 
-        return tableRepository.findByNamespace(namespace);
+            return tableRepository.findByNamespace(tx, namespace);
+        });
     }
 
     @Override
@@ -182,17 +211,20 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
             }
         }
 
-        var deleted = tableRepository.delete(identifier);
+        final var lambdaMaybeCurrentTableMetadata = maybeCurrentTableMetadata;
+        return transactionManager.inTransactionR(tx -> {
+            var deleted = tableRepository.delete(tx, identifier);
 
-        if (deleted) {
-            if (purge && maybeCurrentTableMetadata != null) {
-                CatalogUtil.dropTableData(io, maybeCurrentTableMetadata);
+            if (deleted) {
+                if (purge && lambdaMaybeCurrentTableMetadata != null) {
+                    CatalogUtil.dropTableData(io, lambdaMaybeCurrentTableMetadata);
+                }
+
+                return true;
             }
 
-            return true;
-        }
-
-        return false;
+            return false;
+        });
     }
 
     @Override
@@ -201,90 +233,102 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
             return;
         }
 
-        if (tableRepository.notExists(from)) {
-            throw new NoSuchTableException("Table `%s` does not exist", from);
-        }
+        transactionManager.inTransaction(tx -> {
+            if (tableRepository.notExists(tx, from)) {
+                throw new NoSuchTableException("Table `%s` does not exist", from);
+            }
 
-        if (namespaceRepository.notExists(to.namespace())) {
-            throw new NoSuchNamespaceException("Cannot rename table because namespace `%s` does not exist", to.namespace());
-        }
+            if (namespaceRepository.notExists(tx, to.namespace())) {
+                throw new NoSuchNamespaceException("Cannot rename table because namespace `%s` does not exist", to.namespace());
+            }
 
-        if (tableRepository.exists(to)) {
-            throw new NoSuchTableException("Cannot rename table, because table `%s` is already exists", to);
-        }
+            if (tableRepository.exists(tx, to)) {
+                throw new NoSuchTableException("Cannot rename table, because table `%s` is already exists", to);
+            }
 
-        if (viewRepository.exists(to)) {
-            throw new NoSuchTableException("Cannot rename table, because view `%s` is already exists", to);
-        }
+            if (viewRepository.exists(tx, to)) {
+                throw new NoSuchTableException("Cannot rename table, because view `%s` is already exists", to);
+            }
 
-        var result = tableRepository.rename(from, to);
-        if (!result) {
-            throw new NoSuchTableException("Table `%s` wasn't renamed because it does not exist", from);
-        }
+            var result = tableRepository.rename(tx, from, to);
+            if (!result) {
+                throw new NoSuchTableException("Table `%s` wasn't renamed because it does not exist", from);
+            }
+        });
     }
 
     @Override
     public void createNamespace(Namespace namespace, Map<String, String> metadata) {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
-        if (namespaceRepository.exists(namespace)) {
-            throw new AlreadyExistsException(String.format("Namespace `%s` is already exists in catalog `%s`", namespaceName, catalogName));
-        }
+        transactionManager.inTransaction(tx -> {
+            if (namespaceRepository.exists(tx, namespace)) {
+                throw new AlreadyExistsException(String.format("Namespace `%s` is already exists in catalog `%s`", namespaceName, catalogName));
+            }
 
-        namespaceRepository.create(namespace, metadata);
+            namespaceRepository.create(tx, namespace, metadata);
+        });
     }
 
     @Override
     public List<Namespace> listNamespaces(Namespace namespace) throws NoSuchNamespaceException {
-        return namespaceRepository.list(namespace);
+        return transactionManager.inTransactionR(tx -> namespaceRepository.list(tx, namespace));
     }
 
     @Override
     public Map<String, String> loadNamespaceMetadata(Namespace namespace) throws NoSuchNamespaceException {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
-        if (namespaceRepository.notExists(namespace)) {
-            throw new NoSuchNamespaceException(String.format("Namespace `%s` does not exist in catalog `%s`", namespaceName, catalogName));
-        }
+        return transactionManager.inTransactionR(tx -> {
+            if (namespaceRepository.notExists(tx, namespace)) {
+                throw new NoSuchNamespaceException(String.format("Namespace `%s` does not exist in catalog `%s`", namespaceName, catalogName));
+            }
 
-        return namespaceRepository.load(namespace);
+            return namespaceRepository.load(tx, namespace);
+        });
     }
 
     @Override
     public boolean dropNamespace(Namespace namespace) throws NamespaceNotEmptyException {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
-        if (namespaceRepository.notExists(namespace)) {
-            return false;
-        }
+        return transactionManager.inTransactionR(tx -> {
+            if (namespaceRepository.notExists(tx, namespace)) {
+                return false;
+            }
 
-        if (namespaceRepository.linkedTablesExist(namespace) || namespaceRepository.linkedViewsExist(namespace)) {
-            throw new NamespaceNotEmptyException(String.format("Namespace `%s` in catalog `%s` cannot be dropped because it has linked entities", namespaceName, catalogName));
-        }
+            if (namespaceRepository.linkedTablesExist(tx, namespace) || namespaceRepository.linkedViewsExist(tx, namespace)) {
+                throw new NamespaceNotEmptyException(String.format("Namespace `%s` in catalog `%s` cannot be dropped because it has linked entities", namespaceName, catalogName));
+            }
 
-        return namespaceRepository.delete(namespace);
+            return namespaceRepository.delete(tx, namespace);
+        });
     }
 
     @Override
     public boolean setProperties(Namespace namespace, Map<String, String> properties) throws NoSuchNamespaceException {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
-        if (namespaceRepository.notExists(namespace)) {
-            throw new NoSuchNamespaceException(String.format("Namespace `%s` does not exist in catalog `%s`", namespaceName, catalogName));
-        }
+        return transactionManager.inTransactionR(tx -> {
+            if (namespaceRepository.notExists(tx, namespace)) {
+                throw new NoSuchNamespaceException(String.format("Namespace `%s` does not exist in catalog `%s`", namespaceName, catalogName));
+            }
 
-        return namespaceRepository.setProperties(namespace, properties);
+            return namespaceRepository.setProperties(tx, namespace, properties);
+        });
     }
 
     @Override
     public boolean removeProperties(Namespace namespace, Set<String> properties) throws NoSuchNamespaceException {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
-        if (namespaceRepository.notExists(namespace)) {
-            throw new NoSuchNamespaceException(String.format("Namespace `%s` does not exist in catalog `%s`", namespaceName, catalogName));
-        }
+        return transactionManager.inTransactionR(tx -> {
+            if (namespaceRepository.notExists(tx, namespace)) {
+                throw new NoSuchNamespaceException(String.format("Namespace `%s` does not exist in catalog `%s`", namespaceName, catalogName));
+            }
 
-        return namespaceRepository.removeProperties(namespace, properties);
+            return namespaceRepository.removeProperties(tx, namespace, properties);
+        });
     }
 
     @Override
@@ -298,17 +342,18 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
         return catalogName;
     }
 
+    @VisibleForTesting
     KasanariDataSource getDataSource() {
         return dataSource;
     }
 
     @VisibleForTesting
-    TableRepository getTableRepository() {
+    TableRepository<Handle> getTableRepository() {
         return tableRepository;
     }
 
     @VisibleForTesting
-    void setTableRepository(TableRepository tableRepository) {
+    void setTableRepository(TableRepository<Handle> tableRepository) {
         this.tableRepository = tableRepository;
     }
 }

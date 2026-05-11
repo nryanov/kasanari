@@ -2,6 +2,7 @@ package kasanari.catalog.iceberg.operations;
 
 import kasanari.catalog.iceberg.repository.NamespaceRepository;
 import kasanari.catalog.iceberg.repository.TableRepository;
+import kasanari.catalog.iceberg.repository.TransactionManager;
 import kasanari.catalog.iceberg.repository.ViewRepository;
 import kasanari.catalog.iceberg.repository.model.IcebergViewRecord;
 import kasanari.catalog.iceberg.utils.IcebergUtils;
@@ -14,25 +15,29 @@ import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.view.BaseViewOperations;
 import org.apache.iceberg.view.ViewMetadata;
+import org.jdbi.v3.core.Handle;
 
 import java.util.Objects;
 
 public class KasanariViewOperations extends BaseViewOperations {
-    private final NamespaceRepository namespaceRepository;
-    private final TableRepository tableRepository;
-    private final ViewRepository viewRepository;
+    private final TransactionManager<Handle> transactionManager;
+    private final NamespaceRepository<Handle> namespaceRepository;
+    private final TableRepository<Handle> tableRepository;
+    private final ViewRepository<Handle> viewRepository;
     private final FileIO fileIO;
     private final TableIdentifier viewIdentifier;
     private final String catalogName;
 
     public KasanariViewOperations(
-            NamespaceRepository namespaceRepository,
-            TableRepository tableRepository,
-            ViewRepository viewRepository,
+            TransactionManager<Handle> transactionManager,
+            NamespaceRepository<Handle> namespaceRepository,
+            TableRepository<Handle> tableRepository,
+            ViewRepository<Handle> viewRepository,
             FileIO fileIO,
             TableIdentifier viewIdentifier,
             String catalogName
     ) {
+        this.transactionManager = transactionManager;
         this.namespaceRepository = namespaceRepository;
         this.tableRepository = tableRepository;
         this.viewRepository = viewRepository;
@@ -43,26 +48,29 @@ public class KasanariViewOperations extends BaseViewOperations {
 
     @Override
     protected void doRefresh() {
-        if (viewRepository.exists(viewIdentifier)) {
-            var view = viewRepository.load(viewIdentifier);
+        // todo: optimize
+        transactionManager.inTransaction(tx -> {
+            if (viewRepository.exists(tx, viewIdentifier)) {
+                var view = viewRepository.load(tx, viewIdentifier);
 
-            if (view.metadataLocation() == null) {
-                throw new ValidationException("State of view `%s` is incorrect: metadata location is null", viewIdentifier);
-            }
+                if (view.metadataLocation() == null) {
+                    throw new ValidationException("State of view `%s` is incorrect: metadata location is null", viewIdentifier);
+                }
 
-            refreshFromMetadataLocation(view.metadataLocation());
-        } else {
-            // if table does not exist but there is a metadata info
-            if (currentMetadataLocation() != null) {
-                throw new NoSuchViewException(
-                        "View `%s` doesn't exist in catalog `%s`",
-                        viewIdentifier.toString(), catalogName
-                );
+                refreshFromMetadataLocation(view.metadataLocation());
             } else {
-                // table does not exist and there is no existing metadata
-                disableRefresh();
+                // if table does not exist but there is a metadata info
+                if (currentMetadataLocation() != null) {
+                    throw new NoSuchViewException(
+                            "View `%s` doesn't exist in catalog `%s`",
+                            viewIdentifier.toString(), catalogName
+                    );
+                } else {
+                    // table does not exist and there is no existing metadata
+                    disableRefresh();
+                }
             }
-        }
+        });
     }
 
     @Override
@@ -75,10 +83,12 @@ public class KasanariViewOperations extends BaseViewOperations {
             if (isNewView) {
                 createView(newMetadataLocation);
             } else {
-                var existingView = viewRepository.load(viewIdentifier);
-                // check that current location didn't change yet
-                validateMetadataLocation(existingView, base);
-                updateView(existingView.metadataLocation(), newMetadataLocation);
+                transactionManager.inTransaction(tx -> {
+                    var existingView = viewRepository.load(tx, viewIdentifier);
+                    // check that current location didn't change yet
+                    validateMetadataLocation(existingView, base);
+                    updateView(tx, existingView.metadataLocation(), newMetadataLocation);
+                });
             }
         } catch (Exception e) {
             failure = true;
@@ -104,31 +114,33 @@ public class KasanariViewOperations extends BaseViewOperations {
     private void createView(String newMetadataLocation) {
         var namespaceName = IcebergUtils.namespaceName(viewIdentifier.namespace());
 
-        if (!namespaceRepository.exists(viewIdentifier.namespace())) {
-            throw new NoSuchNamespaceException(
-                    "View couldn't be created because namespace `%s` does not exist in catalog `%s`",
-                    namespaceName,
-                    catalogName
-            );
-        }
+        var result = transactionManager.inTransactionR(tx -> {
+            if (!namespaceRepository.exists(tx, viewIdentifier.namespace())) {
+                throw new NoSuchNamespaceException(
+                        "View couldn't be created because namespace `%s` does not exist in catalog `%s`",
+                        namespaceName,
+                        catalogName
+                );
+            }
 
-        if (viewRepository.exists(viewIdentifier)) {
-            throw new AlreadyExistsException(
-                    "View couldn't be created because view with the same name `%s` is already exist in catalog `%s`",
-                    viewIdentifier.toString(),
-                    catalogName
-            );
-        }
+            if (viewRepository.exists(tx, viewIdentifier)) {
+                throw new AlreadyExistsException(
+                        "View couldn't be created because view with the same name `%s` is already exist in catalog `%s`",
+                        viewIdentifier.toString(),
+                        catalogName
+                );
+            }
 
-        if (tableRepository.exists(viewIdentifier)) {
-            throw new AlreadyExistsException(
-                    "View couldn't be created because table with the same name `%s` is already exist in catalog `%s`",
-                    viewIdentifier.toString(),
-                    catalogName
-            );
-        }
+            if (tableRepository.exists(tx, viewIdentifier)) {
+                throw new AlreadyExistsException(
+                        "View couldn't be created because table with the same name `%s` is already exist in catalog `%s`",
+                        viewIdentifier.toString(),
+                        catalogName
+                );
+            }
 
-        var result = viewRepository.create(viewIdentifier, newMetadataLocation);
+            return viewRepository.create(tx, viewIdentifier, newMetadataLocation);
+        });
 
         if (!result) {
             throw new CommitFailedException(
@@ -139,8 +151,8 @@ public class KasanariViewOperations extends BaseViewOperations {
         }
     }
 
-    private void updateView(String previousMetadataLocation, String newMetadataLocation) {
-        var result = viewRepository.update(viewIdentifier, previousMetadataLocation, newMetadataLocation);
+    private void updateView(Handle tx, String previousMetadataLocation, String newMetadataLocation) {
+        var result = viewRepository.update(tx, viewIdentifier, previousMetadataLocation, newMetadataLocation);
 
         if (!result) {
             throw new CommitFailedException(

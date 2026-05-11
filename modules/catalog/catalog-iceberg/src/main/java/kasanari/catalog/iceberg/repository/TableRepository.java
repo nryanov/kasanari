@@ -3,28 +3,25 @@ package kasanari.catalog.iceberg.repository;
 import kasanari.catalog.iceberg.repository.model.IcebergTableRecord;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.jdbi.v3.core.Handle;
 
 import java.util.List;
 
-public interface TableRepository {
-    IcebergTableRecord load(TableIdentifier tableIdentifier);
+public interface TableRepository<T> {
+    IcebergTableRecord load(T tx, TableIdentifier tableIdentifier);
 
-    boolean exists(TableIdentifier tableIdentifier);
+    boolean exists(T tx, TableIdentifier tableIdentifier);
 
-    default boolean notExists(TableIdentifier identifier) {
-        return !exists(identifier);
+    default boolean notExists(T tx, TableIdentifier identifier) {
+        return !exists(tx, identifier);
     }
 
-    boolean create(TableIdentifier tableIdentifier, String newMetadataLocation);
+    boolean create(T tx, TableIdentifier tableIdentifier, String newMetadataLocation);
 
-    boolean update(TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation);
+    boolean update(T tx, TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation);
 
-    boolean update(Handle tx, TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation);
+    List<TableIdentifier> findByNamespace(T tx, Namespace namespace);
 
-    List<TableIdentifier> findByNamespace(Namespace namespace);
+    boolean delete(T tx, TableIdentifier tableIdentifier);
 
-    boolean delete(TableIdentifier tableIdentifier);
-
-    boolean rename(TableIdentifier from, TableIdentifier to);
+    boolean rename(T tx, TableIdentifier from, TableIdentifier to);
 }

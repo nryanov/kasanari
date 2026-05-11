@@ -2,6 +2,7 @@ package kasanari.catalog.iceberg.operations;
 
 import kasanari.catalog.iceberg.repository.NamespaceRepository;
 import kasanari.catalog.iceberg.repository.TableRepository;
+import kasanari.catalog.iceberg.repository.TransactionManager;
 import kasanari.catalog.iceberg.repository.ViewRepository;
 import kasanari.catalog.iceberg.repository.model.IcebergTableRecord;
 import kasanari.catalog.iceberg.utils.IcebergUtils;
@@ -24,21 +25,24 @@ import java.util.Objects;
 public class KasanariTableOperations extends BaseMetastoreTableOperations {
     private final static Logger logger = LoggerFactory.getLogger(KasanariTableOperations.class);
 
-    private final NamespaceRepository namespaceRepository;
-    private final TableRepository tableRepository;
-    private final ViewRepository viewRepository;
+    private final TransactionManager<Handle> transactionManager;
+    private final NamespaceRepository<Handle> namespaceRepository;
+    private final TableRepository<Handle> tableRepository;
+    private final ViewRepository<Handle> viewRepository;
     private final FileIO fileIO;
     private final TableIdentifier tableIdentifier;
     private final String catalogName;
 
     public KasanariTableOperations(
-            NamespaceRepository namespaceRepository,
-            TableRepository tableRepository,
-            ViewRepository viewRepository,
+            TransactionManager<Handle> transactionManager,
+            NamespaceRepository<Handle> namespaceRepository,
+            TableRepository<Handle> tableRepository,
+            ViewRepository<Handle> viewRepository,
             FileIO fileIO,
             TableIdentifier tableIdentifier,
             String catalogName
     ) {
+        this.transactionManager = transactionManager;
         this.namespaceRepository = namespaceRepository;
         this.tableRepository = tableRepository;
         this.viewRepository = viewRepository;
@@ -59,26 +63,29 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
 
     @Override
     protected void doRefresh() {
-        if (tableRepository.exists(tableIdentifier)) {
-            var table = tableRepository.load(tableIdentifier);
+        // todo: optimize
+        transactionManager.inTransaction(tx -> {
+            if (tableRepository.exists(tx, tableIdentifier)) {
+                var table = tableRepository.load(tx, tableIdentifier);
 
-            if (table.metadataLocation() == null) {
-                throw new ValidationException("State of table `%s` is incorrect: metadata location is null", tableIdentifier);
-            }
+                if (table.metadataLocation() == null) {
+                    throw new ValidationException("State of table `%s` is incorrect: metadata location is null", tableIdentifier);
+                }
 
-            refreshFromMetadataLocation(table.metadataLocation());
-        } else {
-            // if table does not exist but there is a metadata info
-            if (currentMetadataLocation() != null) {
-                throw new NoSuchTableException(
-                        "Table `%s` couldn't be loaded from catalog `%s` because it was dropped",
-                        tableIdentifier.toString(), catalogName
-                );
+                refreshFromMetadataLocation(table.metadataLocation());
             } else {
-                // table does not exist and there is no existing metadata
-                disableRefresh();
+                // if table does not exist but there is a metadata info
+                if (currentMetadataLocation() != null) {
+                    throw new NoSuchTableException(
+                            "Table `%s` couldn't be loaded from catalog `%s` because it was dropped",
+                            tableIdentifier.toString(), catalogName
+                    );
+                } else {
+                    // table does not exist and there is no existing metadata
+                    disableRefresh();
+                }
             }
-        }
+        });
     }
 
 
@@ -119,7 +126,7 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
                 throw new IllegalStateException("Only DMK operations supported for multi-table transactions");
             } else {
                 logger.debug("Updating table: {}", tableIdentifier);
-                var existingTable = tableRepository.load(tableIdentifier);
+                var existingTable = tableRepository.load(tx, tableIdentifier);
                 // check that current location didn't change yet
                 validateMetadataLocation(existingTable, base);
                 updateTable(tx, existingTable.metadataLocation(), newMetadataLocation);
@@ -149,10 +156,12 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
                 createTable(newMetadataLocation);
             } else {
                 logger.debug("Updating table: {}", tableIdentifier);
-                var existingTable = tableRepository.load(tableIdentifier);
-                // check that current location didn't change yet
-                validateMetadataLocation(existingTable, base);
-                updateTable(existingTable.metadataLocation(), newMetadataLocation);
+                transactionManager.inTransaction(tx -> {
+                    var existingTable = tableRepository.load(tx, tableIdentifier);
+                    // check that current location didn't change yet
+                    validateMetadataLocation(existingTable, base);
+                    updateTable(tx, existingTable.metadataLocation(), newMetadataLocation);
+                });
             }
         } catch (Exception e) {
             logger.warn("Error happened while commiting to table `{}`: {}", tableIdentifier, e.getMessage());
@@ -180,31 +189,33 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
     private void createTable(String newMetadataLocation) {
         var namespaceName = IcebergUtils.namespaceName(tableIdentifier.namespace());
 
-        if (!namespaceRepository.exists(tableIdentifier.namespace())) {
-            throw new NoSuchNamespaceException(
-                    "Table couldn't be created because namespace `%s` does not exist in catalog `%s`",
-                    namespaceName,
-                    catalogName
-            );
-        }
+        var result = transactionManager.inTransactionR(tx -> {
+            if (!namespaceRepository.exists(tx, tableIdentifier.namespace())) {
+                throw new NoSuchNamespaceException(
+                        "Table couldn't be created because namespace `%s` does not exist in catalog `%s`",
+                        namespaceName,
+                        catalogName
+                );
+            }
 
-        if (viewRepository.exists(tableIdentifier)) {
-            throw new AlreadyExistsException(
-                    "Table couldn't be created because view with the same name `%s` is already exist in catalog `%s`",
-                    tableIdentifier.toString(),
-                    catalogName
-            );
-        }
+            if (viewRepository.exists(tx, tableIdentifier)) {
+                throw new AlreadyExistsException(
+                        "Table couldn't be created because view with the same name `%s` is already exist in catalog `%s`",
+                        tableIdentifier.toString(),
+                        catalogName
+                );
+            }
 
-        if (tableRepository.exists(tableIdentifier)) {
-            throw new AlreadyExistsException(
-                    "Table couldn't be created because table with the same name `%s` is already exist in catalog `%s`",
-                    tableIdentifier.toString(),
-                    catalogName
-            );
-        }
+            if (tableRepository.exists(tx, tableIdentifier)) {
+                throw new AlreadyExistsException(
+                        "Table couldn't be created because table with the same name `%s` is already exist in catalog `%s`",
+                        tableIdentifier.toString(),
+                        catalogName
+                );
+            }
 
-        var result = tableRepository.create(tableIdentifier, newMetadataLocation);
+            return tableRepository.create(tx, tableIdentifier, newMetadataLocation);
+        });
 
         if (!result) {
             throw new CommitFailedException(
@@ -217,18 +228,6 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
 
     private void updateTable(Handle tx, String previousMetadataLocation, String newMetadataLocation) {
         var result = tableRepository.update(tx, tableIdentifier, previousMetadataLocation, newMetadataLocation);
-
-        if (!result) {
-            throw new CommitFailedException(
-                    "Table `%s` wasn't updated in catalog `%s`",
-                    tableIdentifier.toString(),
-                    catalogName
-            );
-        }
-    }
-
-    private void updateTable(String previousMetadataLocation, String newMetadataLocation) {
-        var result = tableRepository.update(tableIdentifier, previousMetadataLocation, newMetadataLocation);
 
         if (!result) {
             throw new CommitFailedException(

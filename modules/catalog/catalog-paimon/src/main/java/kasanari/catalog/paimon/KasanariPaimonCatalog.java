@@ -89,7 +89,6 @@ import java.util.concurrent.atomic.AtomicReference;
 public class KasanariPaimonCatalog extends AbstractCatalog {
     private final KasanariDataSource dataSource;
     private final TransactionManager<Handle> transactionManager;
-    // TODO: each repository should also accept catalogKey (or warehouse)?
     // TODO: check that current branch is main in each operation?
     private final DatabaseRepository<Handle> databaseRepository;
     private final TableRepository<Handle> tableRepository;

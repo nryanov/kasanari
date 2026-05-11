@@ -1,11 +1,11 @@
 package kasanari.catalog.iceberg.repository;
 
-public interface CatalogRepository {
-    void register();
+public interface CatalogRepository<T> {
+    void register(T tx);
 
-    boolean exists();
+    boolean exists(T tx);
 
-    default boolean notExists() {
-        return !exists();
+    default boolean notExists(T tx) {
+        return !exists(tx);
     }
 }
