@@ -8,6 +8,17 @@ plugins {
 }
 
 dependencies {
+    api(libs.lance.core)
+    api(libs.lance.namespace.core) {
+        exclude(group = "org.lance", module = "lance-core")
+        exclude(group = "com.google.guava", module = "guava")
+        exclude(group = "com.fasterxml.jackson.core", module = "*")
+        exclude(group = "com.fasterxml.jackson.datatype", module = "*")
+        exclude(group = "com.fasterxml.jackson.jaxrs", module = "jackson-jaxrs-json-provider")
+        exclude(group = "org.apache.commons", module = "commons-lang3")
+        exclude(group = "org.apache.opendal", module = "*")
+        exclude(group = "org.junit.jupiter", module = "*")
+    }
     implementation(libs.jakarta.annotation.api)
     implementation(libs.jakarta.inject.api)
     implementation(libs.jakarta.ws.rs.api)
@@ -15,8 +26,8 @@ dependencies {
 
 val rootDir = rootProject.layout.projectDirectory
 val specsDir = rootDir.dir("spec")
-val paimonSpecDir = specsDir.dir("paimon")
-val templatesDir = paimonSpecDir.dir("server-templates")
+val lanceSpecDir = specsDir.dir("lance")
+val templatesDir = lanceSpecDir.dir("server-templates")
 val generatedDir = layout.buildDirectory.dir("generated")
 val generatedOpenApiSrcDir = layout.buildDirectory.dir("generated/src/main/java")
 
@@ -24,7 +35,7 @@ val generatedOpenApiSrcDir = layout.buildDirectory.dir("generated/src/main/java"
 // https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-gradle-plugin
 // https://github.com/lance-format/lance/blob/v2.0.0/docs/src/rest.yaml
 openApiGenerate {
-    inputSpec.set(paimonSpecDir.file("kasanari-lance-catalog-service.yaml").asFile.absolutePath)
+    inputSpec.set(lanceSpecDir.file("kasanari-lance-catalog-service.yaml").asFile.absolutePath)
     generatorName.set("jaxrs-resteasy")
     outputDir.set(generatedDir.get().asFile.absolutePath)
     ignoreFileOverride.set(specsDir.file(".openapi-generator-ignore").asFile.absolutePath)
@@ -50,6 +61,75 @@ openApiGenerate {
     additionalProperties.put("apiNameSuffix", "")
     additionalProperties.put("apiPackage", "kasanari.catalog.lance.api")
     additionalProperties.put("dateLibrary", "java8")
+
+    val lanceModels = listOf(
+        "AlterTableAddColumnsRequest",
+        "AlterTableAddColumnsResponse",
+        "AlterTableAlterColumnsRequest",
+        "AlterTableAlterColumnsResponse",
+        "AlterTableDropColumnsRequest",
+        "AlterTableDropColumnsResponse",
+        "AlterTransactionRequest",
+        "AlterTransactionResponse",
+        "AnalyzeTableQueryPlanRequest",
+        "AnalyzeTableQueryPlanResponse",
+        "CountTableRowsRequest",
+        "CreateNamespaceRequest",
+        "CreateNamespaceResponse",
+        "CreateTableIndexRequest",
+        "CreateTableIndexResponse",
+        "CreateTableResponse",
+        "CreateTableTagRequest",
+        "DeleteFromTableRequest",
+        "DeleteFromTableResponse",
+        "DeleteTableTagRequest",
+        "DeregisterTableRequest",
+        "DeregisterTableResponse",
+        "DescribeNamespaceRequest",
+        "DescribeNamespaceResponse",
+        "DescribeTableIndexStatsRequest",
+        "DescribeTableIndexStatsResponse",
+        "DescribeTableRequest",
+        "DescribeTableResponse",
+        "DescribeTransactionRequest",
+        "DescribeTransactionResponse",
+        "DropNamespaceRequest",
+        "DropNamespaceResponse",
+        "DropTableIndexRequest",
+        "DropTableIndexResponse",
+        "DropTableRequest",
+        "DropTableResponse",
+        "ErrorResponse",
+        "ExplainTableQueryPlanRequest",
+        "ExplainTableQueryPlanResponse",
+        "GetTableStatsRequest",
+        "GetTableStatsResponse",
+        "GetTableTagVersionRequest",
+        "GetTableTagVersionResponse",
+        "InsertIntoTableResponse",
+        "ListNamespacesResponse",
+        "ListTableIndicesRequest",
+        "ListTableIndicesResponse",
+        "ListTableTagsResponse",
+        "ListTableVersionsRequest",
+        "ListTableVersionsResponse",
+        "ListTablesResponse",
+        "MergeInsertIntoTableResponse",
+        "NamespaceExistsRequest",
+        "QueryTableRequest",
+        "RegisterTableRequest",
+        "RegisterTableResponse",
+        "RestoreTableRequest",
+        "RestoreTableResponse",
+        "TableExistsRequest",
+        "UpdateTableRequest",
+        "UpdateTableResponse",
+        "UpdateTableTagRequest",
+    )
+
+    val lanceMappings = lanceModels.associateWith { "org.lance.namespace.model.$it" }.toMutableMap()
+    modelNameMappings = lanceMappings
+    importMappings = lanceMappings.toMutableMap()
 }
 
 the<SourceSetContainer>().named("main") {
@@ -63,6 +143,6 @@ tasks.named<GenerateTask>("openApiGenerate") {
     }
 }
 
-//tasks.named("compileJava") {
-//    dependsOn(tasks.named("openApiGenerate"))
-//}
+tasks.named("compileJava") {
+    dependsOn(tasks.named("openApiGenerate"))
+}
