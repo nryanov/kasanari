@@ -6,6 +6,7 @@ dependencies {
     testFixturesApi(platform(libs.testcontainers.bom))
     testFixturesApi(platform(libs.junit.bom))
 
+    testFixturesApi(libs.logback)
     testFixturesApi("org.testcontainers:testcontainers")
 
     testFixturesRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

@@ -28,16 +28,6 @@ subprojects {
         }
     }
 
-    // todo: remove
-    dependencies {
-        add("implementation", "org.slf4j:slf4j-api:2.0.17")
-
-        add("testImplementation", "ch.qos.logback:logback-classic:1.5.18")
-        add("testImplementation", platform("org.junit:junit-bom:5.12.2"))
-        add("testImplementation", "org.junit.jupiter:junit-jupiter:5.12.2")
-        add("testRuntimeOnly", "org.junit.platform:junit-platform-launcher:1.12.2")
-    }
-
     tasks.withType<JavaCompile>().configureEach {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-parameters")
