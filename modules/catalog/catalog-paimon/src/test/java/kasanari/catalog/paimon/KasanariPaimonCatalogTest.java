@@ -28,8 +28,8 @@ public class KasanariPaimonCatalogTest extends PaimonCatalogAdapterTest {
 
         var options = new HashMap<String, String>();
         options.put("warehouse", "s3a://warehouse");
+        options.put("uri", postgres.jdbcUrl());
         options.put("kasanari.catalog.key", "kasanari-test");
-        options.put("kasanari.jdbc.uri", postgres.jdbcUrl());
         options.put("kasanari.jdbc.user", postgres.username());
         options.put("kasanari.jdbc.password", postgres.password());
 

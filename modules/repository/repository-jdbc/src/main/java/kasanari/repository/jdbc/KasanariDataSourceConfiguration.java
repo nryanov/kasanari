@@ -1,18 +1,11 @@
-package kasanari.catalog.iceberg;
-
+package kasanari.repository.jdbc;
 
 import java.time.Duration;
 
-public final class KasanariIcebergCatalogProperties {
-    private KasanariIcebergCatalogProperties() {}
-
-    public static String WAREHOUSE = "warehouse";
+public abstract class KasanariDataSourceConfiguration {
     public static String URI = "uri";
     public static String USER = "kasanari.jdbc.user";
     public static String PASSWORD = "kasanari.jdbc.password";
-
-    public static String STORAGE_TYPE = "kasanari.storage-type";
-    public static KasanariStorageType STORAGE_TYPE_DEFAULT = KasanariStorageType.JDBC;
 
     public static String CONNECTION_POOL_INITIAL_SIZE = "kasanari.jdbc.connection-pool.initial-size";
     public static int CONNECTION_POOL_INITIAL_SIZE_DEFAULT = 2;

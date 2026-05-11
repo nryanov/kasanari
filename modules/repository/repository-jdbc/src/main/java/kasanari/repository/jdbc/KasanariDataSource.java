@@ -1,4 +1,4 @@
-package kasanari.catalog.iceberg.repository.jdbc;
+package kasanari.repository.jdbc;
 
 
 import io.agroal.api.configuration.AgroalConnectionFactoryConfiguration;
@@ -8,16 +8,13 @@ import io.agroal.api.configuration.supplier.AgroalDataSourceConfigurationSupplie
 import io.agroal.api.security.NamePrincipal;
 import io.agroal.api.security.SimplePassword;
 import io.agroal.pool.DataSource;
-import kasanari.catalog.iceberg.KasanariIcebergCatalogProperties;
 import org.jdbi.v3.core.Jdbi;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.function.Function;
 
-public class KasanariDataSource implements Closeable {
+public class KasanariDataSource implements kasanari.repository.core.DataSource {
     private final DataSource pool;
     private final Jdbi jdbi;
 
@@ -48,45 +45,45 @@ public class KasanariDataSource implements Closeable {
 
     private record DataSourceProperties(Map<String, String> properties) {
         public String getUser() {
-            return getRequired(KasanariIcebergCatalogProperties.USER);
+            return getRequired(KasanariDataSourceConfiguration.USER);
         }
 
         public String getPassword() {
-            return getRequired(KasanariIcebergCatalogProperties.PASSWORD);
+            return getRequired(KasanariDataSourceConfiguration.PASSWORD);
         }
 
         public String getUri() {
-            return getRequired(KasanariIcebergCatalogProperties.URI);
+            return getRequired(KasanariDataSourceConfiguration.URI);
         }
 
         public int getConnectionPoolInitialSize() {
             return getOrDefault(
-                    KasanariIcebergCatalogProperties.CONNECTION_POOL_INITIAL_SIZE,
-                    KasanariIcebergCatalogProperties.CONNECTION_POOL_INITIAL_SIZE_DEFAULT,
+                    KasanariDataSourceConfiguration.CONNECTION_POOL_INITIAL_SIZE,
+                    KasanariDataSourceConfiguration.CONNECTION_POOL_INITIAL_SIZE_DEFAULT,
                     Integer::parseInt
             );
         }
 
         public int getConnectionPoolMinSize() {
             return getOrDefault(
-                    KasanariIcebergCatalogProperties.CONNECTION_POOL_MIN_SIZE,
-                    KasanariIcebergCatalogProperties.CONNECTION_POOL_MIN_SIZE_DEFAULT,
+                    KasanariDataSourceConfiguration.CONNECTION_POOL_MIN_SIZE,
+                    KasanariDataSourceConfiguration.CONNECTION_POOL_MIN_SIZE_DEFAULT,
                     Integer::parseInt
             );
         }
 
         public int getConnectionPoolMaxSize() {
             return getOrDefault(
-                    KasanariIcebergCatalogProperties.CONNECTION_POOL_MAX_SIZE,
-                    KasanariIcebergCatalogProperties.CONNECTION_POOL_MAX_SIZE_DEFAULT,
+                    KasanariDataSourceConfiguration.CONNECTION_POOL_MAX_SIZE,
+                    KasanariDataSourceConfiguration.CONNECTION_POOL_MAX_SIZE_DEFAULT,
                     Integer::parseInt
             );
         }
 
         public Duration getConnectionMaxLifetimeMillis() {
             return getOrDefault(
-                    KasanariIcebergCatalogProperties.CONNECTION_MAX_LIFETIME_MILLIS,
-                    KasanariIcebergCatalogProperties.CONNECTION_MAX_LIFETIME_MILLIS_DEFAULT,
+                    KasanariDataSourceConfiguration.CONNECTION_MAX_LIFETIME_MILLIS,
+                    KasanariDataSourceConfiguration.CONNECTION_MAX_LIFETIME_MILLIS_DEFAULT,
                     value -> Duration.ofMillis(Long.parseLong(value))
             );
         }
@@ -117,7 +114,7 @@ public class KasanariDataSource implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         pool.close();
     }
 }

@@ -6,6 +6,7 @@ import kasanari.fixtures.postgres.PostgresHelper;
 import kasanari.fixtures.s3.NoneRegionS3FileIOAwsClientFactory;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
+import kasanari.repository.jdbc.KasanariDataSourceConfiguration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.MetadataUpdate;
 import org.apache.iceberg.PartitionSpec;
@@ -48,9 +49,9 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
         var factory = new KasanariIcebergCatalogFactory();
         var properties = new HashMap<String, String>();
-        properties.put(KasanariIcebergCatalogProperties.USER, postgres.username());
-        properties.put(KasanariIcebergCatalogProperties.PASSWORD, postgres.password());
-        properties.put(KasanariIcebergCatalogProperties.URI, postgres.jdbcUrl());
+        properties.put(KasanariDataSourceConfiguration.USER, postgres.username());
+        properties.put(KasanariDataSourceConfiguration.PASSWORD, postgres.password());
+        properties.put(KasanariDataSourceConfiguration.URI, postgres.jdbcUrl());
         properties.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
         properties.put(CatalogProperties.WAREHOUSE_LOCATION, "s3a://warehouse");
         properties.put(S3FileIOProperties.ENDPOINT, s3Container.url());

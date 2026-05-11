@@ -1,6 +1,6 @@
-package kasanari.catalog.paimon.repository.jdbc;
+package kasanari.repository.jdbc;
 
-import kasanari.catalog.paimon.repository.TransactionManager;
+import kasanari.repository.core.TransactionManager;
 import org.jdbi.v3.core.Handle;
 
 import java.util.function.Consumer;

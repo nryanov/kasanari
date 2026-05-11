@@ -7,16 +7,16 @@ import kasanari.catalog.iceberg.operations.KasanariViewOperations;
 import kasanari.catalog.iceberg.repository.CatalogRepository;
 import kasanari.catalog.iceberg.repository.NamespaceRepository;
 import kasanari.catalog.iceberg.repository.TableRepository;
-import kasanari.catalog.iceberg.repository.TransactionManager;
 import kasanari.catalog.iceberg.repository.ViewRepository;
 import kasanari.catalog.iceberg.repository.jdbc.JdbcCatalogRepository;
 import kasanari.catalog.iceberg.repository.jdbc.JdbcNamespaceRepository;
 import kasanari.catalog.iceberg.repository.jdbc.JdbcTableInitializer;
 import kasanari.catalog.iceberg.repository.jdbc.JdbcTableRepository;
-import kasanari.catalog.iceberg.repository.jdbc.JdbcTransactionManager;
 import kasanari.catalog.iceberg.repository.jdbc.JdbcViewRepository;
-import kasanari.catalog.iceberg.repository.jdbc.KasanariDataSource;
 import kasanari.catalog.iceberg.utils.IcebergUtils;
+import kasanari.repository.core.TransactionManager;
+import kasanari.repository.jdbc.JdbcTransactionManager;
+import kasanari.repository.jdbc.KasanariDataSource;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.TableMetadata;
@@ -59,7 +59,7 @@ public class KasanariIcebergCatalog extends BaseMetastoreViewCatalog implements 
         this.catalogName = catalogName;
         this.dataSource = new KasanariDataSource(properties);
 
-        this.warehouse = properties.get(KasanariIcebergCatalogProperties.WAREHOUSE);
+        this.warehouse = properties.get("warehouse");
         if (this.warehouse == null) {
             throw new IllegalArgumentException("Warehouse location is not set");
         }

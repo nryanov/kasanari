@@ -1,5 +1,7 @@
 package kasanari.catalog.paimon.repository.jdbc;
 
+import kasanari.repository.jdbc.KasanariDataSource;
+
 public class JdbcTableInitializer {
     private final KasanariDataSource dataSource;
 

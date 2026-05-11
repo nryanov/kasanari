@@ -2,10 +2,10 @@ package kasanari.catalog.iceberg.operations;
 
 import kasanari.catalog.iceberg.repository.NamespaceRepository;
 import kasanari.catalog.iceberg.repository.TableRepository;
-import kasanari.catalog.iceberg.repository.TransactionManager;
 import kasanari.catalog.iceberg.repository.ViewRepository;
 import kasanari.catalog.iceberg.repository.model.IcebergTableRecord;
 import kasanari.catalog.iceberg.utils.IcebergUtils;
+import kasanari.repository.core.TransactionManager;
 import org.apache.iceberg.BaseMetastoreTableOperations;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.TableMetadata;

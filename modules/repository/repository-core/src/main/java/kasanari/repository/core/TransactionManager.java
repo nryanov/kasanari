@@ -1,4 +1,4 @@
-package kasanari.catalog.iceberg.repository;
+package kasanari.repository.core;
 
 import java.util.function.Consumer;
 import java.util.function.Function;

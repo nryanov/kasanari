@@ -26,9 +26,7 @@ dependencies {
 
     implementation(project(":modules:platform:platform-aws"))
     implementation(project(":modules:platform:platform-hadoop"))
-
-    implementation(libs.jdbi.core)
-    implementation(libs.agroal.pool)
+    implementation(project(":modules:repository:repository-jdbc"))
 
     // test
     testImplementation(testFixtures(project(":modules:fixtures:fixtures-common")))

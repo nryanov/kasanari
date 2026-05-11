@@ -13,11 +13,13 @@ pluginManagement {
 rootProject.name = "kasanari"
 
 include(
+    "modules:server",
+    // api
     "modules:api",
     "modules:api:api-iceberg",
     "modules:api:api-paimon",
     "modules:api:api-lance",
-    "modules:server",
+    // catalog
     "modules:catalog",
     "modules:catalog:catalog-iceberg",
     "modules:catalog:catalog-paimon",
@@ -27,6 +29,10 @@ include(
     "modules:platform:platform-aws",
     "modules:platform:platform-hadoop",
     "modules:platform:platform-jakarta",
+    // repository
+    "modules:repository",
+    "modules:repository:repository-core",
+    "modules:repository:repository-jdbc",
     // fixtures
     "modules:fixtures",
     "modules:fixtures:fixtures-common",
@@ -58,3 +64,7 @@ findProject(":modules:platform")?.name = "platform"
 findProject(":modules:platform:platform-aws")?.name = "platform-aws"
 findProject(":modules:platform:platform-hadoop")?.name = "platform-hadoop"
 findProject(":modules:platform:platform-jakarta")?.name = "platform-jakarta"
+
+findProject(":modules:repository")?.name = "repository"
+findProject(":modules:repository:repository-core")?.name = "repository-core"
+findProject(":modules:repository:repository-jdbc")?.name = "repository-jdbc"
