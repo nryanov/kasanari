@@ -35,7 +35,7 @@ import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT;
 
-// copy of BaseTableTransaction but with a little bit different implementation of commitSimpleTransaction method
+// copy of BaseTableTransaction but with a little bit of different implementation of commitSimpleTransaction method
 public class KasanariMultiTableTransaction implements Transaction {
     private static final Logger logger = LoggerFactory.getLogger(KasanariMultiTableTransaction.class);
 

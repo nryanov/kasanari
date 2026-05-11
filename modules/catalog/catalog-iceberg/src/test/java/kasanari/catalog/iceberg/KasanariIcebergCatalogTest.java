@@ -48,9 +48,9 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
         var factory = new KasanariIcebergCatalogFactory();
         var properties = new HashMap<String, String>();
-        properties.put(KasanariCatalogProperties.USER, postgres.username());
-        properties.put(KasanariCatalogProperties.PASSWORD, postgres.password());
-        properties.put(KasanariCatalogProperties.URI, postgres.jdbcUrl());
+        properties.put(KasanariIcebergCatalogProperties.USER, postgres.username());
+        properties.put(KasanariIcebergCatalogProperties.PASSWORD, postgres.password());
+        properties.put(KasanariIcebergCatalogProperties.URI, postgres.jdbcUrl());
         properties.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
         properties.put(CatalogProperties.WAREHOUSE_LOCATION, "s3a://warehouse");
         properties.put(S3FileIOProperties.ENDPOINT, s3Container.url());
@@ -151,7 +151,7 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
     @Test
     public void correctlyRollbackFailedMultiTableTransaction() {
-        var kasanariCatalog = (KasanariCatalog) catalog.delegate();
+        var kasanariCatalog = (KasanariIcebergCatalog) catalog.delegate();
         var tableRepository = kasanariCatalog.getTableRepository();
         kasanariCatalog.setTableRepository(new JdbcTableRepositoryStub(tableRepository) {
             @Override
@@ -219,8 +219,8 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
     @Test
     public void doNotRollbackAllChangesInMultiTableTransactionUsingDefaultCatalogImplementation() {
-        var defaultCatalog = new KasanariIcebergCatalogAdapter((KasanariCatalog) catalog.delegate(), false);
-        var kasanariCatalog = (KasanariCatalog) defaultCatalog.delegate();
+        var defaultCatalog = new KasanariIcebergCatalogAdapter((KasanariIcebergCatalog) catalog.delegate(), false);
+        var kasanariCatalog = (KasanariIcebergCatalog) defaultCatalog.delegate();
         var tableRepository = kasanariCatalog.getTableRepository();
         kasanariCatalog.setTableRepository(new JdbcTableRepositoryStub(tableRepository) {
             @Override

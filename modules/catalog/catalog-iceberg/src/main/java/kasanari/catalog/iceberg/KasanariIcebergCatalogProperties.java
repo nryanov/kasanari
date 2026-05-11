@@ -3,8 +3,8 @@ package kasanari.catalog.iceberg;
 
 import java.time.Duration;
 
-public final class KasanariCatalogProperties {
-    private KasanariCatalogProperties() {}
+public final class KasanariIcebergCatalogProperties {
+    private KasanariIcebergCatalogProperties() {}
 
     public static String WAREHOUSE = "warehouse";
     public static String URI = "uri";

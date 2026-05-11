@@ -8,7 +8,7 @@ import io.agroal.api.configuration.supplier.AgroalDataSourceConfigurationSupplie
 import io.agroal.api.security.NamePrincipal;
 import io.agroal.api.security.SimplePassword;
 import io.agroal.pool.DataSource;
-import kasanari.catalog.iceberg.KasanariCatalogProperties;
+import kasanari.catalog.iceberg.KasanariIcebergCatalogProperties;
 import org.jdbi.v3.core.Jdbi;
 
 import java.io.Closeable;
@@ -48,45 +48,45 @@ public class KasanariDataSource implements Closeable {
 
     private record DataSourceProperties(Map<String, String> properties) {
         public String getUser() {
-            return getRequired(KasanariCatalogProperties.USER);
+            return getRequired(KasanariIcebergCatalogProperties.USER);
         }
 
         public String getPassword() {
-            return getRequired(KasanariCatalogProperties.PASSWORD);
+            return getRequired(KasanariIcebergCatalogProperties.PASSWORD);
         }
 
         public String getUri() {
-            return getRequired(KasanariCatalogProperties.URI);
+            return getRequired(KasanariIcebergCatalogProperties.URI);
         }
 
         public int getConnectionPoolInitialSize() {
             return getOrDefault(
-                    KasanariCatalogProperties.CONNECTION_POOL_INITIAL_SIZE,
-                    KasanariCatalogProperties.CONNECTION_POOL_INITIAL_SIZE_DEFAULT,
+                    KasanariIcebergCatalogProperties.CONNECTION_POOL_INITIAL_SIZE,
+                    KasanariIcebergCatalogProperties.CONNECTION_POOL_INITIAL_SIZE_DEFAULT,
                     Integer::parseInt
             );
         }
 
         public int getConnectionPoolMinSize() {
             return getOrDefault(
-                    KasanariCatalogProperties.CONNECTION_POOL_MIN_SIZE,
-                    KasanariCatalogProperties.CONNECTION_POOL_MIN_SIZE_DEFAULT,
+                    KasanariIcebergCatalogProperties.CONNECTION_POOL_MIN_SIZE,
+                    KasanariIcebergCatalogProperties.CONNECTION_POOL_MIN_SIZE_DEFAULT,
                     Integer::parseInt
             );
         }
 
         public int getConnectionPoolMaxSize() {
             return getOrDefault(
-                    KasanariCatalogProperties.CONNECTION_POOL_MAX_SIZE,
-                    KasanariCatalogProperties.CONNECTION_POOL_MAX_SIZE_DEFAULT,
+                    KasanariIcebergCatalogProperties.CONNECTION_POOL_MAX_SIZE,
+                    KasanariIcebergCatalogProperties.CONNECTION_POOL_MAX_SIZE_DEFAULT,
                     Integer::parseInt
             );
         }
 
         public Duration getConnectionMaxLifetimeMillis() {
             return getOrDefault(
-                    KasanariCatalogProperties.CONNECTION_MAX_LIFETIME_MILLIS,
-                    KasanariCatalogProperties.CONNECTION_MAX_LIFETIME_MILLIS_DEFAULT,
+                    KasanariIcebergCatalogProperties.CONNECTION_MAX_LIFETIME_MILLIS,
+                    KasanariIcebergCatalogProperties.CONNECTION_MAX_LIFETIME_MILLIS_DEFAULT,
                     value -> Duration.ofMillis(Long.parseLong(value))
             );
         }

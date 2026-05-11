@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class KasanariCatalog extends BaseMetastoreViewCatalog implements SupportsNamespaces, Configurable<Object> {
+public class KasanariIcebergCatalog extends BaseMetastoreViewCatalog implements SupportsNamespaces, Configurable<Object> {
     private String catalogName;
     private String warehouse;
     private KasanariDataSource dataSource;
@@ -59,7 +59,7 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
         this.catalogName = catalogName;
         this.dataSource = new KasanariDataSource(properties);
 
-        this.warehouse = properties.get(KasanariCatalogProperties.WAREHOUSE);
+        this.warehouse = properties.get(KasanariIcebergCatalogProperties.WAREHOUSE);
         if (this.warehouse == null) {
             throw new IllegalArgumentException("Warehouse location is not set");
         }
@@ -105,6 +105,16 @@ public class KasanariCatalog extends BaseMetastoreViewCatalog implements Support
         } else {
             return String.join("/", warehouse, String.join("/", namespace.levels()), tableIdentifier.name());
         }
+    }
+
+    @Override
+    public boolean tableExists(TableIdentifier identifier) {
+        return transactionManager.inTransactionR(tx -> tableRepository.exists(tx, identifier));
+    }
+
+    @Override
+    public boolean viewExists(TableIdentifier identifier) {
+        return transactionManager.inTransactionR(tx -> viewRepository.exists(tx, identifier));
     }
 
     @Override
