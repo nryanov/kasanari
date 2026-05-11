@@ -27,10 +27,8 @@ openApiGenerate {
 
     globalProperties.put("apiDocs", "false")
     globalProperties.put("models", "false")
-    globalProperties.put("modelDocs", "false")
+    globalProperties.put("apis", "")
     globalProperties.put("modelTests", "false")
-    globalProperties.put("apiTests", "false")
-    globalProperties.put("supportingFiles", "false")
 
     serverVariables.put("basePath", "api/catalog")
 
@@ -48,25 +46,26 @@ openApiGenerate {
     additionalProperties.put("dateLibrary", "java8")
 }
 
-the<SourceSetContainer>().named("main") {
-    java.srcDir(generatedOpenApiSrcDir)
-}
-
 tasks.named<GenerateTask>("openApiGenerate") {
     doLast {
-        delete(layout.buildDirectory.dir("generated/src/main/java/kasanari/catalog/management/model"))
-        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/api/ApiException.java"))
-        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/api/ApiResponseMessage.java"))
-        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/api/ApiOriginFilter.java"))
-        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/api/NotFoundException.java"))
-        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/api/LocalDateProvider.java"))
-        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/api/OffsetDateTimeProvider.java"))
-        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/JacksonConfig.java"))
-        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/RFC3339DateFormat.java"))
-        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/StringUtil.java"))
-        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/RestApplication.java"))
+//        delete(layout.buildDirectory.dir("generated/src/main/java/kasanari/catalog/management/model"))
+//        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/api/ApiException.java"))
+//        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/api/ApiResponseMessage.java"))
+//        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/api/ApiOriginFilter.java"))
+//        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/api/NotFoundException.java"))
+//        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/api/LocalDateProvider.java"))
+//        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/api/OffsetDateTimeProvider.java"))
+//        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/JacksonConfig.java"))
+//        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/RFC3339DateFormat.java"))
+//        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/StringUtil.java"))
+//        delete(layout.buildDirectory.file("generated/src/main/java/kasanari/catalog/management/RestApplication.java"))
         delete(layout.buildDirectory.dir("generated/src/main/java/kasanari/catalog/management/api/impl"))
     }
+}
+
+
+the<SourceSetContainer>().named("main") {
+    java.srcDir(generatedOpenApiSrcDir)
 }
 
 tasks.named("compileJava") {

@@ -15,3 +15,6 @@ paimon:
 
 lance:
 	./gradlew :modules:api:api-lance:openApiGenerate
+
+management:
+	./gradlew :modules:api:api-management:openApiGenerate
