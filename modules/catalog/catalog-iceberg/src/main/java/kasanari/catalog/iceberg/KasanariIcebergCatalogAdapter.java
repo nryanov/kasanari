@@ -10,15 +10,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class KasanariIcebergCatalogAdapter extends DefaultIcebergCatalogAdapter {
-    private final KasanariCatalog catalog;
+    private final KasanariIcebergCatalog catalog;
     private final boolean enableMultiTableTransaction;
 
-    public KasanariIcebergCatalogAdapter(KasanariCatalog catalog) {
+    public KasanariIcebergCatalogAdapter(KasanariIcebergCatalog catalog) {
         this(catalog, true);
     }
 
     public KasanariIcebergCatalogAdapter(
-            KasanariCatalog catalog,
+            KasanariIcebergCatalog catalog,
             boolean enableMultiTAbleTransaction
     ) {
         super(catalog);
