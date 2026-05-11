@@ -12,3 +12,6 @@ iceberg:
 
 paimon:
 	./gradlew :modules:api:api-paimon:openApiGenerate
+
+lance:
+	./gradlew :modules:api:api-lance:openApiGenerate

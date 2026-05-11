@@ -1,0 +1,122 @@
+---
+openapi: 3.0.3
+info:
+  title: Kasanari Iceberg REST Catalog API
+  version: 0.0.1
+
+# The server configuration is sourced from iceberg-openapi-1.10.1.yaml
+servers:
+  - url: "{scheme}://{host}/{basePath}"
+    description: Server URL when the port can be inferred from the scheme
+    variables:
+      scheme:
+        description: The scheme of the URI, either http or https.
+        default: https
+      host:
+        description: The host address for the specified server
+        default: localhost
+      basePath:
+        description: Optional prefix to be appended to all routes
+        default: ""
+  - url: "{scheme}://{host}:{port}/{basePath}"
+    description: Generic base server URL, with all parts configurable
+    variables:
+      scheme:
+        description: The scheme of the URI, either http or https.
+        default: https
+      host:
+        description: The host address for the specified server
+        default: localhost
+      port:
+        description: The port used when addressing the host
+        default: "443"
+      basePath:
+        description: Optional prefix to be appended to all routes
+        default: ""
+
+# The security configuration is sourced from iceberg-openapi-1.10.1.yaml
+# All routes are currently configured using an Authorization header.
+security:
+  - OAuth2: [catalog]
+  - BearerAuth: []
+
+paths:
+
+  ############################
+  # Iceberg REST Catalog API #
+  # '~1' -> replacement for '/'
+  ############################
+
+  /iceberg/v1/config:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1config'
+
+  /iceberg/v1/{prefix}/namespaces:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces'
+
+  /iceberg/v1/{prefix}/namespaces/{namespace}:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}'
+
+  /iceberg/v1/{prefix}/namespaces/{namespace}/properties:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1properties'
+
+  /iceberg/v1/{prefix}/namespaces/{namespace}/tables:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1tables'
+
+  /iceberg/v1/{prefix}/namespaces/{namespace}/register:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1register'
+
+  /iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1tables~1{table}'
+
+  /iceberg/v1/{prefix}/tables/rename:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1tables~1rename'
+
+  /iceberg/v1/{prefix}/transactions/commit:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1transactions~1commit'
+
+  /iceberg/v1/{prefix}/namespaces/{namespace}/views:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1views'
+
+  /iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1views~1{view}'
+
+  /iceberg/v1/{prefix}/views/rename:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1views~1rename'
+
+  # /iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics:
+  # TODO: Not implemented
+
+  # /iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials:
+  # TODO: Not implemented
+
+  # /iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan:
+  # Not implemented
+
+  # /iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan/{plan-id}:
+  # Not implemented
+
+  # /iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/tasks:
+  # Not implemented
+
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      description:
+        This scheme is used for OAuth2 authorization.
+
+
+        For unauthorized requests, services should return an appropriate 401 or
+        403 response. Implementations must not return altered success (200)
+        responses when a request is unauthenticated or unauthorized.
+
+        If a separate authorization server is used, substitute the tokenUrl with
+        the full token path of the external authorization server, and use the
+        resulting token to access the resources defined in the spec.
+      flows:
+        clientCredentials:
+          tokenUrl: /iceberg/v1/oauth/tokens
+          scopes:
+            catalog: Allows interacting with the Config and Catalog APIs
+    BearerAuth:
+      $ref: './iceberg-openapi-1.10.1.yaml#/components/securitySchemes/BearerAuth'
