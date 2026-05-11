@@ -224,14 +224,14 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
         var tableRepository = kasanariCatalog.getTableRepository();
         kasanariCatalog.setTableRepository(new JdbcTableRepositoryStub(tableRepository) {
             @Override
-            public boolean update(TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation) {
+            public boolean update(Handle tx, TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation) {
                 // fail no commit changes to second table
                 if (tableIdentifier.name().equals("table_2")) {
                     // to avoid commit retries
                     throw new RuntimeException("Intentional commit failure");
                 }
 
-                return super.update(tableIdentifier, previousMetadataLocation, newMetadataLocation);
+                return super.update(tx, tableIdentifier, previousMetadataLocation, newMetadataLocation);
             }
         });
 

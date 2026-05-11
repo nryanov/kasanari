@@ -2,32 +2,27 @@ package kasanari.catalog.iceberg.repository.jdbc;
 
 
 import kasanari.catalog.iceberg.repository.CatalogRepository;
+import org.jdbi.v3.core.Handle;
 
-public class JdbcCatalogRepository implements CatalogRepository {
-    private final KasanariDataSource dataSource;
+public class JdbcCatalogRepository implements CatalogRepository<Handle> {
     private final String catalogName;
 
-    public JdbcCatalogRepository(KasanariDataSource dataSource, String catalogName) {
-        this.dataSource = dataSource;
+    public JdbcCatalogRepository(String catalogName) {
         this.catalogName = catalogName;
     }
 
     @Override
-    public void register() {
-        dataSource.getJdbi().useTransaction(tx -> {
-            var registerCatalogQuery = tx.createUpdate(JdbcQueries.REGISTER_CATALOG);
-            registerCatalogQuery.bind(0, catalogName);
-            registerCatalogQuery.execute();
-        });
+    public void register(Handle tx) {
+        var registerCatalogQuery = tx.createUpdate(JdbcQueries.REGISTER_CATALOG);
+        registerCatalogQuery.bind(0, catalogName);
+        registerCatalogQuery.execute();
     }
 
     @Override
-    public boolean exists() {
-        return dataSource.getJdbi().inTransaction(tx -> {
-            var checkExistenceQuery = tx.createQuery(JdbcQueries.CHECK_IF_CATALOG_EXISTS);
-            checkExistenceQuery.bind(0, catalogName);
+    public boolean exists(Handle tx) {
+        var checkExistenceQuery = tx.createQuery(JdbcQueries.CHECK_IF_CATALOG_EXISTS);
+        checkExistenceQuery.bind(0, catalogName);
 
-            return checkExistenceQuery.mapTo(Boolean.class).first();
-        });
+        return checkExistenceQuery.mapTo(Boolean.class).first();
     }
 }

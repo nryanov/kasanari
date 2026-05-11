@@ -6,22 +6,22 @@ import org.apache.iceberg.catalog.TableIdentifier;
 
 import java.util.List;
 
-public interface ViewRepository {
-    IcebergViewRecord load(TableIdentifier tableIdentifier);
+public interface ViewRepository<T> {
+    IcebergViewRecord load(T tx, TableIdentifier tableIdentifier);
 
-    boolean exists(TableIdentifier tableIdentifier);
+    boolean exists(T tx, TableIdentifier tableIdentifier);
 
-    default boolean notExists(TableIdentifier identifier) {
-        return !exists(identifier);
+    default boolean notExists(T tx, TableIdentifier identifier) {
+        return !exists(tx, identifier);
     }
 
-    boolean create(TableIdentifier tableIdentifier, String newMetadataLocation);
+    boolean create(T tx, TableIdentifier tableIdentifier, String newMetadataLocation);
 
-    boolean update(TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation);
+    boolean update(T tx, TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation);
 
-    List<TableIdentifier> findByNamespace(Namespace namespace);
+    List<TableIdentifier> findByNamespace(T tx, Namespace namespace);
 
-    boolean delete(TableIdentifier tableIdentifier);
+    boolean delete(T tx, TableIdentifier tableIdentifier);
 
-    boolean rename(TableIdentifier from, TableIdentifier to);
+    boolean rename(T tx, TableIdentifier from, TableIdentifier to);
 }
