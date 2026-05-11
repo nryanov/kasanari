@@ -16,6 +16,9 @@ dependencies {
     implementation(project(":modules:catalog:catalog-iceberg"))
     // paimon
     implementation(project(":modules:api:api-paimon"))
+    implementation(project(":modules:catalog:catalog-paimon"))
+    // lance
+    implementation(project(":modules:api:api-lance"))
 
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")

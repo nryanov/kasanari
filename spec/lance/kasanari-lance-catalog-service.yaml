@@ -1,0 +1,174 @@
+---
+openapi: 3.0.3
+info:
+  title: Kasanari Lance REST Catalog API
+  version: 0.0.1
+
+# The server configuration is sourced from lance-openapi-2.0.0.yaml
+servers:
+  - url: "{scheme}://{host}/{basePath}"
+    description: Server URL when the port can be inferred from the scheme
+    variables:
+      scheme:
+        description: The scheme of the URI, either http or https.
+        default: https
+      host:
+        description: The host address for the specified server
+        default: localhost
+      basePath:
+        description: Optional prefix to be appended to all routes
+        default: ""
+  - url: "{scheme}://{host}:{port}/{basePath}"
+    description: Generic base server URL, with all parts configurable
+    variables:
+      scheme:
+        description: The scheme of the URI, either http or https.
+        default: https
+      host:
+        description: The host address for the specified server
+        default: localhost
+      port:
+        description: The port used when addressing the host
+        default: "443"
+      basePath:
+        description: Optional prefix to be appended to all routes
+        default: ""
+
+# The security configuration is sourced from lance-openapi-2.0.0.yaml
+# All routes are currently configured using an Authorization header.
+security:
+  - OAuth2: []
+  - BearerAuth: []
+
+paths:
+
+  ##########################
+  # Lance REST Catalog API #
+  # '~1' -> replacement for '/'
+  ##########################
+
+  /lance/v1/namespace/{id}/create:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1namespace~1{id}~1create'
+
+  /lance/v1/namespace/{id}/list:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1namespace~1{id}~1list'
+
+  /lance/v1/namespace/{id}/describe:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1namespace~1{id}~1describe'
+
+  /lance/v1/namespace/{id}/drop:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1namespace~1{id}~1drop'
+
+  /lance/v1/namespace/{id}/exists:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1namespace~1{id}~1exists'
+
+  /lance/v1/namespace/{id}/table/list:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1namespace~1{id}~1table~1list'
+
+  /lance/v1/table/{id}/register:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1register'
+
+  /lance/v1/table/{id}/describe:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1describe'
+
+  /lance/v1/table/{id}/exists:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1exists'
+
+  /lance/v1/table/{id}/drop:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1drop'
+
+  /lance/v1/table/{id}/deregister:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1deregister'
+
+  /lance/v1/table/{id}/restore:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1restore'
+
+  /lance/v1/table/{id}/version/list:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1version~1list'
+
+  /lance/v1/table/{id}/alter_columns:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1alter_columns'
+
+  /lance/v1/table/{id}/drop_columns:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1drop_columns'
+
+  /lance/v1/table/{id}/stats:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1stats'
+
+  /lance/v1/table/{id}/insert:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1insert'
+
+  /lance/v1/table/{id}/merge_insert:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1merge_insert'
+
+  /lance/v1/table/{id}/update:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1update'
+
+  /lance/v1/table/{id}/delete:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1delete'
+
+  /lance/v1/table/{id}/query:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1query'
+
+  /lance/v1/table/{id}/count_rows:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1count_rows'
+
+  /lance/v1/table/{id}/create:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1create'
+
+  /lance/v1/table/{id}/explain_plan:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1explain_plan'
+
+  /lance/v1/table/{id}/analyze_plan:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1analyze_plan'
+
+  /lance/v1/table/{id}/add_columns:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1add_columns'
+
+  /lance/v1/table/{id}/create_index:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1create_index'
+
+  /lance/v1/table/{id}/index/list:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1index~1list'
+
+  /lance/v1/table/{id}/index/{index_name}/stats:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1index~1{index_name}~1stats'
+
+  /lance/v1/table/{id}/index/{index_name}/drop:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1index~1{index_name}~1drop'
+
+  /lance/v1/table/{id}/tags/list:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1tags~1list'
+
+  /lance/v1/table/{id}/tags/version:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1tags~1version'
+
+  /lance/v1/table/{id}/tags/create:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1tags~1create'
+
+  /lance/v1/table/{id}/tags/delete:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1tags~1delete'
+
+  /lance/v1/table/{id}/tags/update:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1table~1{id}~1tags~1update'
+
+  /lance/v1/transaction/{id}/describe:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1transaction~1{id}~1describe'
+
+  /lance/v1/transaction/{id}/alter:
+    $ref: './lance-openapi-2.0.0.yaml#/paths/~1v1~1transaction~1{id}~1alter'
+
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      description:
+        This scheme is used for OAuth2 authorization.
+      flows:
+        clientCredentials:
+          tokenUrl: /lance/v1/oauth/tokens
+          scopes: {}
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

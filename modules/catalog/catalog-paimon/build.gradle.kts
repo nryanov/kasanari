@@ -30,6 +30,7 @@ dependencies {
         exclude(group = "asm")
         exclude(group = "org.ow2.asm", module = "asm-all")
         exclude(group = "org.apache.logging.log4j")
+        exclude(group = "org.apache.hive", module = "hive-metastore")
     }
 
     implementation(libs.hadoop3.common) {
@@ -45,6 +46,14 @@ dependencies {
 
     implementation(libs.jdbi.core)
     implementation(libs.agroal.pool)
+    implementation(libs.hive.metastore) {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+        exclude(group = "asm")
+        exclude(group = "org.ow2.asm", module = "asm-all")
+        exclude(group = "org.apache.logging.log4j")
+        exclude(group = "org.apache.parquet")
+        exclude(group = "org.apache.orc")
+    }
 
     // test
     testImplementation(testFixtures(project(":modules:fixtures:fixtures-common")))
