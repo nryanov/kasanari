@@ -12,6 +12,7 @@ hive = { strictly = "2.3.9" }
 slfj4 = "2.0.17"
 jdbi = "3.49.4"
 agroal = "2.7.1"
+jcasbin = "1.99.0"
 
 jakarta-ws-rs-api = "4.0.0"
 jakarta-inject-api = "2.0.1"
@@ -64,6 +65,7 @@ hive-metastore = { group = "org.apache.hive", name = "hive-metastore", version.r
 
 jdbi-core = { group = "org.jdbi", name = "jdbi3-core", version.ref = "jdbi" }
 agroal-pool = { group = "io.agroal", name = "agroal-pool", version.ref = "agroal" }
+casbin-jcasbin = { group = "org.casbin", name = "jcasbin", version.ref = "jcasbin" }
 
 slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slfj4" }
 
