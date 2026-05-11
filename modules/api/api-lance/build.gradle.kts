@@ -8,6 +8,8 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":modules:platform:platform-jakarta"))
+
     api(libs.lance.core)
     api(libs.lance.namespace.core) {
         exclude(group = "org.lance", module = "lance-core")
@@ -19,9 +21,6 @@ dependencies {
         exclude(group = "org.apache.opendal", module = "*")
         exclude(group = "org.junit.jupiter", module = "*")
     }
-    implementation(libs.jakarta.annotation.api)
-    implementation(libs.jakarta.inject.api)
-    implementation(libs.jakarta.ws.rs.api)
 }
 
 val rootDir = rootProject.layout.projectDirectory

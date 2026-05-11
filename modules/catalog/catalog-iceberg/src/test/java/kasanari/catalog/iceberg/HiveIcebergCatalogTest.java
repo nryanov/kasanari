@@ -1,13 +1,26 @@
 package kasanari.catalog.iceberg;
 
 import kasanari.fixtures.hive.HiveFixtureContainer;
+import kasanari.fixtures.postgres.PostgresFixtureContainer;
+import kasanari.fixtures.s3.NoneRegionS3FileIOAwsClientFactory;
+import kasanari.fixtures.s3.S3FixtureContainer;
+import kasanari.fixtures.s3.S3Helper;
+import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.catalog.Namespace;
+import org.testcontainers.containers.Network;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HiveIcebergCatalogTest extends IcebergCatalogAdapterTest {
-    private final HiveFixtureContainer hive = new HiveFixtureContainer();
+    private final Network network = Network.newNetwork();
+    private final HiveFixtureContainer hive = new HiveFixtureContainer(network);
+    private final PostgresFixtureContainer postgres = new PostgresFixtureContainer(network);
+    private final S3FixtureContainer s3Container = new S3FixtureContainer(network);
+    private S3Helper s3Helper;
+
     private IcebergCatalogAdapter adapter;
 
     private final AtomicInteger tableId = new AtomicInteger(1);
@@ -16,18 +29,32 @@ public class HiveIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
     @Override
     public IcebergCatalogAdapter setupCatalog() {
+        s3Container.start();
+        postgres.start();
         hive.start();
 
-        var hiveUri = hive.thriftUri();
-        var hiveWarehouse = "file:///tmp/warehouse"; // local
+        s3Helper = new S3Helper(s3Container);
+        s3Helper.createBucket("warehouse");
+
+        var properties = new HashMap<String, String>();
+        properties.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
+        properties.put(CatalogProperties.URI, hive.thriftUri());
+        properties.put(CatalogProperties.WAREHOUSE_LOCATION, "s3a://warehouse");
+        properties.put(S3FileIOProperties.ENDPOINT, s3Container.url());
+        properties.put(S3FileIOProperties.ACCESS_KEY_ID, s3Container.username());
+        properties.put(S3FileIOProperties.SECRET_ACCESS_KEY, s3Container.password());
+        properties.put(S3FileIOProperties.PATH_STYLE_ACCESS, "true");
+        properties.put(S3FileIOProperties.CLIENT_FACTORY, NoneRegionS3FileIOAwsClientFactory.class.getName());
 
         var factory = new HiveIcebergCatalogFactory();
-        this.adapter = factory.create(Map.of(
-                "uri", hiveUri,
-                "warehouse", hiveWarehouse
-        ));
+        this.adapter = factory.create(properties);
 
         return adapter;
+    }
+
+    @Override
+    public void reset() {
+        s3Helper.clearBucket("warehouse");
     }
 
     @Override
@@ -37,7 +64,7 @@ public class HiveIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
     @Override
     public String entityLocation(String name) {
-        return "file:///tmp/" + name;
+        return "s3a://warehouse/" + name;
     }
 
     @Override

@@ -8,13 +8,11 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":modules:platform:platform-jakarta"))
+
     api(libs.iceberg.api)
     api(libs.iceberg.core)
     implementation(libs.iceberg.common)
-
-    implementation(libs.jakarta.annotation.api)
-    implementation(libs.jakarta.inject.api)
-    implementation(libs.jakarta.ws.rs.api)
 }
 
 val rootDir = rootProject.layout.projectDirectory

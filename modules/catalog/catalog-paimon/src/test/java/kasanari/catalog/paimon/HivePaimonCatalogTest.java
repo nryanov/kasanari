@@ -116,4 +116,9 @@ public class HivePaimonCatalogTest extends PaimonCatalogAdapterTest {
     protected boolean supportSnapshot() {
         return false;
     }
+
+    @Override
+    protected boolean supportsPartitions() {
+        return false;
+    }
 }

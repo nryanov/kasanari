@@ -8,11 +8,9 @@ plugins {
 }
 
 dependencies {
-    api(libs.paimon.api)
+    implementation(project(":modules:platform:platform-jakarta"))
 
-    implementation(libs.jakarta.annotation.api)
-    implementation(libs.jakarta.inject.api)
-    implementation(libs.jakarta.ws.rs.api)
+    api(libs.paimon.api)
 }
 
 val rootDir = rootProject.layout.projectDirectory

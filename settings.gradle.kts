@@ -22,6 +22,11 @@ include(
     "modules:catalog:catalog-iceberg",
     "modules:catalog:catalog-paimon",
     "modules:catalog:catalog-lance",
+    // platform
+    "modules:platform",
+    "modules:platform:platform-aws",
+    "modules:platform:platform-hadoop",
+    "modules:platform:platform-jakarta",
     // fixtures
     "modules:fixtures",
     "modules:fixtures:fixtures-common",
@@ -48,3 +53,8 @@ findProject(":modules:catalog")?.name = "catalog"
 findProject(":modules:catalog:catalog-iceberg")?.name = "catalog-iceberg"
 findProject(":modules:catalog:catalog-paimon")?.name = "catalog-paimon"
 findProject(":modules:catalog:catalog-lance")?.name = "catalog-lance"
+
+findProject(":modules:platform")?.name = "platform"
+findProject(":modules:platform:platform-aws")?.name = "platform-aws"
+findProject(":modules:platform:platform-hadoop")?.name = "platform-hadoop"
+findProject(":modules:platform:platform-jakarta")?.name = "platform-jakarta"

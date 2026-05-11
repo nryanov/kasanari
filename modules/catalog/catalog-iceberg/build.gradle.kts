@@ -17,34 +17,8 @@ dependencies {
     implementation("org.apache.iceberg:iceberg-nessie")
     implementation("org.apache.iceberg:iceberg-hive-metastore")
 
-    implementation(enforcedPlatform(libs.aws.platform))
-    implementation("software.amazon.awssdk:aws-core")
-    implementation("software.amazon.awssdk:regions")
-    implementation("software.amazon.awssdk:auth")
-    implementation("software.amazon.awssdk:sdk-core")
-    implementation("software.amazon.awssdk:http-auth")
-    implementation("software.amazon.awssdk:s3-transfer-manager")
-    implementation("software.amazon.awssdk:netty-nio-client")
-
-    implementation(libs.hive.metastore) {
-        exclude(group = "org.slf4j", module = "slf4j-api")
-        exclude(group = "asm")
-        exclude(group = "org.ow2.asm", module = "asm-all")
-        exclude(group = "org.apache.logging.log4j")
-        exclude(group = "org.apache.parquet")
-        exclude(group = "org.apache.orc")
-    }
-
-    implementation(libs.hadoop3.common) {
-        exclude(group = "org.slf4j", module = "slf4j-log4j12")
-        exclude(group = "log4j", module = "log4j")
-        exclude(group = "org.slf4j", module = "slf4j-reload4j")
-        exclude(group = "ch.qos.logback")
-    }
-    implementation(libs.hadoop3.client)
-    implementation(libs.hadoop3.aws) {
-        exclude(group = "software.amazon.awssdk", module = "bundle")
-    }
+    implementation(project(":modules:platform:platform-aws"))
+    implementation(project(":modules:platform:platform-hadoop"))
 
     implementation(libs.jdbi.core)
     implementation(libs.agroal.pool)
