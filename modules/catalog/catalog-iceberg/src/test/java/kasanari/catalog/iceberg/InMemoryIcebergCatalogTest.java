@@ -1,8 +1,11 @@
 package kasanari.catalog.iceberg;
 
 
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.inmemory.InMemoryCatalog;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -12,8 +15,11 @@ public class InMemoryIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
     @Override
     public IcebergCatalogAdapter setupCatalog() {
-        var factory = new InMemoryIcebergCatalogFactory();
-        this.adapter = factory.create(Map.of());
+        var properties = new HashMap<String, String>();
+        properties.put(CatalogProperties.CATALOG_IMPL, InMemoryCatalog.class.getName());
+
+        var factory = new ProxyIcebergCatalogFactory();
+        this.adapter = factory.create("inmemory", Map.of(), properties);
         return adapter;
     }
 

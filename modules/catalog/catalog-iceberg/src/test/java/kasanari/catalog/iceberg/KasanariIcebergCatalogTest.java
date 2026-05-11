@@ -60,7 +60,7 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
         properties.put(S3FileIOProperties.PATH_STYLE_ACCESS, "true");
         properties.put(S3FileIOProperties.CLIENT_FACTORY, NoneRegionS3FileIOAwsClientFactory.class.getName());
 
-        adapter = factory.create(properties);
+        adapter = factory.create("kasanari", Map.of(), properties);
         return adapter;
     }
 

@@ -7,6 +7,7 @@ import kasanari.fixtures.s3.S3Helper;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.nessie.NessieCatalog;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +34,7 @@ public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
         var properties = new HashMap<String, String>();
         properties.put("ref", "main");
         properties.put(CatalogProperties.URI, nessie.url());
+        properties.put(CatalogProperties.CATALOG_IMPL, NessieCatalog.class.getName());
         properties.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
         properties.put(CatalogProperties.WAREHOUSE_LOCATION, "s3a://warehouse");
         properties.put(S3FileIOProperties.ENDPOINT, s3Container.url());
@@ -41,8 +43,8 @@ public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
         properties.put(S3FileIOProperties.PATH_STYLE_ACCESS, "true");
         properties.put(S3FileIOProperties.CLIENT_FACTORY, NoneRegionS3FileIOAwsClientFactory.class.getName());
 
-        var factory = new NessieIcebergCatalogFactory();
-        return factory.create(properties);
+        var factory = new ProxyIcebergCatalogFactory();
+        return factory.create("nessie", Map.of(), properties);
     }
 
     @Override

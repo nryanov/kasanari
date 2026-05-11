@@ -8,6 +8,7 @@ import kasanari.fixtures.s3.S3Helper;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.hive.HiveCatalog;
 import org.testcontainers.containers.Network;
 
 import java.util.HashMap;
@@ -37,6 +38,7 @@ public class HiveIcebergCatalogTest extends IcebergCatalogAdapterTest {
         s3Helper.createBucket("warehouse");
 
         var properties = new HashMap<String, String>();
+        properties.put(CatalogProperties.CATALOG_IMPL, HiveCatalog.class.getName());
         properties.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
         properties.put(CatalogProperties.URI, hive.thriftUri());
         properties.put(CatalogProperties.WAREHOUSE_LOCATION, "s3a://warehouse");
@@ -46,8 +48,8 @@ public class HiveIcebergCatalogTest extends IcebergCatalogAdapterTest {
         properties.put(S3FileIOProperties.PATH_STYLE_ACCESS, "true");
         properties.put(S3FileIOProperties.CLIENT_FACTORY, NoneRegionS3FileIOAwsClientFactory.class.getName());
 
-        var factory = new HiveIcebergCatalogFactory();
-        this.adapter = factory.create(properties);
+        var factory = new ProxyIcebergCatalogFactory();
+        this.adapter = factory.create("hive", Map.of(), properties);
 
         return adapter;
     }

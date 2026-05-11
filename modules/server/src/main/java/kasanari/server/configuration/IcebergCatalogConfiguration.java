@@ -10,9 +10,13 @@ import java.util.Map;
 public interface IcebergCatalogConfiguration {
     IcebergCatalogType type();
 
-    Map<String, String> properties();
+    String name();
+
+    Map<String, String> catalogProperties();
+
+    Map<String, String> hadoopProperties();
 
     enum IcebergCatalogType {
-        IN_MEMORY, HADOOP, HIVE, JDBC, NESSIE, REST, KASANARI
+        PROXY, KASANARI
     }
 }
