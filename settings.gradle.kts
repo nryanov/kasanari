@@ -16,6 +16,7 @@ include(
     "modules:server",
     // api
     "modules:api",
+    "modules:api:api-management",
     "modules:api:api-iceberg",
     "modules:api:api-paimon",
     "modules:api:api-lance",
@@ -43,6 +44,7 @@ include(
 )
 
 findProject(":modules:api")?.name = "api"
+findProject(":modules:api:api-management")?.name = "api-management"
 findProject(":modules:api:api-iceberg")?.name = "api-iceberg"
 findProject(":modules:api:api-paimon")?.name = "api-paimon"
 findProject(":modules:api:api-lance")?.name = "api-lance"
