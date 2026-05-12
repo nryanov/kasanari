@@ -1,15 +1,14 @@
 package kasanari.management.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.management.model.CatalogType;
 import kasanari.repository.core.TransactionManager;
 import kasanari.repository.jdbc.JdbcTransactionManager;
 import kasanari.repository.jdbc.KasanariDataSource;
-import kasanari.repository.management.RoleBindingRepository;
-import kasanari.repository.management.postgres.JdbcCatalogMetadataRepository;
-import kasanari.repository.management.postgres.JdbcManagementQueries;
-import kasanari.repository.management.postgres.JdbcRoleBindingRepository;
+import kasanari.repository.management.security.RoleBindingRepository;
+import kasanari.repository.management.security.model.StoredRoleBinding;
+import kasanari.repository.management.security.postgres.JdbcManagementSecurityQueries;
+import kasanari.repository.management.security.postgres.JdbcRoleBindingRepository;
 import org.casbin.jcasbin.main.Enforcer;
 import org.casbin.jcasbin.model.Model;
 import org.jdbi.v3.core.Handle;
@@ -17,20 +16,29 @@ import org.jdbi.v3.core.Handle;
 import java.util.List;
 
 public class ManagementSecurityService {
-    private final KasanariDataSource dataSource;
     private final TransactionManager<Handle> txManager;
     private final RoleBindingRepository<Handle> roleBindingRepository;
     private final Enforcer enforcer;
 
-    public ManagementSecurityService(ManagementMetadataConfiguration configuration, ObjectMapper objectMapper) {
-        this.dataSource = new KasanariDataSource(configuration.jdbcProperties());
+    public ManagementSecurityService(KasanariDataSource dataSource) {
         this.txManager = new JdbcTransactionManager(dataSource);
-        this.catalogRepository = new JdbcCatalogMetadataRepository(objectMapper);
         this.roleBindingRepository = new JdbcRoleBindingRepository();
         this.enforcer = createEnforcer();
         initSchema();
         initRolePermissions();
         reloadGroupingPolicies();
+    }
+
+    public void deleteRoles(List<StoredRoleBinding> bindings) {
+        txManager.inTransaction(tx -> roleBindingRepository.delete(tx, bindings));
+    }
+
+    public void updateRoles(List<StoredRoleBinding> bindings) {
+        txManager.inTransaction(tx -> roleBindingRepository.upsert(tx, bindings));
+    }
+
+    public List<StoredRoleBinding> listRoles(String subject, CatalogType catalogType) {
+        return txManager.inTransactionR(tx -> roleBindingRepository.list(tx, subject, catalogType));
     }
 
     public String subject(SecurityContext securityContext) {
@@ -73,10 +81,7 @@ public class ManagementSecurityService {
     }
 
     private void initSchema() {
-        txManager.inTransaction(tx -> {
-            tx.createUpdate(JdbcManagementQueries.CREATE_CATALOG_REGISTRY_DDL).execute();
-            tx.createUpdate(JdbcManagementQueries.CREATE_ROLE_BINDINGS_DDL).execute();
-        });
+        txManager.inTransaction(tx -> tx.createUpdate(JdbcManagementSecurityQueries.CREATE_ROLE_BINDINGS_DDL).execute());
     }
 
     private Enforcer createEnforcer() {
