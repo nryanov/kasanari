@@ -10,11 +10,8 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-container-image-jib")
-    implementation(libs.casbin.jcasbin)
-    implementation(project(":modules:repository:repository-jdbc"))
 
     // iceberg
-    implementation(project(":modules:api:api-management"))
     implementation(project(":modules:api:api-iceberg"))
     implementation(project(":modules:catalog:catalog-iceberg"))
     // paimon
@@ -22,6 +19,11 @@ dependencies {
     implementation(project(":modules:catalog:catalog-paimon"))
     // lance
     implementation(project(":modules:api:api-lance"))
+    // management
+    implementation(project(":modules:api:api-management"))
+    implementation(libs.casbin.jcasbin)
+    implementation(project(":modules:repository:repository-jdbc"))
+    implementation(project(":modules:repository:repository-management:repository-management-postgres"))
 
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")

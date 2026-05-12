@@ -9,6 +9,7 @@ import kasanari.catalog.management.model.DeleteRolesRequest;
 import kasanari.catalog.management.model.GetRolesResponse;
 import kasanari.catalog.management.model.RoleBinding;
 import kasanari.catalog.management.model.UpdateRolesRequest;
+import kasanari.repository.management.model.StoredRoleBinding;
 
 import java.util.ArrayList;
 import java.util.List;

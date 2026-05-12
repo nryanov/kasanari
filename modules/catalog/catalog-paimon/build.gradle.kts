@@ -27,6 +27,7 @@ dependencies {
     implementation(project(":modules:platform:platform-aws"))
     implementation(project(":modules:platform:platform-hadoop"))
     implementation(project(":modules:repository:repository-jdbc"))
+    implementation(project(":modules:repository:repository-paimon:repository-paimon-postgres"))
 
     // test
     testImplementation(testFixtures(project(":modules:fixtures:fixtures-common")))

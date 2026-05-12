@@ -13,7 +13,7 @@ slfj4 = "2.0.17"
 jdbi = "3.49.4"
 agroal = "2.7.1"
 jcasbin = "1.99.0"
-
+jackson = "2.20.1"
 jakarta-ws-rs-api = "4.0.0"
 jakarta-inject-api = "2.0.1"
 jakarta-annotations-api = "3.0.0"
@@ -32,6 +32,9 @@ quarkus-bom = { group = "io.quarkus.platform", name = "quarkus-bom", version.ref
 jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotations-api" }
 jakarta-inject-api = { module = "jakarta.inject:jakarta.inject-api", version.ref = "jakarta-inject-api" }
 jakarta-ws-rs-api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref = "jakarta-ws-rs-api" }
+
+# jackson
+jackson-bom = { group = "com.fasterxml.jackson", name = "jackson-bom", version.ref = "jackson" }
 
 # iceberg
 # todo: use bom instead of direct deps
