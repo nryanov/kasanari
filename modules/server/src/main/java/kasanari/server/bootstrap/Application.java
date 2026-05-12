@@ -1,4 +1,4 @@
-package kasanari.server;
+package kasanari.server.bootstrap;
 
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.annotations.QuarkusMain;

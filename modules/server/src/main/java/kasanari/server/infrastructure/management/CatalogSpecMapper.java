@@ -1,4 +1,4 @@
-package kasanari.server.management;
+package kasanari.server.infrastructure.management;
 
 import kasanari.catalog.management.model.CatalogMode;
 import kasanari.catalog.management.model.CatalogSpec;

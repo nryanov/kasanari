@@ -1,16 +1,16 @@
-package kasanari.server.paimon;
+package kasanari.server.infrastructure.paimon;
 
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.paimon.api.PaimonRestPartitionService;
-import kasanari.server.http.ApiFallbacks;
+import kasanari.server.infrastructure.http.ApiFallbacks;
 import org.apache.paimon.rest.requests.ListPartitionsByNamesRequest;
 import org.apache.paimon.rest.requests.MarkDonePartitionsRequest;
 
 @ApplicationScoped
-public class PaimonPartitionService implements PaimonRestPartitionService {
+public class PaimonPartitionServiceHandler implements PaimonRestPartitionService {
     @Override
     public Response listPartitions(String prefix, String database, String table, Integer maxResults, String pageToken, String partitionNamePattern, SecurityContext securityContext) {
         return ApiFallbacks.notImplemented("PaimonPartitionService.listPartitions");

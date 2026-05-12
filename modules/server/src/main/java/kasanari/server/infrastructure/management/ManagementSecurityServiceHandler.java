@@ -1,4 +1,4 @@
-package kasanari.server.management;
+package kasanari.server.infrastructure.management;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
@@ -11,6 +11,7 @@ import kasanari.catalog.management.model.RoleBinding;
 import kasanari.catalog.management.model.UpdateRolesRequest;
 import kasanari.management.security.ManagementSecurityService;
 import kasanari.repository.management.security.model.StoredRoleBinding;
+import kasanari.server.infrastructure.http.ApiFallbacks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,7 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
     @Override
     public Response deleteRoles(DeleteRolesRequest deleteRolesRequest, SecurityContext securityContext) {
         if (deleteRolesRequest == null || deleteRolesRequest.getBindings() == null || deleteRolesRequest.getBindings().isEmpty()) {
-            return ManagementResponses.error(Response.Status.BAD_REQUEST, "Role bindings are required");
+            return ApiFallbacks.error(Response.Status.BAD_REQUEST, "Role bindings are required");
         }
 
         var subject = securityService.subject(securityContext);
@@ -36,11 +37,11 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
         try {
             bindings = toStoredBindings(deleteRolesRequest.getBindings());
         } catch (IllegalArgumentException e) {
-            return ManagementResponses.error(Response.Status.BAD_REQUEST, e.getMessage());
+            return ApiFallbacks.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
         for (var type : distinctTypes(bindings)) {
             if (!securityService.canSecurityWrite(subject, type, "delete")) {
-                return ManagementResponses.error(Response.Status.FORBIDDEN, "Missing permission to delete role bindings");
+                return ApiFallbacks.error(Response.Status.FORBIDDEN, "Missing permission to delete role bindings");
             }
         }
 
@@ -56,11 +57,11 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
         var visibleDomains = getReadableDomains(caller);
 
         if (visibleDomains.isEmpty()) {
-            return ManagementResponses.error(Response.Status.FORBIDDEN, "Missing permission to read role bindings");
+            return ApiFallbacks.error(Response.Status.FORBIDDEN, "Missing permission to read role bindings");
         }
 
         if (catalogType != null && !visibleDomains.contains(catalogType)) {
-            return ManagementResponses.error(Response.Status.FORBIDDEN, "Missing permission to read role bindings");
+            return ApiFallbacks.error(Response.Status.FORBIDDEN, "Missing permission to read role bindings");
         }
 
         var bindings = securityService.listRoles(subject, catalogType);
@@ -79,7 +80,7 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
     @Override
     public Response updateRoles(UpdateRolesRequest updateRolesRequest, SecurityContext securityContext) {
         if (updateRolesRequest == null || updateRolesRequest.getBindings() == null || updateRolesRequest.getBindings().isEmpty()) {
-            return ManagementResponses.error(Response.Status.BAD_REQUEST, "Role bindings are required");
+            return ApiFallbacks.error(Response.Status.BAD_REQUEST, "Role bindings are required");
         }
 
         var subject = securityService.subject(securityContext);
@@ -87,11 +88,11 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
         try {
             bindings = toStoredBindings(updateRolesRequest.getBindings());
         } catch (IllegalArgumentException e) {
-            return ManagementResponses.error(Response.Status.BAD_REQUEST, e.getMessage());
+            return ApiFallbacks.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
         for (var type : distinctTypes(bindings)) {
             if (!securityService.canSecurityWrite(subject, type, "update")) {
-                return ManagementResponses.error(Response.Status.FORBIDDEN, "Missing permission to update role bindings");
+                return ApiFallbacks.error(Response.Status.FORBIDDEN, "Missing permission to update role bindings");
             }
         }
 

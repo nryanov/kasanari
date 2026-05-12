@@ -1,15 +1,15 @@
-package kasanari.server.paimon;
+package kasanari.server.infrastructure.paimon;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.paimon.api.PaimonRestDatabaseService;
-import kasanari.server.http.ApiFallbacks;
+import kasanari.server.infrastructure.http.ApiFallbacks;
 import org.apache.paimon.rest.requests.AlterDatabaseRequest;
 import org.apache.paimon.rest.requests.CreateDatabaseRequest;
 
 @ApplicationScoped
-public class PaimonDatabaseService implements PaimonRestDatabaseService {
+public class PaimonDatabaseServiceHandler implements PaimonRestDatabaseService {
     @Override
     public Response alterDatabase(String prefix, String database, AlterDatabaseRequest orgApachePaimonRestRequestsAlterDatabaseRequest, SecurityContext securityContext) {
         return ApiFallbacks.notImplemented("PaimonDatabaseService.alterDatabase");

@@ -1,11 +1,11 @@
-package kasanari.server.paimon;
+package kasanari.server.infrastructure.paimon;
 
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.paimon.api.PaimonRestTableService;
-import kasanari.server.http.ApiFallbacks;
+import kasanari.server.infrastructure.http.ApiFallbacks;
 import org.apache.paimon.rest.requests.AlterTableRequest;
 import org.apache.paimon.rest.requests.AuthTableQueryRequest;
 import org.apache.paimon.rest.requests.CommitTableRequest;
@@ -17,7 +17,7 @@ import org.apache.paimon.rest.requests.RollbackSchemaRequest;
 import org.apache.paimon.rest.requests.RollbackTableRequest;
 
 @ApplicationScoped
-public class PaimonTableService implements PaimonRestTableService {
+public class PaimonTableServiceHandler implements PaimonRestTableService {
     @Override
     public Response alterTable(String prefix, String database, String table, AlterTableRequest orgApachePaimonRestRequestsAlterTableRequest, SecurityContext securityContext) {
         return ApiFallbacks.notImplemented("PaimonTableService.alterTable");

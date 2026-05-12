@@ -1,4 +1,4 @@
-package kasanari.server.iceberg;
+package kasanari.server.infrastructure.iceberg;
 
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Produces;

@@ -1,17 +1,17 @@
-package kasanari.server.paimon;
+package kasanari.server.infrastructure.paimon;
 
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.paimon.api.PaimonRestViewService;
-import kasanari.server.http.ApiFallbacks;
+import kasanari.server.infrastructure.http.ApiFallbacks;
 import org.apache.paimon.rest.requests.AlterViewRequest;
 import org.apache.paimon.rest.requests.CreateViewRequest;
 import org.apache.paimon.rest.requests.RenameTableRequest;
 
 @ApplicationScoped
-public class PaimonViewService implements PaimonRestViewService {
+public class PaimonViewServiceHandler implements PaimonRestViewService {
     @Override
     public Response alterView(String prefix, String database, String view, AlterViewRequest orgApachePaimonRestRequestsAlterViewRequest, SecurityContext securityContext) {
         return ApiFallbacks.notImplemented("PaimonViewService.alterView");

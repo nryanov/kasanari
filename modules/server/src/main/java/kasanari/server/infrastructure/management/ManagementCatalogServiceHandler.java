@@ -1,4 +1,4 @@
-package kasanari.server.management;
+package kasanari.server.infrastructure.management;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
@@ -9,6 +9,7 @@ import kasanari.catalog.management.model.CreateCatalogRequest;
 import kasanari.catalog.management.model.UpdateCatalogRequest;
 import kasanari.management.catalog.ManagementCatalogService;
 import kasanari.repository.management.catalog.model.CatalogMetadata;
+import kasanari.server.infrastructure.http.ApiFallbacks;
 
 @ApplicationScoped
 public class ManagementCatalogServiceHandler implements ManagementRestCatalogsService {
@@ -25,13 +26,13 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
                 || createCatalogRequest.getCatalogType() == null
                 || createCatalogRequest.getMode() == null
                 || createCatalogRequest.getSpec() == null) {
-            return ManagementResponses.error(Response.Status.BAD_REQUEST, "Catalog payload is incomplete");
+            return ApiFallbacks.error(Response.Status.BAD_REQUEST, "Catalog payload is incomplete");
         }
 
         try {
             CatalogSpecMapper.validate(createCatalogRequest.getCatalogType(), createCatalogRequest.getMode(), createCatalogRequest.getSpec());
         } catch (IllegalArgumentException e) {
-            return ManagementResponses.error(Response.Status.BAD_REQUEST, e.getMessage());
+            return ApiFallbacks.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
 
         var spec = CatalogSpecMapper.copy(createCatalogRequest.getSpec());
@@ -41,7 +42,7 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
         if (created) {
             return Response.status(Response.Status.CREATED).entity(toPublicInfo(metadata)).build();
         } else {
-            return ManagementResponses.error(Response.Status.CONFLICT, "Catalog already exists");
+            return ApiFallbacks.error(Response.Status.CONFLICT, "Catalog already exists");
         }
     }
 
@@ -52,7 +53,7 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
         if (deleted) {
             return Response.status(Response.Status.NO_CONTENT).build();
         } else {
-            return ManagementResponses.error(Response.Status.NOT_FOUND, "Catalog not found");
+            return ApiFallbacks.error(Response.Status.NOT_FOUND, "Catalog not found");
         }
     }
 
@@ -61,7 +62,7 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
         var maybe = catalogService.get(catalogId);
 
         if (maybe.isEmpty()) {
-            return ManagementResponses.error(Response.Status.NOT_FOUND, "Catalog not found");
+            return ApiFallbacks.error(Response.Status.NOT_FOUND, "Catalog not found");
         } else {
             return Response.status(Response.Status.OK).entity(toPublicInfo(maybe.get())).build();
         }
@@ -70,18 +71,18 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     @Override
     public Response updateCatalog(String catalogId, UpdateCatalogRequest updateCatalogRequest, SecurityContext securityContext) {
         if (updateCatalogRequest == null || updateCatalogRequest.getSpec() == null) {
-            return ManagementResponses.error(Response.Status.BAD_REQUEST, "Catalog update requires spec");
+            return ApiFallbacks.error(Response.Status.BAD_REQUEST, "Catalog update requires spec");
         }
 
         var existing = catalogService.get(catalogId);
         if (existing.isEmpty()) {
-            return ManagementResponses.error(Response.Status.NOT_FOUND, "Catalog not found");
+            return ApiFallbacks.error(Response.Status.NOT_FOUND, "Catalog not found");
         }
 
         try {
             CatalogSpecMapper.validate(existing.get().catalogType(), existing.get().catalogMode(), updateCatalogRequest.getSpec());
         } catch (IllegalArgumentException e) {
-            return ManagementResponses.error(Response.Status.BAD_REQUEST, e.getMessage());
+            return ApiFallbacks.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
 
         var spec = CatalogSpecMapper.copy(updateCatalogRequest.getSpec());
@@ -90,12 +91,12 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
             var updated = catalogService.update(catalogId, spec, updateCatalogRequest.getExpectedVersion());
 
             if (updated.isEmpty()) {
-                return ManagementResponses.error(Response.Status.NOT_FOUND, "Catalog not found");
+                return ApiFallbacks.error(Response.Status.NOT_FOUND, "Catalog not found");
             }
 
             return Response.status(Response.Status.OK).entity(updated).build();
         } catch (IllegalStateException e) {
-            return ManagementResponses.error(Response.Status.CONFLICT, e.getMessage());
+            return ApiFallbacks.error(Response.Status.CONFLICT, e.getMessage());
         }
     }
 

@@ -1,17 +1,17 @@
-package kasanari.server.paimon;
+package kasanari.server.infrastructure.paimon;
 
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.paimon.api.PaimonRestBranchService;
-import kasanari.server.http.ApiFallbacks;
+import kasanari.server.infrastructure.http.ApiFallbacks;
 import org.apache.paimon.rest.requests.CreateBranchRequest;
 import org.apache.paimon.rest.requests.ForwardBranchRequest;
 import org.apache.paimon.rest.requests.RenameBranchRequest;
 
 @ApplicationScoped
-public class PaimonBranchService implements PaimonRestBranchService {
+public class PaimonBranchServiceHandler implements PaimonRestBranchService {
     @Override
     public Response createBranch(String prefix, String database, String table, CreateBranchRequest orgApachePaimonRestRequestsCreateBranchRequest, SecurityContext securityContext) {
         return ApiFallbacks.notImplemented("PaimonBranchService.createBranch");

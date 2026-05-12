@@ -1,4 +1,4 @@
-package kasanari.server.iceberg;
+package kasanari.server.infrastructure.iceberg;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
@@ -19,10 +19,10 @@ import org.apache.iceberg.rest.requests.UpdateTableRequest;
 import java.util.HashSet;
 
 @ApplicationScoped
-public class IcebergCatalogService implements IcebergRestCatalogApiService {
+public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiService {
     private final IcebergCatalogAdapter catalog;
 
-    public IcebergCatalogService(IcebergCatalogAdapter catalog) {
+    public IcebergCatalogServiceHandler(IcebergCatalogAdapter catalog) {
         this.catalog = catalog;
     }
 

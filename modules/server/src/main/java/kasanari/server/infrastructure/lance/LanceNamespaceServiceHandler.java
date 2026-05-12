@@ -1,17 +1,17 @@
-package kasanari.server.lance;
+package kasanari.server.infrastructure.lance;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.lance.api.LanceRestNamespaceService;
-import kasanari.server.http.ApiFallbacks;
+import kasanari.server.infrastructure.http.ApiFallbacks;
 import org.lance.namespace.model.CreateNamespaceRequest;
 import org.lance.namespace.model.DescribeNamespaceRequest;
 import org.lance.namespace.model.DropNamespaceRequest;
 import org.lance.namespace.model.NamespaceExistsRequest;
 
 @ApplicationScoped
-public class LanceNamespaceService implements LanceRestNamespaceService {
+public class LanceNamespaceServiceHandler implements LanceRestNamespaceService {
     @Override
     public Response createNamespace(String id, CreateNamespaceRequest orgLanceNamespaceModelCreateNamespaceRequest, String delimiter, SecurityContext securityContext) {
         return ApiFallbacks.notImplemented("LanceNamespaceService.createNamespace");

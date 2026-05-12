@@ -1,15 +1,15 @@
-package kasanari.server.paimon;
+package kasanari.server.infrastructure.paimon;
 
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.paimon.api.PaimonRestTagService;
-import kasanari.server.http.ApiFallbacks;
+import kasanari.server.infrastructure.http.ApiFallbacks;
 import org.apache.paimon.rest.requests.CreateTagRequest;
 
 @ApplicationScoped
-public class PaimonTagService implements PaimonRestTagService {
+public class PaimonTagServiceHandler implements PaimonRestTagService {
     @Override
     public Response createTag(String prefix, String database, String table, CreateTagRequest orgApachePaimonRestRequestsCreateTagRequest, SecurityContext securityContext) {
         return ApiFallbacks.notImplemented("PaimonTagService.createTag");

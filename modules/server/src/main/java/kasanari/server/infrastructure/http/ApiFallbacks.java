@@ -1,6 +1,7 @@
-package kasanari.server.http;
+package kasanari.server.infrastructure.http;
 
 import jakarta.ws.rs.core.Response;
+import kasanari.catalog.management.model.ErrorResponse;
 
 import java.util.Map;
 
@@ -15,5 +16,11 @@ public final class ApiFallbacks {
                         "handler", handler
                 ))
                 .build();
+    }
+
+    public static Response error(Response.Status status, String message) {
+        var error = new ErrorResponse();
+        error.setMessage(message);
+        return Response.status(status).entity(error).build();
     }
 }
