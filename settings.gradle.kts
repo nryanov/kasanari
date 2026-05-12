@@ -32,6 +32,10 @@ include(
     "modules:platform:platform-jakarta",
     "modules:platform:platform-iceberg",
     "modules:platform:platform-jackson",
+    // management
+    "modules:management",
+    "modules:management:management-catalog",
+    "modules:management:management-security",
     // repository
     "modules:repository",
     "modules:repository:repository-core",
@@ -40,8 +44,10 @@ include(
     "modules:repository:repository-iceberg:repository-iceberg-postgres",
     "modules:repository:repository-paimon",
     "modules:repository:repository-paimon:repository-paimon-postgres",
-    "modules:repository:repository-management",
-    "modules:repository:repository-management:repository-management-postgres",
+    "modules:repository:repository-management:repository-management-catalog",
+    "modules:repository:repository-management:repository-management-catalog:repository-management-catalog-postgres",
+    "modules:repository:repository-management:repository-management-security",
+    "modules:repository:repository-management:repository-management-security:repository-management-security-postgres",
     // fixtures
     "modules:fixtures",
     "modules:fixtures:fixtures-common",
@@ -84,5 +90,11 @@ findProject(":modules:repository:repository-iceberg")?.name = "repository-iceber
 findProject(":modules:repository:repository-iceberg:repository-iceberg-postgres")?.name = "repository-iceberg-postgres"
 findProject(":modules:repository:repository-paimon")?.name = "repository-paimon"
 findProject(":modules:repository:repository-paimon:repository-paimon-postgres")?.name = "repository-paimon-postgres"
-findProject(":modules:repository:repository-management")?.name = "repository-management"
-findProject(":modules:repository:repository-management:repository-management-postgres")?.name = "repository-management-postgres"
+findProject(":modules:repository:repository-management:repository-management-catalog")?.name = "repository-management-catalog"
+findProject(":modules:repository:repository-management:repository-management-catalog:repository-management-catalog-postgres")?.name = "repository-management-catalog-postgres"
+findProject(":modules:repository:repository-management:repository-management-security")?.name = "repository-management-security"
+findProject(":modules:repository:repository-management:repository-management-security:repository-management-security-postgres")?.name = "repository-management-security-postgres"
+
+findProject(":modules:management")?.name = "management"
+findProject(":modules:management:management-catalog")?.name = "management-catalog"
+findProject(":modules:management:management-security")?.name = "management-security"

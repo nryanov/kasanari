@@ -1,0 +1,26 @@
+package kasanari.server.infrastructure.http;
+
+import jakarta.ws.rs.core.Response;
+import kasanari.catalog.management.model.ErrorResponse;
+
+import java.util.Map;
+
+public final class ApiFallbacks {
+    private ApiFallbacks() {
+    }
+
+    public static Response notImplemented(String handler) {
+        return Response.status(Response.Status.NOT_IMPLEMENTED)
+                .entity(Map.of(
+                        "message", "Handler is not implemented yet",
+                        "handler", handler
+                ))
+                .build();
+    }
+
+    public static Response error(Response.Status status, String message) {
+        var error = new ErrorResponse();
+        error.setMessage(message);
+        return Response.status(status).entity(error).build();
+    }
+}
