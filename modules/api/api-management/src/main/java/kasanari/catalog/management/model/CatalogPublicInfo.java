@@ -1,15 +1,10 @@
 package kasanari.catalog.management.model;
 
-
-import java.util.ArrayList;
-import java.util.List;
-
 public class CatalogPublicInfo {
     private String catalogId;
     private CatalogType catalogType;
     private CatalogMode mode;
-    private CatalogPublicSpec spec;
-    private List<String> secretKeys = new ArrayList<>();
+    private CatalogSpec spec;
     private Long version;
 
     public String getCatalogId() {
@@ -36,20 +31,12 @@ public class CatalogPublicInfo {
         this.mode = mode;
     }
 
-    public CatalogPublicSpec getSpec() {
+    public CatalogSpec getSpec() {
         return spec;
     }
 
-    public void setSpec(CatalogPublicSpec spec) {
+    public void setSpec(CatalogSpec spec) {
         this.spec = spec;
-    }
-
-    public List<String> getSecretKeys() {
-        return secretKeys;
-    }
-
-    public void setSecretKeys(List<String> secretKeys) {
-        this.secretKeys = secretKeys;
     }
 
     public Long getVersion() {

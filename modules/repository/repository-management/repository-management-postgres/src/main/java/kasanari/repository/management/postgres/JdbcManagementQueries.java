@@ -17,19 +17,6 @@ public final class JdbcManagementQueries {
             )
             """;
 
-    public static final String CREATE_CATALOG_SECRETS_DDL = """
-            CREATE TABLE IF NOT EXISTS kasanari_catalog_secrets
-            (
-                catalog_id    TEXT                     NOT NULL,
-                secret_key    TEXT                     NOT NULL,
-                secret_value  TEXT                     NOT NULL,
-                created_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                CONSTRAINT kasanari_catalog_secrets_pk PRIMARY KEY (catalog_id, secret_key),
-                CONSTRAINT kasanari_catalog_secrets_catalog_fk FOREIGN KEY (catalog_id) REFERENCES kasanari_catalog_registry (catalog_id) ON DELETE CASCADE
-            )
-            """;
-
     public static final String CREATE_ROLE_BINDINGS_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_role_bindings
             (
@@ -47,6 +34,7 @@ public final class JdbcManagementQueries {
             VALUES (?, ?, ?, ?, ?)
             """;
 
+    // todo: use CAS logic (version check)
     public static final String UPDATE_CATALOG = """
             UPDATE kasanari_catalog_registry
             SET spec_json = ?, version = ?, updated_at = CURRENT_TIMESTAMP
@@ -59,22 +47,6 @@ public final class JdbcManagementQueries {
             SELECT catalog_id, catalog_type, catalog_mode, spec_json, version
             FROM kasanari_catalog_registry
             WHERE catalog_id = ?
-            """;
-
-    public static final String UPSERT_SECRET = """
-            INSERT INTO kasanari_catalog_secrets(catalog_id, secret_key, secret_value)
-            VALUES (?, ?, ?)
-            ON CONFLICT (catalog_id, secret_key) DO UPDATE SET
-            secret_value = EXCLUDED.secret_value,
-            updated_at = CURRENT_TIMESTAMP
-            """;
-
-    public static final String DELETE_SECRETS_BY_CATALOG = "DELETE FROM kasanari_catalog_secrets WHERE catalog_id = ?";
-
-    public static final String SELECT_SECRET_KEYS_BY_CATALOG = """
-            SELECT secret_key FROM kasanari_catalog_secrets
-            WHERE catalog_id = ?
-            ORDER BY secret_key
             """;
 
     public static final String UPSERT_ROLE_BINDING = """

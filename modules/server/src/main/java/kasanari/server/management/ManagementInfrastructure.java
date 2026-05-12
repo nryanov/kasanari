@@ -69,7 +69,6 @@ public class ManagementInfrastructure {
     private void initSchema() {
         txManager.inTransaction(tx -> {
             tx.createUpdate(JdbcManagementQueries.CREATE_CATALOG_REGISTRY_DDL).execute();
-            tx.createUpdate(JdbcManagementQueries.CREATE_CATALOG_SECRETS_DDL).execute();
             tx.createUpdate(JdbcManagementQueries.CREATE_ROLE_BINDINGS_DDL).execute();
         });
     }

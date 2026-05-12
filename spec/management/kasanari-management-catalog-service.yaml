@@ -67,7 +67,7 @@ paths:
       tags:
         - Catalogs
       operationId: getCatalog
-      summary: Get catalog metadata without secret values
+      summary: Get catalog metadata
       parameters:
         - $ref: "#/components/parameters/CatalogId"
       responses:
@@ -271,7 +271,6 @@ components:
         - catalogType
         - mode
         - spec
-        - secretKeys
       properties:
         catalogId:
           type: string
@@ -280,11 +279,7 @@ components:
         mode:
           $ref: "#/components/schemas/CatalogMode"
         spec:
-          $ref: "#/components/schemas/CatalogPublicSpec"
-        secretKeys:
-          type: array
-          items:
-            type: string
+          $ref: "#/components/schemas/CatalogSpec"
         version:
           type: integer
           format: int64
@@ -293,12 +288,6 @@ components:
         - $ref: "#/components/schemas/IcebergCatalogSpec"
         - $ref: "#/components/schemas/PaimonCatalogSpec"
         - $ref: "#/components/schemas/LanceCatalogSpec"
-    CatalogPublicSpec:
-      oneOf:
-        - $ref: "#/components/schemas/IcebergCatalogPublicSpec"
-        - $ref: "#/components/schemas/PaimonCatalogPublicSpec"
-        - $ref: "#/components/schemas/LanceCatalogPublicSpec"
-
     IcebergCatalogSpec:
       type: object
       required:
@@ -339,46 +328,6 @@ components:
             - $ref: "#/components/schemas/InternalCatalogConfig"
             - $ref: "#/components/schemas/ProxyCatalogConfig"
 
-    IcebergCatalogPublicSpec:
-      type: object
-      required:
-        - type
-        - modeConfig
-      properties:
-        type:
-          type: string
-          enum: [ICEBERG]
-        modeConfig:
-          oneOf:
-            - $ref: "#/components/schemas/InternalCatalogPublicConfig"
-            - $ref: "#/components/schemas/ProxyCatalogPublicConfig"
-    PaimonCatalogPublicSpec:
-      type: object
-      required:
-        - type
-        - modeConfig
-      properties:
-        type:
-          type: string
-          enum: [PAIMON]
-        modeConfig:
-          oneOf:
-            - $ref: "#/components/schemas/InternalCatalogPublicConfig"
-            - $ref: "#/components/schemas/ProxyCatalogPublicConfig"
-    LanceCatalogPublicSpec:
-      type: object
-      required:
-        - type
-        - modeConfig
-      properties:
-        type:
-          type: string
-          enum: [LANCE]
-        modeConfig:
-          oneOf:
-            - $ref: "#/components/schemas/InternalCatalogPublicConfig"
-            - $ref: "#/components/schemas/ProxyCatalogPublicConfig"
-
     InternalCatalogConfig:
       type: object
       required:
@@ -407,27 +356,6 @@ components:
           type: object
           additionalProperties:
             type: string
-    InternalCatalogPublicConfig:
-      type: object
-      required:
-        - properties
-      properties:
-        properties:
-          type: object
-          additionalProperties:
-            type: string
-    ProxyCatalogPublicConfig:
-      type: object
-      required:
-        - endpoint
-      properties:
-        endpoint:
-          type: string
-        properties:
-          type: object
-          additionalProperties:
-            type: string
-
     RoleBinding:
       type: object
       required:

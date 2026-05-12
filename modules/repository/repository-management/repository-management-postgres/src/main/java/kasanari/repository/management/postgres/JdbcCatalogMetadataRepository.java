@@ -9,8 +9,6 @@ import kasanari.repository.management.CatalogMetadataRepository;
 import kasanari.repository.management.model.CatalogMetadata;
 import org.jdbi.v3.core.Handle;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<Handle> {
@@ -75,6 +73,7 @@ public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<
         update.bind(0, serialize(spec));
         update.bind(1, nextVersion);
         update.bind(2, catalogId);
+        update.bind(3, expectedVersion);
         update.execute();
 
         return Optional.of(new CatalogMetadata(
@@ -91,32 +90,6 @@ public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<
         var delete = tx.createUpdate(JdbcManagementQueries.DELETE_CATALOG);
         delete.bind(0, catalogId);
         return delete.execute() > 0;
-    }
-
-    @Override
-    public void replaceSecrets(Handle tx, String catalogId, Map<String, String> secrets) {
-        var delete = tx.createUpdate(JdbcManagementQueries.DELETE_SECRETS_BY_CATALOG);
-        delete.bind(0, catalogId);
-        delete.execute();
-
-        if (secrets == null || secrets.isEmpty()) {
-            return;
-        }
-
-        for (var entry : secrets.entrySet()) {
-            var upsert = tx.createUpdate(JdbcManagementQueries.UPSERT_SECRET);
-            upsert.bind(0, catalogId);
-            upsert.bind(1, entry.getKey());
-            upsert.bind(2, entry.getValue());
-            upsert.execute();
-        }
-    }
-
-    @Override
-    public List<String> getSecretKeys(Handle tx, String catalogId) {
-        var query = tx.createQuery(JdbcManagementQueries.SELECT_SECRET_KEYS_BY_CATALOG);
-        query.bind(0, catalogId);
-        return query.mapTo(String.class).list();
     }
 
     private String serialize(CatalogSpec spec) {

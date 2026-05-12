@@ -9,8 +9,6 @@ import kasanari.catalog.management.model.CreateCatalogRequest;
 import kasanari.catalog.management.model.UpdateCatalogRequest;
 import kasanari.repository.management.model.CatalogMetadata;
 
-import java.util.List;
-
 @ApplicationScoped
 public class ManagementCatalogService implements ManagementRestCatalogsService {
     private final ManagementInfrastructure infrastructure;
@@ -42,15 +40,14 @@ public class ManagementCatalogService implements ManagementRestCatalogsService {
             return ManagementResponses.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
 
-        var sanitizedSpec = CatalogSpecMapper.toSanitized(createCatalogRequest.getSpec());
-        var secrets = CatalogSpecMapper.extractSecrets(createCatalogRequest.getSpec());
+        var spec = CatalogSpecMapper.copy(createCatalogRequest.getSpec());
 
         var created = infrastructure.txManager().inTransactionR(tx -> {
             var metadata = new CatalogMetadata(
                     createCatalogRequest.getCatalogId(),
                     createCatalogRequest.getCatalogType(),
                     createCatalogRequest.getMode(),
-                    sanitizedSpec,
+                    spec,
                     1L
             );
 
@@ -58,9 +55,7 @@ public class ManagementCatalogService implements ManagementRestCatalogsService {
                 return null;
             }
 
-            infrastructure.catalogRepository().replaceSecrets(tx, metadata.catalogId(), secrets);
-            var keys = infrastructure.catalogRepository().getSecretKeys(tx, metadata.catalogId());
-            return toPublicInfo(metadata, keys);
+            return toPublicInfo(metadata);
         });
 
         if (created == null) {
@@ -90,12 +85,8 @@ public class ManagementCatalogService implements ManagementRestCatalogsService {
     public Response getCatalog(String catalogId, SecurityContext securityContext) {
         var result = infrastructure.txManager().inTransactionR(tx -> {
             var metadata = infrastructure.catalogRepository().getById(tx, catalogId);
-            if (metadata.isEmpty()) {
-                return null;
-            }
+            return metadata.map(this::toPublicInfo).orElse(null);
 
-            var secretKeys = infrastructure.catalogRepository().getSecretKeys(tx, catalogId);
-            return toPublicInfo(metadata.get(), secretKeys);
         });
 
         if (result == null) {
@@ -132,24 +123,18 @@ public class ManagementCatalogService implements ManagementRestCatalogsService {
             return ManagementResponses.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
 
-        var sanitizedSpec = CatalogSpecMapper.toSanitized(updateCatalogRequest.getSpec());
-        var secrets = CatalogSpecMapper.extractSecrets(updateCatalogRequest.getSpec());
+        var spec = CatalogSpecMapper.copy(updateCatalogRequest.getSpec());
 
         try {
             var updated = infrastructure.txManager().inTransactionR(tx -> {
                 var maybeUpdated = infrastructure.catalogRepository().update(
                         tx,
                         catalogId,
-                        sanitizedSpec,
+                        spec,
                         updateCatalogRequest.getExpectedVersion()
                 );
-                if (maybeUpdated.isEmpty()) {
-                    return null;
-                }
+                return maybeUpdated.map(this::toPublicInfo).orElse(null);
 
-                infrastructure.catalogRepository().replaceSecrets(tx, catalogId, secrets);
-                var secretKeys = infrastructure.catalogRepository().getSecretKeys(tx, catalogId);
-                return toPublicInfo(maybeUpdated.get(), secretKeys);
             });
 
             if (updated == null) {
@@ -162,13 +147,12 @@ public class ManagementCatalogService implements ManagementRestCatalogsService {
         }
     }
 
-    private CatalogPublicInfo toPublicInfo(CatalogMetadata metadata, List<String> secretKeys) {
+    private CatalogPublicInfo toPublicInfo(CatalogMetadata metadata) {
         var info = new CatalogPublicInfo();
         info.setCatalogId(metadata.catalogId());
         info.setCatalogType(metadata.catalogType());
         info.setMode(metadata.catalogMode());
-        info.setSpec(CatalogSpecMapper.toPublic(metadata.spec()));
-        info.setSecretKeys(secretKeys);
+        info.setSpec(CatalogSpecMapper.copy(metadata.spec()));
         info.setVersion(metadata.version());
         return info;
     }
