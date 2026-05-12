@@ -30,10 +30,18 @@ include(
     "modules:platform:platform-aws",
     "modules:platform:platform-hadoop",
     "modules:platform:platform-jakarta",
+    "modules:platform:platform-iceberg",
+    "modules:platform:platform-jackson",
     // repository
     "modules:repository",
     "modules:repository:repository-core",
     "modules:repository:repository-jdbc",
+    "modules:repository:repository-iceberg",
+    "modules:repository:repository-iceberg:repository-iceberg-postgres",
+    "modules:repository:repository-paimon",
+    "modules:repository:repository-paimon:repository-paimon-postgres",
+    "modules:repository:repository-management",
+    "modules:repository:repository-management:repository-management-postgres",
     // fixtures
     "modules:fixtures",
     "modules:fixtures:fixtures-common",
@@ -66,7 +74,15 @@ findProject(":modules:platform")?.name = "platform"
 findProject(":modules:platform:platform-aws")?.name = "platform-aws"
 findProject(":modules:platform:platform-hadoop")?.name = "platform-hadoop"
 findProject(":modules:platform:platform-jakarta")?.name = "platform-jakarta"
+findProject(":modules:platform:platform-iceberg")?.name = "platform-iceberg"
+findProject(":modules:platform:platform-jackson")?.name = "platform-jackson"
 
 findProject(":modules:repository")?.name = "repository"
 findProject(":modules:repository:repository-core")?.name = "repository-core"
 findProject(":modules:repository:repository-jdbc")?.name = "repository-jdbc"
+findProject(":modules:repository:repository-iceberg")?.name = "repository-iceberg"
+findProject(":modules:repository:repository-iceberg:repository-iceberg-postgres")?.name = "repository-iceberg-postgres"
+findProject(":modules:repository:repository-paimon")?.name = "repository-paimon"
+findProject(":modules:repository:repository-paimon:repository-paimon-postgres")?.name = "repository-paimon-postgres"
+findProject(":modules:repository:repository-management")?.name = "repository-management"
+findProject(":modules:repository:repository-management:repository-management-postgres")?.name = "repository-management-postgres"

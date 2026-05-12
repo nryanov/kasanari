@@ -7,6 +7,7 @@ import kasanari.catalog.management.api.ManagementRestCatalogsService;
 import kasanari.catalog.management.model.CatalogPublicInfo;
 import kasanari.catalog.management.model.CreateCatalogRequest;
 import kasanari.catalog.management.model.UpdateCatalogRequest;
+import kasanari.repository.management.model.CatalogMetadata;
 
 import java.util.List;
 

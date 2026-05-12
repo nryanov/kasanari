@@ -1,5 +1,6 @@
 package kasanari.catalog.management.model;
 
+
 import java.util.ArrayList;
 import java.util.List;
 

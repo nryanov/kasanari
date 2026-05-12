@@ -4,9 +4,11 @@ plugins {
 }
 
 dependencies {
-    implementation(enforcedPlatform(libs.iceberg.platform)) {
-        exclude(group = "org.slf4j", module = "slf4j-api")
-    }
+    implementation(project(":modules:platform:platform-iceberg"))
+    implementation(project(":modules:platform:platform-aws"))
+    implementation(project(":modules:platform:platform-hadoop"))
+    implementation(project(":modules:repository:repository-jdbc"))
+    implementation(project(":modules:repository:repository-iceberg:repository-iceberg-postgres"))
 
     implementation("org.apache.iceberg:iceberg-core")
     implementation("org.apache.iceberg:iceberg-api")
@@ -16,10 +18,6 @@ dependencies {
     implementation("org.apache.iceberg:iceberg-orc")
     implementation("org.apache.iceberg:iceberg-nessie")
     implementation("org.apache.iceberg:iceberg-hive-metastore")
-
-    implementation(project(":modules:platform:platform-aws"))
-    implementation(project(":modules:platform:platform-hadoop"))
-    implementation(project(":modules:repository:repository-jdbc"))
 
     // test
     testImplementation(testFixtures(project(":modules:fixtures:fixtures-common")))

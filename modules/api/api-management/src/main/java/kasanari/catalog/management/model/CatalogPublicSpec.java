@@ -1,5 +1,6 @@
 package kasanari.catalog.management.model;
 
+
 public class CatalogPublicSpec {
     public enum TypeEnum {
         ICEBERG("ICEBERG"),

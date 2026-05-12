@@ -1,8 +1,8 @@
 package kasanari.catalog.iceberg.stub;
 
 
-import kasanari.catalog.iceberg.repository.TableRepository;
-import kasanari.catalog.iceberg.repository.model.IcebergTableRecord;
+import kasanari.repository.iceberg.TableRepository;
+import kasanari.repository.iceberg.model.IcebergTableRecord;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.jdbi.v3.core.Handle;

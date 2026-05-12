@@ -4,9 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import kasanari.catalog.management.model.CatalogType;
-import kasanari.server.configuration.ManagementMetadataConfiguration;
+import kasanari.repository.core.TransactionManager;
 import kasanari.repository.jdbc.JdbcTransactionManager;
 import kasanari.repository.jdbc.KasanariDataSource;
+import kasanari.repository.management.CatalogMetadataRepository;
+import kasanari.repository.management.RoleBindingRepository;
+import kasanari.repository.management.postgres.JdbcCatalogMetadataRepository;
+import kasanari.repository.management.postgres.JdbcManagementQueries;
+import kasanari.repository.management.postgres.JdbcRoleBindingRepository;
+import kasanari.server.configuration.ManagementMetadataConfiguration;
 import org.casbin.jcasbin.main.Enforcer;
 import org.casbin.jcasbin.model.Model;
 import org.jdbi.v3.core.Handle;
@@ -16,31 +22,31 @@ import java.util.List;
 @ApplicationScoped
 public class ManagementInfrastructure {
     private final KasanariDataSource dataSource;
-    private final JdbcTransactionManager txManager;
-    private final CatalogMetadataRepository catalogRepository;
-    private final RoleBindingRepository roleBindingRepository;
+    private final TransactionManager<Handle> txManager;
+    private final CatalogMetadataRepository<Handle> catalogRepository;
+    private final RoleBindingRepository<Handle> roleBindingRepository;
     private final Enforcer enforcer;
 
     public ManagementInfrastructure(ManagementMetadataConfiguration configuration, ObjectMapper objectMapper) {
         this.dataSource = new KasanariDataSource(configuration.jdbcProperties());
         this.txManager = new JdbcTransactionManager(dataSource);
-        this.catalogRepository = new CatalogMetadataRepository(objectMapper);
-        this.roleBindingRepository = new RoleBindingRepository();
+        this.catalogRepository = new JdbcCatalogMetadataRepository(objectMapper);
+        this.roleBindingRepository = new JdbcRoleBindingRepository();
         this.enforcer = createEnforcer();
         initSchema();
         initRolePermissions();
         reloadGroupingPolicies();
     }
 
-    public JdbcTransactionManager txManager() {
+    public TransactionManager<Handle> txManager() {
         return txManager;
     }
 
-    public CatalogMetadataRepository catalogRepository() {
+    public CatalogMetadataRepository<Handle> catalogRepository() {
         return catalogRepository;
     }
 
-    public RoleBindingRepository roleBindingRepository() {
+    public RoleBindingRepository<Handle> roleBindingRepository() {
         return roleBindingRepository;
     }
 
@@ -62,9 +68,9 @@ public class ManagementInfrastructure {
 
     private void initSchema() {
         txManager.inTransaction(tx -> {
-            tx.createUpdate(ManagementJdbcQueries.CREATE_CATALOG_REGISTRY_DDL).execute();
-            tx.createUpdate(ManagementJdbcQueries.CREATE_CATALOG_SECRETS_DDL).execute();
-            tx.createUpdate(ManagementJdbcQueries.CREATE_ROLE_BINDINGS_DDL).execute();
+            tx.createUpdate(JdbcManagementQueries.CREATE_CATALOG_REGISTRY_DDL).execute();
+            tx.createUpdate(JdbcManagementQueries.CREATE_CATALOG_SECRETS_DDL).execute();
+            tx.createUpdate(JdbcManagementQueries.CREATE_ROLE_BINDINGS_DDL).execute();
         });
     }
 
