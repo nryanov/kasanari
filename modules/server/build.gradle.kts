@@ -21,6 +21,8 @@ dependencies {
     implementation(project(":modules:api:api-lance"))
     // management
     implementation(project(":modules:api:api-management"))
+    implementation(project(":modules:management:management-catalog"))
+    implementation(project(":modules:management:management-security"))
     implementation(libs.casbin.jcasbin)
     implementation(project(":modules:repository:repository-jdbc"))
     implementation(project(":modules:repository:repository-management:repository-management-postgres"))

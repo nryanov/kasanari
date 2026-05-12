@@ -1,33 +1,28 @@
-package kasanari.server.management;
+package kasanari.management.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PreDestroy;
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.management.model.CatalogType;
 import kasanari.repository.core.TransactionManager;
 import kasanari.repository.jdbc.JdbcTransactionManager;
 import kasanari.repository.jdbc.KasanariDataSource;
-import kasanari.repository.management.CatalogMetadataRepository;
 import kasanari.repository.management.RoleBindingRepository;
 import kasanari.repository.management.postgres.JdbcCatalogMetadataRepository;
 import kasanari.repository.management.postgres.JdbcManagementQueries;
 import kasanari.repository.management.postgres.JdbcRoleBindingRepository;
-import kasanari.server.configuration.ManagementMetadataConfiguration;
 import org.casbin.jcasbin.main.Enforcer;
 import org.casbin.jcasbin.model.Model;
 import org.jdbi.v3.core.Handle;
 
 import java.util.List;
 
-@ApplicationScoped
-public class ManagementInfrastructure {
+public class ManagementSecurityService {
     private final KasanariDataSource dataSource;
     private final TransactionManager<Handle> txManager;
-    private final CatalogMetadataRepository<Handle> catalogRepository;
     private final RoleBindingRepository<Handle> roleBindingRepository;
     private final Enforcer enforcer;
 
-    public ManagementInfrastructure(ManagementMetadataConfiguration configuration, ObjectMapper objectMapper) {
+    public ManagementSecurityService(ManagementMetadataConfiguration configuration, ObjectMapper objectMapper) {
         this.dataSource = new KasanariDataSource(configuration.jdbcProperties());
         this.txManager = new JdbcTransactionManager(dataSource);
         this.catalogRepository = new JdbcCatalogMetadataRepository(objectMapper);
@@ -38,20 +33,31 @@ public class ManagementInfrastructure {
         reloadGroupingPolicies();
     }
 
-    public TransactionManager<Handle> txManager() {
-        return txManager;
+    public String subject(SecurityContext securityContext) {
+        if (securityContext == null || securityContext.getUserPrincipal() == null) {
+            return "anonymous";
+        }
+        return securityContext.getUserPrincipal().getName();
     }
 
-    public CatalogMetadataRepository<Handle> catalogRepository() {
-        return catalogRepository;
+    public boolean canCatalogRead(String subject, CatalogType catalogType) {
+        return can(subject, catalogType, "catalog", "get");
     }
 
-    public RoleBindingRepository<Handle> roleBindingRepository() {
-        return roleBindingRepository;
+    public boolean canCatalogWrite(String subject, CatalogType catalogType, String action) {
+        return can(subject, catalogType, "catalog", action);
     }
 
-    public Enforcer enforcer() {
-        return enforcer;
+    public boolean canSecurityRead(String subject, CatalogType catalogType) {
+        return can(subject, catalogType, "security.roles", "get");
+    }
+
+    public boolean canSecurityWrite(String subject, CatalogType catalogType, String action) {
+        return can(subject, catalogType, "security.roles", action);
+    }
+
+    private boolean can(String subject, CatalogType catalogType, String obj, String action) {
+        return enforcer.enforce(subject, catalogType.toString(), obj, action);
     }
 
     public void reloadGroupingPolicies() {
@@ -119,10 +125,5 @@ public class ManagementInfrastructure {
                 CatalogType.PAIMON.toString(),
                 CatalogType.LANCE.toString()
         );
-    }
-
-    @PreDestroy
-    void close() {
-        dataSource.close();
     }
 }
