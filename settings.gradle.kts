@@ -32,6 +32,7 @@ include(
     "modules:platform:platform-jakarta",
     "modules:platform:platform-iceberg",
     "modules:platform:platform-jackson",
+    "modules:platform:platform-lance",
     // management
     "modules:management",
     "modules:management:management-catalog",
@@ -82,6 +83,7 @@ findProject(":modules:platform:platform-hadoop")?.name = "platform-hadoop"
 findProject(":modules:platform:platform-jakarta")?.name = "platform-jakarta"
 findProject(":modules:platform:platform-iceberg")?.name = "platform-iceberg"
 findProject(":modules:platform:platform-jackson")?.name = "platform-jackson"
+findProject(":modules:platform:platform-lance")?.name = "platform-lance"
 
 findProject(":modules:repository")?.name = "repository"
 findProject(":modules:repository:repository-core")?.name = "repository-core"
