@@ -4,6 +4,8 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":modules:platform:platform-jackson"))
+
     api(libs.paimon.core) {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }

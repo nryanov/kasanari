@@ -7,6 +7,7 @@ dependencies {
     implementation(project(":modules:platform:platform-iceberg"))
     implementation(project(":modules:platform:platform-aws"))
     implementation(project(":modules:platform:platform-hadoop"))
+    implementation(project(":modules:platform:platform-jackson"))
     implementation(project(":modules:repository:repository-jdbc"))
     implementation(project(":modules:repository:repository-iceberg:repository-iceberg-postgres"))
 
