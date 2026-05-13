@@ -4,6 +4,8 @@ plugins {
 }
 
 dependencies {
+    api(project(":modules:platform:platform-jackson"))
+
     api(libs.hive.metastore) {
         exclude(group = "org.slf4j", module = "slf4j-api")
         exclude(group = "asm")

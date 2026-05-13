@@ -5,6 +5,5 @@ plugins {
 
 dependencies {
     implementation(project(":modules:repository:repository-jdbc"))
-    implementation(project(":modules:platform:platform-jackson"))
-    api(project(":modules:repository:repository-iceberg"))
+    api(project(":modules:repository:repository-lance"))
 }

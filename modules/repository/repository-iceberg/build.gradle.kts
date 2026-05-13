@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     api(project(":modules:platform:platform-iceberg"))
+    implementation(project(":modules:platform:platform-jackson"))
     implementation(project(":modules:repository:repository-jdbc"))
 
     api("org.apache.iceberg:iceberg-core")

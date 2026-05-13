@@ -32,6 +32,7 @@ include(
     "modules:platform:platform-jakarta",
     "modules:platform:platform-iceberg",
     "modules:platform:platform-jackson",
+    "modules:platform:platform-lance",
     // management
     "modules:management",
     "modules:management:management-catalog",
@@ -44,6 +45,8 @@ include(
     "modules:repository:repository-iceberg:repository-iceberg-postgres",
     "modules:repository:repository-paimon",
     "modules:repository:repository-paimon:repository-paimon-postgres",
+    "modules:repository:repository-lance",
+    "modules:repository:repository-lance:repository-lance-postgres",
     "modules:repository:repository-management:repository-management-catalog",
     "modules:repository:repository-management:repository-management-catalog:repository-management-catalog-postgres",
     "modules:repository:repository-management:repository-management-security",
@@ -82,6 +85,7 @@ findProject(":modules:platform:platform-hadoop")?.name = "platform-hadoop"
 findProject(":modules:platform:platform-jakarta")?.name = "platform-jakarta"
 findProject(":modules:platform:platform-iceberg")?.name = "platform-iceberg"
 findProject(":modules:platform:platform-jackson")?.name = "platform-jackson"
+findProject(":modules:platform:platform-lance")?.name = "platform-lance"
 
 findProject(":modules:repository")?.name = "repository"
 findProject(":modules:repository:repository-core")?.name = "repository-core"
@@ -90,6 +94,8 @@ findProject(":modules:repository:repository-iceberg")?.name = "repository-iceber
 findProject(":modules:repository:repository-iceberg:repository-iceberg-postgres")?.name = "repository-iceberg-postgres"
 findProject(":modules:repository:repository-paimon")?.name = "repository-paimon"
 findProject(":modules:repository:repository-paimon:repository-paimon-postgres")?.name = "repository-paimon-postgres"
+findProject(":modules:repository:repository-lance")?.name = "repository-lance"
+findProject(":modules:repository:repository-lance:repository-lance-postgres")?.name = "repository-lance-postgres"
 findProject(":modules:repository:repository-management:repository-management-catalog")?.name = "repository-management-catalog"
 findProject(":modules:repository:repository-management:repository-management-catalog:repository-management-catalog-postgres")?.name = "repository-management-catalog-postgres"
 findProject(":modules:repository:repository-management:repository-management-security")?.name = "repository-management-security"

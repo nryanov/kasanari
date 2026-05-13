@@ -9,4 +9,5 @@ dependencies {
     implementation(project(":modules:repository:repository-jdbc"))
     api(project(":modules:repository:repository-management:repository-management-security:repository-management-security-postgres"))
     implementation(project(":modules:platform:platform-jakarta"))
+    implementation(project(":modules:platform:platform-jackson"))
 }

@@ -9,18 +9,7 @@ plugins {
 
 dependencies {
     implementation(project(":modules:platform:platform-jakarta"))
-
-    api(libs.lance.core)
-    api(libs.lance.namespace.core) {
-        exclude(group = "org.lance", module = "lance-core")
-        exclude(group = "com.google.guava", module = "guava")
-        exclude(group = "com.fasterxml.jackson.core", module = "*")
-        exclude(group = "com.fasterxml.jackson.datatype", module = "*")
-        exclude(group = "com.fasterxml.jackson.jaxrs", module = "jackson-jaxrs-json-provider")
-        exclude(group = "org.apache.commons", module = "commons-lang3")
-        exclude(group = "org.apache.opendal", module = "*")
-        exclude(group = "org.junit.jupiter", module = "*")
-    }
+    api(project(":modules:platform:platform-lance"))
 }
 
 val rootDir = rootProject.layout.projectDirectory

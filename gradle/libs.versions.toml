@@ -54,6 +54,7 @@ paimon-format = { group = "org.apache.paimon", name = "paimon-format", version.r
 paimon-hive-catalog = { group = "org.apache.paimon", name = "paimon-hive-catalog", version.ref = "paimon" }
 
 # lance
+# https://mvnrepository.com/artifact/org.lance
 lance-core = { group = "org.lance", name = "lance-core", version.ref = "lance" }
 lance-namespace-core = { group = "org.lance", name = "lance-namespace-core", version.ref = "lance-namespace" }
 
