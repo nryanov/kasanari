@@ -32,6 +32,8 @@ import org.lance.namespace.model.BatchDeleteTableVersionsResponse;
 import org.lance.namespace.model.CommitTableResult;
 import org.lance.namespace.model.CreateNamespaceRequest;
 import org.lance.namespace.model.CreateNamespaceResponse;
+import org.lance.namespace.model.CreateTableRequest;
+import org.lance.namespace.model.CreateTableResponse;
 import org.lance.namespace.model.CreateTableVersionRequest;
 import org.lance.namespace.model.CreateTableVersionResponse;
 import org.lance.namespace.model.DeregisterTableRequest;
@@ -290,6 +292,11 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
             }
             return new BatchCreateTableVersionsResponse().versions(created);
         });
+    }
+
+    @Override
+    public CreateTableResponse createTable(CreateTableRequest request, byte[] requestData) {
+        return LanceNamespace.super.createTable(request, requestData);
     }
 
     @Override
