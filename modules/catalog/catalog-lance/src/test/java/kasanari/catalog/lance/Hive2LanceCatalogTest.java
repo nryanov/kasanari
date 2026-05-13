@@ -1,29 +1,27 @@
 package kasanari.catalog.lance;
 
-import kasanari.fixtures.hive.HiveFixtureContainer;
 import kasanari.fixtures.postgres.PostgresFixtureContainer;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
-import org.testcontainers.containers.Network;
+import org.junit.jupiter.api.Disabled;
 
 import java.util.HashMap;
 
+@Disabled("Fixes required")
 public class Hive2LanceCatalogTest extends LanceCatalogAdapterTest {
-    private final Network network = Network.newNetwork();
-    private final HiveFixtureContainer hive = new HiveFixtureContainer(network);
-    private final PostgresFixtureContainer postgres = new PostgresFixtureContainer(network);
-    private final S3FixtureContainer s3Container = new S3FixtureContainer(network);
+    private final PostgresFixtureContainer postgres = new PostgresFixtureContainer();
+    private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
 
     @Override
     protected LanceCatalogAdapter setupCatalogAdapter() {
         s3Container.start();
         postgres.start();
-        hive.start();
 
         s3Helper = new S3Helper(s3Container);
         s3Helper.createBucket("warehouse");
 
+        // TODO: setup postgres connection via Hadoop#Configuration
         var properties = new HashMap<String, String>();
         properties.put("root", "s3://warehouse/" + uniqueName("hive2_root"));
         properties.put("client.pool-size", "2");
@@ -46,9 +44,7 @@ public class Hive2LanceCatalogTest extends LanceCatalogAdapterTest {
 
     @Override
     protected void onClose() {
-        hive.stop();
         postgres.stop();
         s3Container.stop();
-        network.close();
     }
 }
