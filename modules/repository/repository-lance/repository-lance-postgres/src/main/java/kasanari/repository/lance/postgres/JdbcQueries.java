@@ -1,4 +1,4 @@
-package kasanari.catalog.lance.jdbc;
+package kasanari.repository.lance.postgres;
 
 public final class JdbcQueries {
     private JdbcQueries() {

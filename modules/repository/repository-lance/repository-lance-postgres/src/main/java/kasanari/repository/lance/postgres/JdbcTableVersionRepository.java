@@ -1,20 +1,19 @@
-package kasanari.catalog.lance.jdbc;
+package kasanari.repository.lance.postgres;
 
-import kasanari.repository.jdbc.KasanariDataSource;
+import kasanari.repository.lance.TableVersionRepository;
+import org.jdbi.v3.core.Handle;
 import org.lance.namespace.model.TableVersion;
 import org.lance.namespace.model.VersionRange;
 
 import java.util.List;
 
-public class TableVersionJdbcRepository {
-    private final KasanariDataSource dataSource;
-
-    public TableVersionJdbcRepository(KasanariDataSource dataSource) {
-        this.dataSource = dataSource;
+public class JdbcTableVersionRepository implements TableVersionRepository<Handle> {
+    public JdbcTableVersionRepository() {
     }
 
-    public void create(String tableId, TableVersion version) {
-        dataSource.getJdbi().useHandle(handle -> handle.createUpdate("""
+    @Override
+    public void create(Handle tx, String tableId, TableVersion version) {
+        tx.createUpdate("""
                         INSERT INTO kasanari_lance_table_versions(
                             table_id, version, manifest_path, manifest_size, etag, metadata, timestamp_millis
                         )
@@ -29,11 +28,12 @@ public class TableVersionJdbcRepository {
                 .bind("etag", version.geteTag())
                 .bind("metadata", PropertiesSerde.encode(version.getMetadata()))
                 .bind("timestamp_millis", version.getTimestampMillis())
-                .execute());
+                .execute();
     }
 
-    public TableVersion get(String tableId, Long version) {
-        return dataSource.getJdbi().withHandle(handle -> handle.createQuery("""
+    @Override
+    public TableVersion get(Handle tx, String tableId, Long version) {
+        return tx.createQuery("""
                         SELECT version, manifest_path, manifest_size, etag, metadata, timestamp_millis
                         FROM kasanari_lance_table_versions
                         WHERE table_id = :table_id AND version = :version
@@ -49,15 +49,16 @@ public class TableVersionJdbcRepository {
                         .metadata(PropertiesSerde.decode(rs.getString("metadata")))
                         .timestampMillis(rs.getLong("timestamp_millis")))
                 .findOne()
-                .orElse(null));
+                .orElse(null);
     }
 
-    public List<TableVersion> list(String tableId, boolean descending, Integer limit, String pageToken) {
+    @Override
+    public List<TableVersion> list(Handle tx, String tableId, boolean descending, Integer limit, String pageToken) {
         var order = descending ? "DESC" : "ASC";
         var offset = pageToken == null || pageToken.isBlank() ? 0 : Integer.parseInt(pageToken);
         var max = limit == null ? 1000 : limit;
 
-        return dataSource.getJdbi().withHandle(handle -> handle.createQuery("""
+        return tx.createQuery("""
                         SELECT version, manifest_path, manifest_size, etag, metadata, timestamp_millis
                         FROM kasanari_lance_table_versions
                         WHERE table_id = :table_id
@@ -75,35 +76,37 @@ public class TableVersionJdbcRepository {
                         .eTag(rs.getString("etag"))
                         .metadata(PropertiesSerde.decode(rs.getString("metadata")))
                         .timestampMillis(rs.getLong("timestamp_millis")))
-                .list());
+                .list();
     }
 
-    public long deleteRanges(String tableId, List<VersionRange> ranges) {
+    @Override
+    public long deleteRanges(Handle tx, String tableId, List<VersionRange> ranges) {
         final long[] count = {0L};
-        dataSource.getJdbi().useHandle(handle -> {
-            for (var range : ranges) {
-                var deleted = handle.createUpdate("""
+
+        for (var range : ranges) {
+            var deleted = tx.createUpdate("""
                                 DELETE FROM kasanari_lance_table_versions
                                 WHERE table_id = :table_id
                                   AND version >= :start
                                   AND (:end = -1 OR version < :end)
                                 """)
-                        .bind("table_id", tableId)
-                        .bind("start", range.getStartVersion())
-                        .bind("end", range.getEndVersion())
-                        .execute();
-                count[0] += deleted;
-            }
-        });
+                    .bind("table_id", tableId)
+                    .bind("start", range.getStartVersion())
+                    .bind("end", range.getEndVersion())
+                    .execute();
+            count[0] += deleted;
+        }
+
         return count[0];
     }
 
-    public void deleteForTable(String tableId) {
-        dataSource.getJdbi().useHandle(handle -> handle.createUpdate("""
+    @Override
+    public void deleteForTable(Handle tx, String tableId) {
+        tx.createUpdate("""
                         DELETE FROM kasanari_lance_table_versions
                         WHERE table_id = :table_id
                         """)
                 .bind("table_id", tableId)
-                .execute());
+                .execute();
     }
 }

@@ -8,8 +8,8 @@ dependencies {
     implementation(project(":modules:platform:platform-hadoop"))
     implementation(project(":modules:platform:platform-lance"))
     implementation(project(":modules:repository:repository-jdbc"))
+    implementation(project(":modules:repository:repository-lance:repository-lance-postgres"))
     implementation("org.lance:lance-namespace-hive2:0.3.0")
-    implementation("org.lance:lance-namespace-hive3:0.3.0")
 
     // test
     testImplementation(testFixtures(project(":modules:fixtures:fixtures-common")))

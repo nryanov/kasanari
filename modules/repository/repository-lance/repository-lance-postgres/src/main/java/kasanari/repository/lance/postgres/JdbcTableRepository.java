@@ -1,20 +1,19 @@
-package kasanari.catalog.lance.jdbc;
+package kasanari.repository.lance.postgres;
 
-import kasanari.repository.jdbc.KasanariDataSource;
+import kasanari.repository.lance.TableRepository;
+import kasanari.repository.lance.model.TableRow;
+import org.jdbi.v3.core.Handle;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TableJdbcRepository {
-    private final KasanariDataSource dataSource;
-
-    public TableJdbcRepository(KasanariDataSource dataSource) {
-        this.dataSource = dataSource;
+public class JdbcTableRepository implements TableRepository<Handle> {
+    public JdbcTableRepository() {
     }
 
-    public void upsert(String tableId, String namespacePath, String tableName, String location, Map<String, String> properties, boolean declaredOnly) {
-        dataSource.getJdbi().useHandle(handle -> handle.createUpdate("""
+    @Override
+    public void upsert(Handle tx, String tableId, String namespacePath, String tableName, String location, Map<String, String> properties, boolean declaredOnly) {
+        tx.createUpdate("""
                         INSERT INTO kasanari_lance_tables(table_id, namespace_path, table_name, location, properties, declared_only)
                         VALUES (:table_id, :namespace_path, :table_name, :location, :properties, :declared_only)
                         ON CONFLICT (table_id)
@@ -31,11 +30,12 @@ public class TableJdbcRepository {
                 .bind("location", location)
                 .bind("properties", PropertiesSerde.encode(properties))
                 .bind("declared_only", declaredOnly)
-                .execute());
+                .execute();
     }
 
-    public boolean exists(String tableId) {
-        return dataSource.getJdbi().withHandle(handle -> handle.createQuery("""
+    @Override
+    public boolean exists(Handle tx, String tableId) {
+        return tx.createQuery("""
                         SELECT 1 FROM kasanari_lance_tables
                         WHERE table_id = :table_id
                         LIMIT 1
@@ -43,11 +43,12 @@ public class TableJdbcRepository {
                 .bind("table_id", tableId)
                 .mapTo(Integer.class)
                 .findOne()
-                .isPresent());
+                .isPresent();
     }
 
-    public TableRow get(String tableId) {
-        return dataSource.getJdbi().withHandle(handle -> handle.createQuery("""
+    @Override
+    public TableRow get(Handle tx, String tableId) {
+        return tx.createQuery("""
                         SELECT table_id, namespace_path, table_name, location, properties, declared_only
                         FROM kasanari_lance_tables
                         WHERE table_id = :table_id
@@ -63,39 +64,28 @@ public class TableJdbcRepository {
                         rs.getBoolean("declared_only")
                 ))
                 .findOne()
-                .orElse(null));
+                .orElse(null);
     }
 
-    public List<String> listByNamespace(String namespacePath) {
-        return dataSource.getJdbi().withHandle(handle -> handle.createQuery("""
+    @Override
+    public List<String> listByNamespace(Handle tx, String namespacePath) {
+        return tx.createQuery("""
                         SELECT table_id FROM kasanari_lance_tables
                         WHERE namespace_path = :namespace_path
                         ORDER BY table_name
                         """)
                 .bind("namespace_path", namespacePath)
                 .mapTo(String.class)
-                .list());
+                .list();
     }
 
-    public void delete(String tableId) {
-        dataSource.getJdbi().useHandle(handle -> handle.createUpdate("""
+    @Override
+    public void delete(Handle tx, String tableId) {
+        tx.createUpdate("""
                         DELETE FROM kasanari_lance_tables
                         WHERE table_id = :table_id
                         """)
                 .bind("table_id", tableId)
-                .execute());
-    }
-
-    public record TableRow(
-            String tableId,
-            String namespacePath,
-            String tableName,
-            String location,
-            Map<String, String> properties,
-            boolean declaredOnly
-    ) {
-        public Map<String, String> propertiesOrEmpty() {
-            return properties == null ? new HashMap<>() : properties;
-        }
+                .execute();
     }
 }

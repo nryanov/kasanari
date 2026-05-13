@@ -1,4 +1,4 @@
-package kasanari.catalog.lance.jdbc;
+package kasanari.repository.lance.postgres;
 
 import java.io.IOException;
 import java.io.StringReader;

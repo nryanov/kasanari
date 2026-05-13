@@ -1,13 +1,26 @@
 package kasanari.catalog.lance;
 
-import kasanari.catalog.lance.jdbc.JdbcTableInitializer;
-import kasanari.catalog.lance.jdbc.NamespaceJdbcRepository;
-import kasanari.catalog.lance.jdbc.TableJdbcRepository;
-import kasanari.catalog.lance.jdbc.TableVersionJdbcRepository;
-import kasanari.catalog.lance.jdbc.TransactionJdbcRepository;
+import kasanari.repository.core.TransactionManager;
+import kasanari.repository.jdbc.JdbcTransactionManager;
+import kasanari.repository.lance.NamespaceRepository;
+import kasanari.repository.lance.TableRepository;
+import kasanari.repository.lance.TableVersionRepository;
+import kasanari.repository.lance.TransactionRepository;
+import kasanari.repository.lance.postgres.JdbcTableInitializer;
+import kasanari.repository.lance.postgres.JdbcNamespaceRepository;
+import kasanari.repository.lance.postgres.JdbcTableRepository;
+import kasanari.repository.lance.postgres.JdbcTableVersionRepository;
+import kasanari.repository.lance.postgres.JdbcTransactionRepository;
 import kasanari.repository.jdbc.KasanariDataSource;
 import org.apache.arrow.memory.BufferAllocator;
+import org.jdbi.v3.core.Handle;
 import org.lance.namespace.LanceNamespace;
+import org.lance.namespace.model.AlterTableAddColumnsRequest;
+import org.lance.namespace.model.AlterTableAddColumnsResponse;
+import org.lance.namespace.model.AlterTableAlterColumnsRequest;
+import org.lance.namespace.model.AlterTableAlterColumnsResponse;
+import org.lance.namespace.model.AlterTableDropColumnsRequest;
+import org.lance.namespace.model.AlterTableDropColumnsResponse;
 import org.lance.namespace.model.AlterTransactionRequest;
 import org.lance.namespace.model.AlterTransactionResponse;
 import org.lance.namespace.model.BatchCommitTablesRequest;
@@ -51,16 +64,18 @@ import org.lance.namespace.model.VersionRange;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
     private KasanariDataSource dataSource;
     private BufferAllocator allocator;
-    private NamespaceJdbcRepository namespaceRepository;
-    private TableJdbcRepository tableRepository;
-    private TableVersionJdbcRepository tableVersionRepository;
-    private TransactionJdbcRepository transactionRepository;
+    private NamespaceRepository<Handle> namespaceRepository;
+    private TableRepository<Handle> tableRepository;
+    private TableVersionRepository<Handle> tableVersionRepository;
+    private TransactionRepository<Handle> transactionRepository;
+    private TransactionManager<Handle> transactionManager;
 
     @Override
     public void initialize(Map configProperties, BufferAllocator allocator) {
@@ -75,10 +90,11 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         this.dataSource = new KasanariDataSource(properties);
         new JdbcTableInitializer(dataSource).initialize();
 
-        this.namespaceRepository = new NamespaceJdbcRepository(dataSource);
-        this.tableRepository = new TableJdbcRepository(dataSource);
-        this.tableVersionRepository = new TableVersionJdbcRepository(dataSource);
-        this.transactionRepository = new TransactionJdbcRepository(dataSource);
+        this.transactionManager = new JdbcTransactionManager(dataSource);
+        this.namespaceRepository = new JdbcNamespaceRepository();
+        this.tableRepository = new JdbcTableRepository();
+        this.tableVersionRepository = new JdbcTableVersionRepository();
+        this.transactionRepository = new JdbcTransactionRepository();
     }
 
     @Override
@@ -88,28 +104,28 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public CreateNamespaceResponse createNamespace(CreateNamespaceRequest request) {
-        var namespacePath = namespaceIdFrom(request.getId());
-        namespaceRepository.upsert(namespacePath, mapOrEmpty(request.getProperties()));
+        var namespacePath = joinIds(request.getId());
+        transactionManager.inTransaction(tx -> namespaceRepository.upsert(tx, namespacePath, mapOrEmpty(request.getProperties())));
         return new CreateNamespaceResponse().properties(mapOrEmpty(request.getProperties()));
     }
 
     @Override
     public DescribeNamespaceResponse describeNamespace(DescribeNamespaceRequest request) {
-        var namespacePath = namespaceIdFrom(request.getId());
+        var namespacePath = joinIds(request.getId());
         var properties = namespaceRepository.properties(namespacePath);
         return new DescribeNamespaceResponse().properties(properties);
     }
 
     @Override
     public DropNamespaceResponse dropNamespace(DropNamespaceRequest request) {
-        var namespacePath = namespaceIdFrom(request.getId());
+        var namespacePath = joinIds(request.getId());
         namespaceRepository.delete(namespacePath);
         return new DropNamespaceResponse();
     }
 
     @Override
     public void namespaceExists(NamespaceExistsRequest request) {
-        var namespacePath = namespaceIdFrom(request.getId());
+        var namespacePath = joinIds(request.getId());
         if (!namespaceRepository.exists(namespacePath)) {
             throw new IllegalStateException("Namespace does not exist: " + namespacePath);
         }
@@ -117,7 +133,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public ListNamespacesResponse listNamespaces(ListNamespacesRequest request) {
-        var parent = namespaceIdFrom(request.getId());
+        var parent = joinIds(request.getId());
         var children = namespaceRepository.list(parent);
         var response = new ListNamespacesResponse();
         response.setNamespaces(new java.util.LinkedHashSet<>(children));
@@ -127,7 +143,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public ListTablesResponse listTables(ListTablesRequest request) {
-        var namespacePath = namespaceIdFrom(request.getId());
+        var namespacePath = joinIds(request.getId());
         var tables = tableRepository.listByNamespace(namespacePath);
         var response = new ListTablesResponse();
         response.setTables(new java.util.LinkedHashSet<>(tables));
@@ -137,7 +153,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public RegisterTableResponse registerTable(RegisterTableRequest request) {
-        var tableId = tableIdFrom(request.getId());
+        var tableId = joinIds(request.getId());
         var namespacePath = namespaceFrom(tableId);
         var tableName = tableNameFrom(tableId);
 
@@ -149,7 +165,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public DescribeTableResponse describeTable(DescribeTableRequest request) {
-        var tableId = tableIdFrom(request.getId());
+        var tableId = joinIds(request.getId());
         var table = tableRepository.get(tableId);
         if (table == null) {
             throw new IllegalStateException("Table does not exist: " + tableId);
@@ -171,7 +187,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public void tableExists(TableExistsRequest request) {
-        var tableId = tableIdFrom(request.getId());
+        var tableId = joinIds(request.getId());
         if (!tableRepository.exists(tableId)) {
             throw new IllegalStateException("Table does not exist: " + tableId);
         }
@@ -179,7 +195,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public DropTableResponse dropTable(DropTableRequest request) {
-        var tableId = tableIdFrom(request.getId());
+        var tableId = joinIds(request.getId());
         var table = tableRepository.get(tableId);
         tableVersionRepository.deleteForTable(tableId);
         tableRepository.delete(tableId);
@@ -191,7 +207,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public DeregisterTableResponse deregisterTable(DeregisterTableRequest request) {
-        var tableId = tableIdFrom(request.getId());
+        var tableId = joinIds(request.getId());
         var table = tableRepository.get(tableId);
         tableVersionRepository.deleteForTable(tableId);
         tableRepository.delete(tableId);
@@ -203,7 +219,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public ListTableVersionsResponse listTableVersions(ListTableVersionsRequest request) {
-        var tableId = tableIdFrom(request.getId());
+        var tableId = joinIds(request.getId());
         var versions = tableVersionRepository.list(
                 tableId,
                 Boolean.TRUE.equals(request.getDescending()),
@@ -215,7 +231,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public CreateTableVersionResponse createTableVersion(CreateTableVersionRequest request) {
-        var tableId = tableIdFrom(request.getId());
+        var tableId = joinIds(request.getId());
         var row = new TableVersion()
                 .version(request.getVersion())
                 .manifestPath(request.getManifestPath())
@@ -229,7 +245,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public DescribeTableVersionResponse describeTableVersion(DescribeTableVersionRequest request) {
-        var tableId = tableIdFrom(request.getId());
+        var tableId = joinIds(request.getId());
         var row = tableVersionRepository.get(tableId, request.getVersion());
         if (row == null) {
             throw new IllegalStateException("Table version does not exist");
@@ -239,7 +255,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public BatchDeleteTableVersionsResponse batchDeleteTableVersions(BatchDeleteTableVersionsRequest request) {
-        var tableId = tableIdFrom(request.getId());
+        var tableId = joinIds(request.getId());
         var ranges = new ArrayList<VersionRange>();
         for (var value : request.getRanges()) {
             ranges.add((VersionRange) value);
@@ -253,7 +269,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         var created = new ArrayList<TableVersion>();
         for (var value : request.getEntries()) {
             var entry = (CreateTableVersionEntry) value;
-            var tableId = tableIdFrom(entry.getId());
+            var tableId = joinIds(entry.getId());
             var row = new TableVersion()
                     .version(entry.getVersion())
                     .manifestPath(entry.getManifestPath())
@@ -268,16 +284,30 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
     }
 
     @Override
+    public AlterTableAddColumnsResponse alterTableAddColumns(AlterTableAddColumnsRequest request) {
+        return LanceNamespace.super.alterTableAddColumns(request);
+    }
+
+    @Override
+    public AlterTableAlterColumnsResponse alterTableAlterColumns(AlterTableAlterColumnsRequest request) {
+        return LanceNamespace.super.alterTableAlterColumns(request);
+    }
+
+    @Override
+    public AlterTableDropColumnsResponse alterTableDropColumns(AlterTableDropColumnsRequest request) {
+        return LanceNamespace.super.alterTableDropColumns(request);
+    }
+
+    @Override
     public BatchCommitTablesResponse batchCommitTables(BatchCommitTablesRequest request) {
         var transactionId = UUID.randomUUID().toString();
         var results = new ArrayList<CommitTableResult>();
         for (var value : request.getOperations()) {
-            var operation = (org.lance.namespace.model.CommitTableOperation) value;
             var result = new CommitTableResult();
 
-            if (operation.getDeclareTable() != null) {
-                var declare = operation.getDeclareTable();
-                var tableId = tableIdFrom(declare.getId());
+            if (value.getDeclareTable() != null) {
+                var declare = value.getDeclareTable();
+                var tableId = joinIds(declare.getId());
                 var namespace = namespaceFrom(tableId);
                 var name = tableNameFrom(tableId);
                 tableRepository.upsert(tableId, namespace, name, declare.getLocation(), mapOrEmpty(declare.getProperties()), true);
@@ -288,20 +318,20 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
                         .transactionId(transactionId));
             }
 
-            if (operation.getCreateTableVersion() != null) {
-                var created = createTableVersion(operation.getCreateTableVersion());
+            if (value.getCreateTableVersion() != null) {
+                var created = createTableVersion(value.getCreateTableVersion());
                 created.setTransactionId(transactionId);
                 result.setCreateTableVersion(created);
             }
 
-            if (operation.getDeleteTableVersions() != null) {
-                var deleted = batchDeleteTableVersions(operation.getDeleteTableVersions());
+            if (value.getDeleteTableVersions() != null) {
+                var deleted = batchDeleteTableVersions(value.getDeleteTableVersions());
                 deleted.setTransactionId(transactionId);
                 result.setDeleteTableVersions(deleted);
             }
 
-            if (operation.getDeregisterTable() != null) {
-                var deregister = deregisterTable(operation.getDeregisterTable());
+            if (value.getDeregisterTable() != null) {
+                var deregister = deregisterTable(value.getDeregisterTable());
                 deregister.setTransactionId(transactionId);
                 result.setDeregisterTable(deregister);
             }
@@ -309,26 +339,26 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
             results.add(result);
         }
 
-        transactionRepository.upsert(transactionId, TransactionJdbcRepository.STATUS_SUCCEEDED, Map.of("operation_count", String.valueOf(results.size())));
+        transactionRepository.upsert(transactionId, JdbcTransactionRepository.STATUS_SUCCEEDED, Map.of("operation_count", String.valueOf(results.size())));
         return new BatchCommitTablesResponse().transactionId(transactionId).results(results);
     }
 
     @Override
     public DescribeTransactionResponse describeTransaction(DescribeTransactionRequest request) {
-        var transactionId = transactionIdFrom(request.getId());
+        var transactionId = joinIds(request.getId());
         var row = transactionRepository.get(transactionId);
         if (row == null) {
-            return new DescribeTransactionResponse().status(TransactionJdbcRepository.STATUS_QUEUED).properties(new HashMap<>());
+            return new DescribeTransactionResponse().status(JdbcTransactionRepository.STATUS_QUEUED).properties(new HashMap<>());
         }
         return new DescribeTransactionResponse().status(row.status()).properties(row.propertiesOrEmpty());
     }
 
     @Override
     public AlterTransactionResponse alterTransaction(AlterTransactionRequest request) {
-        var transactionId = transactionIdFrom(request.getId());
+        var transactionId = joinIds(request.getId());
         var current = transactionRepository.get(transactionId);
 
-        var status = current == null ? TransactionJdbcRepository.STATUS_QUEUED : current.status();
+        var status = current == null ? JdbcTransactionRepository.STATUS_QUEUED : current.status();
         var properties = current == null ? new HashMap<String, String>() : new HashMap<>(current.propertiesOrEmpty());
 
         for (var value : request.getActions()) {
@@ -386,25 +416,11 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         return result;
     }
 
-    private static String namespaceIdFrom(java.util.List id) {
-        if (id == null || id.isEmpty()) {
+    private String joinIds(List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
             return "";
         }
-        return String.join(".", id);
-    }
-
-    private static String tableIdFrom(java.util.List id) {
-        if (id == null || id.isEmpty()) {
-            throw new IllegalArgumentException("Table identifier is required");
-        }
-        return String.join(".", id);
-    }
-
-    private static String transactionIdFrom(java.util.List id) {
-        if (id == null || id.isEmpty()) {
-            throw new IllegalArgumentException("Transaction identifier is required");
-        }
-        return String.join(".", id);
+        return String.join(".", ids);
     }
 
     private static String namespaceFrom(String tableId) {

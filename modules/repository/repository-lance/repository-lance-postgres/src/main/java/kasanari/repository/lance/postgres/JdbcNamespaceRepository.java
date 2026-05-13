@@ -1,21 +1,20 @@
-package kasanari.catalog.lance.jdbc;
+package kasanari.repository.lance.postgres;
 
-import kasanari.repository.jdbc.KasanariDataSource;
+import kasanari.repository.lance.NamespaceRepository;
+import org.jdbi.v3.core.Handle;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class NamespaceJdbcRepository {
-    private final KasanariDataSource dataSource;
-
-    public NamespaceJdbcRepository(KasanariDataSource dataSource) {
-        this.dataSource = dataSource;
+public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
+    public JdbcNamespaceRepository() {
     }
 
-    public void upsert(String namespacePath, Map<String, String> properties) {
-        dataSource.getJdbi().useHandle(handle -> handle.createUpdate("""
+    @Override
+    public void upsert(Handle tx, String namespacePath, Map<String, String> properties) {
+        tx.createUpdate("""
                         INSERT INTO kasanari_lance_namespaces(namespace_path, properties)
                         VALUES (:namespace_path, :properties)
                         ON CONFLICT (namespace_path)
@@ -23,11 +22,12 @@ public class NamespaceJdbcRepository {
                         """)
                 .bind("namespace_path", namespacePath)
                 .bind("properties", PropertiesSerde.encode(properties))
-                .execute());
+                .execute();
     }
 
-    public boolean exists(String namespacePath) {
-        return dataSource.getJdbi().withHandle(handle -> handle.createQuery("""
+    @Override
+    public boolean exists(Handle tx, String namespacePath) {
+        return tx.createQuery("""
                         SELECT 1 FROM kasanari_lance_namespaces
                         WHERE namespace_path = :namespace_path
                         LIMIT 1
@@ -35,11 +35,12 @@ public class NamespaceJdbcRepository {
                 .bind("namespace_path", namespacePath)
                 .mapTo(Integer.class)
                 .findOne()
-                .isPresent());
+                .isPresent();
     }
 
-    public Map<String, String> properties(String namespacePath) {
-        return dataSource.getJdbi().withHandle(handle -> handle.createQuery("""
+    @Override
+    public Map<String, String> properties(Handle tx, String namespacePath) {
+        return tx.createQuery("""
                         SELECT properties FROM kasanari_lance_namespaces
                         WHERE namespace_path = :namespace_path
                         LIMIT 1
@@ -48,17 +49,18 @@ public class NamespaceJdbcRepository {
                 .mapTo(String.class)
                 .findOne()
                 .map(PropertiesSerde::decode)
-                .orElse(new HashMap<>()));
+                .orElse(new HashMap<>());
     }
 
-    public List<String> list(String parentPath) {
+    @Override
+    public List<String> list(Handle tx, String parentPath) {
         var prefix = (parentPath == null || parentPath.isBlank()) ? "" : parentPath + ".";
-        var rows = dataSource.getJdbi().withHandle(handle -> handle.createQuery("""
+        var rows = tx.createQuery("""
                         SELECT namespace_path FROM kasanari_lance_namespaces
                         ORDER BY namespace_path
                         """)
                 .mapTo(String.class)
-                .list());
+                .list();
 
         var result = new ArrayList<String>();
         for (var row : rows) {
@@ -79,12 +81,13 @@ public class NamespaceJdbcRepository {
         return result;
     }
 
-    public void delete(String namespacePath) {
-        dataSource.getJdbi().useHandle(handle -> handle.createUpdate("""
+    @Override
+    public void delete(Handle tx, String namespacePath) {
+        tx.createUpdate("""
                         DELETE FROM kasanari_lance_namespaces
                         WHERE namespace_path = :namespace_path
                         """)
                 .bind("namespace_path", namespacePath)
-                .execute());
+                .execute();
     }
 }

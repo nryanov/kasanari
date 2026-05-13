@@ -9,6 +9,7 @@ public class KasanariLanceCatalogFactory implements LanceCatalogFactory {
     public LanceCatalogAdapter create(String implementation, Map<String, String> properties) {
         var catalog = new KasanariLanceCatalog();
         catalog.initialize(properties, new RootAllocator());
+
         return new DefaultLanceCatalogAdapter(catalog);
     }
 }

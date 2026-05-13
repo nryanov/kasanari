@@ -1,22 +1,21 @@
-package kasanari.catalog.lance.jdbc;
+package kasanari.repository.lance.postgres;
 
-import kasanari.repository.jdbc.KasanariDataSource;
+import kasanari.repository.lance.TransactionRepository;
+import kasanari.repository.lance.model.TransactionRow;
+import org.jdbi.v3.core.Handle;
 
-import java.util.HashMap;
 import java.util.Map;
 
-public class TransactionJdbcRepository {
+public class JdbcTransactionRepository implements TransactionRepository<Handle> {
     public static final String STATUS_QUEUED = "Queued";
     public static final String STATUS_SUCCEEDED = "Succeeded";
 
-    private final KasanariDataSource dataSource;
-
-    public TransactionJdbcRepository(KasanariDataSource dataSource) {
-        this.dataSource = dataSource;
+    public JdbcTransactionRepository() {
     }
 
-    public void upsert(String transactionId, String status, Map<String, String> properties) {
-        dataSource.getJdbi().useHandle(handle -> handle.createUpdate("""
+    @Override
+    public void upsert(Handle tx, String transactionId, String status, Map<String, String> properties) {
+        tx.createUpdate("""
                         INSERT INTO kasanari_lance_transactions(transaction_id, status, properties)
                         VALUES (:transaction_id, :status, :properties)
                         ON CONFLICT (transaction_id)
@@ -25,11 +24,12 @@ public class TransactionJdbcRepository {
                 .bind("transaction_id", transactionId)
                 .bind("status", status)
                 .bind("properties", PropertiesSerde.encode(properties))
-                .execute());
+                .execute();
     }
 
-    public TransactionRow get(String transactionId) {
-        return dataSource.getJdbi().withHandle(handle -> handle.createQuery("""
+    @Override
+    public TransactionRow get(Handle tx, String transactionId) {
+        return tx.createQuery("""
                         SELECT transaction_id, status, properties
                         FROM kasanari_lance_transactions
                         WHERE transaction_id = :transaction_id
@@ -42,12 +42,6 @@ public class TransactionJdbcRepository {
                         PropertiesSerde.decode(rs.getString("properties"))
                 ))
                 .findOne()
-                .orElse(null));
-    }
-
-    public record TransactionRow(String id, String status, Map<String, String> properties) {
-        public Map<String, String> propertiesOrEmpty() {
-            return properties == null ? new HashMap<>() : properties;
-        }
+                .orElse(null);
     }
 }
