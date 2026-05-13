@@ -128,171 +128,171 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     protected boolean supportsCreateNamespace() {
-        return false;
+        return true;
     }
 
     protected boolean supportsDescribeNamespace() {
-        return false;
+        return true;
     }
 
     protected boolean supportsDropNamespace() {
-        return false;
+        return true;
     }
 
     protected boolean supportsNamespaceExists() {
-        return false;
+        return true;
     }
 
     protected boolean supportsListNamespaces() {
-        return false;
+        return true;
     }
 
     protected boolean supportsListTables() {
-        return false;
+        return true;
     }
 
     protected boolean supportsRegisterTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsDescribeTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsTableExists() {
-        return false;
+        return true;
     }
 
     protected boolean supportsDropTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsDeregisterTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsAlterTableAddColumns() {
-        return false;
+        return true;
     }
 
     protected boolean supportsAlterTableAlterColumns() {
-        return false;
+        return true;
     }
 
     protected boolean supportsAlterTableDropColumns() {
-        return false;
+        return true;
     }
 
     protected boolean supportsAnalyzeTableQueryPlan() {
-        return false;
+        return true;
     }
 
     protected boolean supportsCountTableRows() {
-        return false;
+        return true;
     }
 
     protected boolean supportsCreateTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsCreateTableIndex() {
-        return false;
+        return true;
     }
 
     protected boolean supportsCreateTableTag() {
-        return false;
+        return true;
     }
 
     protected boolean supportsDeleteFromTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsDeleteTableTag() {
-        return false;
+        return true;
     }
 
     protected boolean supportsDescribeTableIndexStats() {
-        return false;
+        return true;
     }
 
     protected boolean supportsDropTableIndex() {
-        return false;
+        return true;
     }
 
     protected boolean supportsExplainTableQueryPlan() {
-        return false;
+        return true;
     }
 
     protected boolean supportsGetTableStats() {
-        return false;
+        return true;
     }
 
     protected boolean supportsGetTableTagVersion() {
-        return false;
+        return true;
     }
 
     protected boolean supportsInsertIntoTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsListTableIndices() {
-        return false;
+        return true;
     }
 
     protected boolean supportsListTableTags() {
-        return false;
+        return true;
     }
 
     protected boolean supportsListTableVersions() {
-        return false;
+        return true;
     }
 
     protected boolean supportsCreateTableVersion() {
-        return false;
+        return true;
     }
 
     protected boolean supportsDescribeTableVersion() {
-        return false;
+        return true;
     }
 
     protected boolean supportsBatchDeleteTableVersions() {
-        return false;
+        return true;
     }
 
     protected boolean supportsBatchCreateTableVersions() {
-        return false;
+        return true;
     }
 
     protected boolean supportsBatchCommitTables() {
-        return false;
+        return true;
     }
 
     protected boolean supportsMergeInsertIntoTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsQueryTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsRestoreTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsUpdateTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsUpdateTableTag() {
-        return false;
+        return true;
     }
 
     protected boolean supportsDescribeTransaction() {
-        return false;
+        return true;
     }
 
     protected boolean supportsAlterTransaction() {
-        return false;
+        return true;
     }
 
     @Test

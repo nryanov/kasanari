@@ -13,6 +13,8 @@ dependencies {
     implementation(project(":modules:repository:repository-lance:repository-lance-postgres"))
 
     implementation("org.lance:lance-namespace-hive2:0.3.0") {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+        exclude(group = "org.apache.logging.log4j")
         exclude(group = "org.lance", module = "lance-core")
         exclude(group = "com.google.guava", module = "guava")
         exclude(group = "com.fasterxml.jackson.core", module = "*")
@@ -22,6 +24,9 @@ dependencies {
         exclude(group = "org.apache.opendal", module = "*")
         exclude(group = "org.junit.jupiter", module = "*")
         exclude(group = "org.apache.hive", module = "hive-metastore")
+        exclude(group = "org.apache.hive", module = "hive-service")
+        exclude(group = "org.apache.hive", module = "hive-llap-server")
+        exclude(group = "org.apache.hive", module = "hive-exec")
     }
 
     // test
