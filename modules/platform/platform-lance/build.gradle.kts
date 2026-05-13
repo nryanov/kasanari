@@ -15,4 +15,5 @@ dependencies {
         exclude(group = "org.apache.opendal", module = "*")
         exclude(group = "org.junit.jupiter", module = "*")
     }
+    api("org.lance:lance-namespace-impls-core:0.3.0")
 }
