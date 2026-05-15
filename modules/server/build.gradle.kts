@@ -19,6 +19,7 @@ dependencies {
     implementation(project(":modules:catalog:catalog-paimon"))
     // lance
     implementation(project(":modules:api:api-lance"))
+    implementation(project(":modules:catalog:catalog-lance"))
     // management
     implementation(project(":modules:api:api-management"))
     implementation(project(":modules:management:management-catalog"))

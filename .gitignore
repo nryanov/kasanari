@@ -7,3 +7,4 @@ target/
 *.iml
 .bsp
 .DS_Store
+stash/

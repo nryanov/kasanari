@@ -27,6 +27,8 @@ dependencies {
         exclude(group = "org.apache.hive", module = "hive-service")
         exclude(group = "org.apache.hive", module = "hive-llap-server")
         exclude(group = "org.apache.hive", module = "hive-exec")
+        exclude(group = "asm")
+        exclude(group = "org.ow2.asm", module = "asm-all")
     }
 
     // test
