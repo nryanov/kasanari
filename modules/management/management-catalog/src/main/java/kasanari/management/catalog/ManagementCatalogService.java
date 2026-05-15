@@ -9,6 +9,7 @@ import kasanari.repository.management.catalog.model.CatalogMetadata;
 import kasanari.repository.management.catalog.model.CatalogSpec;
 import kasanari.repository.management.catalog.postgres.JdbcCatalogMetadataRepository;
 import kasanari.repository.management.catalog.postgres.JdbcManagementCatalogQueries;
+import kasanari.repository.management.common.model.CatalogType;
 import org.jdbi.v3.core.Handle;
 
 import java.util.Optional;
@@ -31,15 +32,15 @@ public class ManagementCatalogService {
         return txManager.inTransactionR(tx -> catalogRepository.create(tx, metadata));
     }
 
-    public boolean delete(String catalogId) {
-        return txManager.inTransactionR(tx -> catalogRepository.delete(tx, catalogId));
+    public boolean delete(CatalogType catalogType, String catalogName) {
+        return txManager.inTransactionR(tx -> catalogRepository.delete(tx, catalogType, catalogName));
     }
 
-    public Optional<CatalogMetadata> get(String catalogId) {
-        return txManager.inTransactionR(tx -> catalogRepository.getById(tx, catalogId));
+    public Optional<CatalogMetadata> get(CatalogType catalogType, String catalogName) {
+        return txManager.inTransactionR(tx -> catalogRepository.getByName(tx, catalogType, catalogName));
     }
 
-    public Optional<CatalogMetadata> update(String catalogId, CatalogSpec spec, Long expectedVersion) {
-        return txManager.inTransactionR(tx -> catalogRepository.update(tx, catalogId, spec, expectedVersion));
+    public Optional<CatalogMetadata> update(CatalogType catalogType, String catalogName, CatalogSpec spec, Long expectedVersion) {
+        return txManager.inTransactionR(tx -> catalogRepository.update(tx, catalogType, catalogName, spec, expectedVersion));
     }
 }

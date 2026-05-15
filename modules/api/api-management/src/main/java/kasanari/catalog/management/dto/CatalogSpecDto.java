@@ -1,23 +1,35 @@
 package kasanari.catalog.management.dto;
 
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class CatalogSpecDto {
-    private CatalogTypeDto type;
-    private IcebergCatalogSpecModeConfigDto modeConfig;
+    private Map<String, String> fileIoProperties = new HashMap<>();
+    private Map<String, String> catalogProperties = new HashMap<>();
+    private String endpoint;
 
-    public CatalogTypeDto getType() {
-        return type;
+    public Map<String, String> getFileIoProperties() {
+        return fileIoProperties;
     }
 
-    public void setType(CatalogTypeDto type) {
-        this.type = type;
+    public void setFileIoProperties(Map<String, String> fileIoProperties) {
+        this.fileIoProperties = fileIoProperties;
     }
 
-    public IcebergCatalogSpecModeConfigDto getModeConfig() {
-        return modeConfig;
+    public Map<String, String> getCatalogProperties() {
+        return catalogProperties;
     }
 
-    public void setModeConfig(IcebergCatalogSpecModeConfigDto modeConfig) {
-        this.modeConfig = modeConfig;
+    public void setCatalogProperties(Map<String, String> catalogProperties) {
+        this.catalogProperties = catalogProperties;
+    }
+
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
     }
 }

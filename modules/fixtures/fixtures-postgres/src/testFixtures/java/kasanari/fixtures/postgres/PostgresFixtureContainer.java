@@ -1,8 +1,15 @@
 package kasanari.fixtures.postgres;
 
+import com.github.dockerjava.api.model.HealthCheck;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 import org.testcontainers.utility.DockerImageName;
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 
 public class PostgresFixtureContainer {
     private static final int POSTGRES_INTERNAL_PORT = 5432;
@@ -19,6 +26,13 @@ public class PostgresFixtureContainer {
                 DockerImageName
                         .parse("postgres:17")
                         .asCompatibleSubstituteFor("postgres")
+        ).waitingFor(
+                new WaitAllStrategy()
+                        .withStrategy(new LogMessageWaitStrategy()
+                                .withRegEx(".*database system is ready to accept connections.*\\s")
+                                .withTimes(2)
+                                .withStartupTimeout(Duration.of(60, ChronoUnit.SECONDS)))
+                        .withStrategy(new HostPortWaitStrategy().forPorts(POSTGRES_INTERNAL_PORT))
         );
 
         if (network != null) {
@@ -43,7 +57,9 @@ public class PostgresFixtureContainer {
         postgres.stop();
     }
 
-    /** JDBC URL reachable from the host (mapped port). */
+    /**
+     * JDBC URL reachable from the host (mapped port).
+     */
     public String jdbcUrl() {
         return postgres.getJdbcUrl();
     }

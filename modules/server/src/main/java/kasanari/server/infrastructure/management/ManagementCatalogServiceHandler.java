@@ -5,6 +5,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.management.api.ManagementRestCatalogsService;
 import kasanari.catalog.management.dto.CatalogPublicInfoDto;
+import kasanari.catalog.management.dto.CatalogTypeDto;
 import kasanari.catalog.management.dto.CreateCatalogRequestDto;
 import kasanari.catalog.management.dto.UpdateCatalogRequestDto;
 import kasanari.management.catalog.ManagementCatalogService;
@@ -29,16 +30,6 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
             return ApiFallbacks.error(Response.Status.BAD_REQUEST, "Catalog payload is incomplete");
         }
 
-        try {
-            CatalogSpecMapper.validate(
-                    CatalogSpecMapper.toDomain(createCatalogRequest.getCatalogType()),
-                    CatalogSpecMapper.toDomain(createCatalogRequest.getMode()),
-                    createCatalogRequest.getSpec()
-            );
-        } catch (IllegalArgumentException e) {
-            return ApiFallbacks.error(Response.Status.BAD_REQUEST, e.getMessage());
-        }
-
         var spec = CatalogSpecMapper.toDomain(createCatalogRequest.getSpec());
         var metadata = new CatalogMetadata(
                 createCatalogRequest.getCatalogId(),
@@ -57,8 +48,8 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     }
 
     @Override
-    public Response deleteCatalog(String catalogId, SecurityContext securityContext) {
-        var deleted = catalogService.delete(catalogId);
+    public Response deleteCatalog(CatalogTypeDto catalogType, String name, SecurityContext securityContext) {
+        var deleted = catalogService.delete(CatalogSpecMapper.toDomain(catalogType), name);
 
         if (deleted) {
             return Response.status(Response.Status.NO_CONTENT).build();
@@ -68,8 +59,8 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     }
 
     @Override
-    public Response getCatalog(String catalogId, SecurityContext securityContext) {
-        var maybe = catalogService.get(catalogId);
+    public Response getCatalog(CatalogTypeDto catalogType, String name, SecurityContext securityContext) {
+        var maybe = catalogService.get(CatalogSpecMapper.toDomain(catalogType), name);
 
         if (maybe.isEmpty()) {
             return ApiFallbacks.error(Response.Status.NOT_FOUND, "Catalog not found");
@@ -79,26 +70,21 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     }
 
     @Override
-    public Response updateCatalog(String catalogId, UpdateCatalogRequestDto updateCatalogRequest, SecurityContext securityContext) {
+    public Response updateCatalog(CatalogTypeDto catalogType, String catalogId, UpdateCatalogRequestDto updateCatalogRequest, SecurityContext securityContext) {
         if (updateCatalogRequest == null || updateCatalogRequest.getSpec() == null) {
             return ApiFallbacks.error(Response.Status.BAD_REQUEST, "Catalog update requires spec");
         }
 
-        var existing = catalogService.get(catalogId);
+        var domainType = CatalogSpecMapper.toDomain(catalogType);
+        var existing = catalogService.get(domainType, catalogId);
         if (existing.isEmpty()) {
             return ApiFallbacks.error(Response.Status.NOT_FOUND, "Catalog not found");
-        }
-
-        try {
-            CatalogSpecMapper.validate(existing.get().catalogType(), existing.get().catalogMode(), updateCatalogRequest.getSpec());
-        } catch (IllegalArgumentException e) {
-            return ApiFallbacks.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
 
         var spec = CatalogSpecMapper.toDomain(updateCatalogRequest.getSpec());
 
         try {
-            var updated = catalogService.update(catalogId, spec, updateCatalogRequest.getExpectedVersion());
+            var updated = catalogService.update(domainType, catalogId, spec, updateCatalogRequest.getExpectedVersion());
 
             if (updated.isEmpty()) {
                 return ApiFallbacks.error(Response.Status.NOT_FOUND, "Catalog not found");

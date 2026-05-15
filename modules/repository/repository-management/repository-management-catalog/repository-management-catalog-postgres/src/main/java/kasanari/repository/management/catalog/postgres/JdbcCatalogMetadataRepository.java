@@ -19,15 +19,16 @@ public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<
     }
 
     @Override
-    public Optional<CatalogMetadata> getById(Handle tx, String catalogId) {
+    public Optional<CatalogMetadata> getByName(Handle tx, CatalogType catalogType, String catalogName) {
         var query = tx.createQuery(JdbcManagementCatalogQueries.SELECT_CATALOG);
-        query.bind(0, catalogId);
+        query.bind(0, catalogType.toString());
+        query.bind(1, catalogName);
 
         return query.map((rs, ctx) -> {
             try {
                 var spec = objectMapper.readValue(rs.getString("spec_json"), CatalogSpec.class);
                 return new CatalogMetadata(
-                        rs.getString("catalog_id"),
+                        rs.getString("catalog_name"),
                         CatalogType.fromValue(rs.getString("catalog_type")),
                         CatalogMode.fromValue(rs.getString("catalog_mode")),
                         spec,
@@ -41,13 +42,13 @@ public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<
 
     @Override
     public boolean create(Handle tx, CatalogMetadata metadata) {
-        if (getById(tx, metadata.catalogId()).isPresent()) {
+        if (getByName(tx, metadata.catalogType(), metadata.catalogId()).isPresent()) {
             return false;
         }
 
         var insert = tx.createUpdate(JdbcManagementCatalogQueries.INSERT_CATALOG);
-        insert.bind(0, metadata.catalogId());
-        insert.bind(1, metadata.catalogType().toString());
+        insert.bind(0, metadata.catalogType().toString());
+        insert.bind(1, metadata.catalogId());
         insert.bind(2, metadata.catalogMode().toString());
         insert.bind(3, serialize(metadata.spec()));
         insert.bind(4, metadata.version());
@@ -56,8 +57,8 @@ public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<
     }
 
     @Override
-    public Optional<CatalogMetadata> update(Handle tx, String catalogId, CatalogSpec spec, Long expectedVersion) {
-        var current = getById(tx, catalogId);
+    public Optional<CatalogMetadata> update(Handle tx, CatalogType catalogType, String catalogName, CatalogSpec spec, Long expectedVersion) {
+        var current = getByName(tx, catalogType, catalogName);
 
         if (current.isEmpty()) {
             return Optional.empty();
@@ -72,9 +73,13 @@ public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<
         var update = tx.createUpdate(JdbcManagementCatalogQueries.UPDATE_CATALOG);
         update.bind(0, serialize(spec));
         update.bind(1, nextVersion);
-        update.bind(2, catalogId);
-        update.bind(3, expectedVersion);
-        update.execute();
+        update.bind(2, catalogType.toString());
+        update.bind(3, catalogName);
+        update.bind(4, existing.version());
+        var rows = update.execute();
+        if (rows == 0) {
+            throw new IllegalStateException("Catalog version does not match expected value");
+        }
 
         return Optional.of(new CatalogMetadata(
                 existing.catalogId(),
@@ -86,9 +91,10 @@ public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<
     }
 
     @Override
-    public boolean delete(Handle tx, String catalogId) {
+    public boolean delete(Handle tx, CatalogType catalogType, String catalogName) {
         var delete = tx.createUpdate(JdbcManagementCatalogQueries.DELETE_CATALOG);
-        delete.bind(0, catalogId);
+        delete.bind(0, catalogType.toString());
+        delete.bind(1, catalogName);
         return delete.execute() > 0;
     }
 

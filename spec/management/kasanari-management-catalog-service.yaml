@@ -62,13 +62,14 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
-  /management/v1/catalogs/{catalogId}:
+  /management/v1/catalogs/{catalogType}/{catalogId}:
     get:
       tags:
         - Catalogs
       operationId: getCatalog
       summary: Get catalog metadata
       parameters:
+        - $ref: "#/components/parameters/CatalogTypePath"
         - $ref: "#/components/parameters/CatalogId"
       responses:
         "200":
@@ -87,6 +88,7 @@ paths:
       operationId: updateCatalog
       summary: Update catalog metadata
       parameters:
+        - $ref: "#/components/parameters/CatalogTypePath"
         - $ref: "#/components/parameters/CatalogId"
       requestBody:
         required: true
@@ -113,6 +115,7 @@ paths:
       operationId: deleteCatalog
       summary: Delete catalog metadata
       parameters:
+        - $ref: "#/components/parameters/CatalogTypePath"
         - $ref: "#/components/parameters/CatalogId"
       responses:
         "204":
@@ -195,6 +198,12 @@ components:
       scheme: bearer
       bearerFormat: JWT
   parameters:
+    CatalogTypePath:
+      in: path
+      name: catalogType
+      required: true
+      schema:
+        $ref: "#/components/schemas/CatalogType"
     CatalogId:
       in: path
       name: catalogId
@@ -264,6 +273,7 @@ components:
         expectedVersion:
           type: integer
           format: int64
+          nullable: true
     CatalogPublicInfo:
       type: object
       required:
@@ -283,79 +293,23 @@ components:
         version:
           type: integer
           format: int64
+          nullable: true
     CatalogSpec:
-      oneOf:
-        - $ref: "#/components/schemas/IcebergCatalogSpec"
-        - $ref: "#/components/schemas/PaimonCatalogSpec"
-        - $ref: "#/components/schemas/LanceCatalogSpec"
-    IcebergCatalogSpec:
       type: object
-      required:
-        - type
-        - modeConfig
+      description: >-
+        Flat catalog connector configuration (file IO props, catalog props, optional proxy endpoint).
       properties:
-        type:
-          type: string
-          enum: [ICEBERG]
-        modeConfig:
-          oneOf:
-            - $ref: "#/components/schemas/InternalCatalogConfig"
-            - $ref: "#/components/schemas/ProxyCatalogConfig"
-    PaimonCatalogSpec:
-      type: object
-      required:
-        - type
-        - modeConfig
-      properties:
-        type:
-          type: string
-          enum: [PAIMON]
-        modeConfig:
-          oneOf:
-            - $ref: "#/components/schemas/InternalCatalogConfig"
-            - $ref: "#/components/schemas/ProxyCatalogConfig"
-    LanceCatalogSpec:
-      type: object
-      required:
-        - type
-        - modeConfig
-      properties:
-        type:
-          type: string
-          enum: [LANCE]
-        modeConfig:
-          oneOf:
-            - $ref: "#/components/schemas/InternalCatalogConfig"
-            - $ref: "#/components/schemas/ProxyCatalogConfig"
-
-    InternalCatalogConfig:
-      type: object
-      required:
-        - properties
-      properties:
-        properties:
+        fileIoProperties:
           type: object
           additionalProperties:
             type: string
-        secrets:
+        catalogProperties:
           type: object
           additionalProperties:
             type: string
-    ProxyCatalogConfig:
-      type: object
-      required:
-        - endpoint
-      properties:
         endpoint:
           type: string
-        properties:
-          type: object
-          additionalProperties:
-            type: string
-        secrets:
-          type: object
-          additionalProperties:
-            type: string
+          nullable: true
     RoleBinding:
       type: object
       required:
@@ -369,11 +323,12 @@ components:
           $ref: "#/components/schemas/CatalogType"
         role:
           type: string
+          description: RoleBindingDto.RoleEnum (Jackson default wire format is enum constant name)
           enum:
-            - catalog_admin
-            - catalog_reader
-            - security_admin
-            - security_reader
+            - CATALOG_ADMIN
+            - CATALOG_READER
+            - SECURITY_ADMIN
+            - SECURITY_READER
     GetRolesResponse:
       type: object
       required:
