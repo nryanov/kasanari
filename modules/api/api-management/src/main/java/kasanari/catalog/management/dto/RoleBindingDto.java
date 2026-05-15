@@ -1,6 +1,6 @@
-package kasanari.catalog.management.model;
+package kasanari.catalog.management.dto;
 
-public class RoleBinding {
+public class RoleBindingDto {
     public enum RoleEnum {
         CATALOG_ADMIN("catalog_admin"),
         CATALOG_READER("catalog_reader"),
@@ -29,7 +29,7 @@ public class RoleBinding {
     }
 
     private String subject;
-    private CatalogType catalogType;
+    private CatalogTypeDto catalogType;
     private RoleEnum role;
 
     public String getSubject() {
@@ -40,11 +40,11 @@ public class RoleBinding {
         this.subject = subject;
     }
 
-    public CatalogType getCatalogType() {
+    public CatalogTypeDto getCatalogType() {
         return catalogType;
     }
 
-    public void setCatalogType(CatalogType catalogType) {
+    public void setCatalogType(CatalogTypeDto catalogType) {
         this.catalogType = catalogType;
     }
 

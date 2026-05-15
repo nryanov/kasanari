@@ -1,14 +1,14 @@
-package kasanari.catalog.management.model;
+package kasanari.catalog.management.dto;
 
-public class UpdateCatalogRequest {
-    private CatalogSpec spec;
+public class UpdateCatalogRequestDto {
+    private CatalogSpecDto spec;
     private Long expectedVersion;
 
-    public CatalogSpec getSpec() {
+    public CatalogSpecDto getSpec() {
         return spec;
     }
 
-    public void setSpec(CatalogSpec spec) {
+    public void setSpec(CatalogSpecDto spec) {
         this.spec = spec;
     }
 

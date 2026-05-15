@@ -1,10 +1,10 @@
 package kasanari.management.security;
 
 import jakarta.ws.rs.core.SecurityContext;
-import kasanari.catalog.management.model.CatalogType;
 import kasanari.repository.core.TransactionManager;
 import kasanari.repository.jdbc.JdbcTransactionManager;
 import kasanari.repository.jdbc.KasanariDataSource;
+import kasanari.repository.management.common.model.CatalogType;
 import kasanari.repository.management.security.RoleBindingRepository;
 import kasanari.repository.management.security.model.StoredRoleBinding;
 import kasanari.repository.management.security.postgres.JdbcManagementSecurityQueries;

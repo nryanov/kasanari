@@ -1,19 +1,18 @@
-package kasanari.catalog.management.model;
-
+package kasanari.repository.management.catalog.model;
 
 public class CatalogSpec {
-    public enum TypeEnum {
+    public enum Type {
         ICEBERG("ICEBERG"),
         PAIMON("PAIMON"),
         LANCE("LANCE");
 
         private final String value;
 
-        TypeEnum(String value) {
+        Type(String value) {
             this.value = value;
         }
 
-        public static TypeEnum fromValue(String value) {
+        public static Type fromValue(String value) {
             for (var item : values()) {
                 if (item.value.equals(value)) {
                     return item;
@@ -28,22 +27,22 @@ public class CatalogSpec {
         }
     }
 
-    private TypeEnum type;
-    private IcebergCatalogSpecModeConfig modeConfig;
+    private Type type;
+    private CatalogSpecModeConfig modeConfig;
 
-    public TypeEnum getType() {
+    public Type getType() {
         return type;
     }
 
-    public void setType(TypeEnum type) {
+    public void setType(Type type) {
         this.type = type;
     }
 
-    public IcebergCatalogSpecModeConfig getModeConfig() {
+    public CatalogSpecModeConfig getModeConfig() {
         return modeConfig;
     }
 
-    public void setModeConfig(IcebergCatalogSpecModeConfig modeConfig) {
+    public void setModeConfig(CatalogSpecModeConfig modeConfig) {
         this.modeConfig = modeConfig;
     }
 }

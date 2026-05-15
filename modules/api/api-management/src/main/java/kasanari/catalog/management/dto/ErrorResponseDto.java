@@ -1,6 +1,6 @@
-package kasanari.catalog.management.model;
+package kasanari.catalog.management.dto;
 
-public class ErrorResponse {
+public class ErrorResponseDto {
     private String message;
 
     public String getMessage() {

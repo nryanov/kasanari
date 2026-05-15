@@ -4,5 +4,5 @@ plugins {
 }
 
 dependencies {
-    api(project(":modules:api:api-management"))
+    api(project(":modules:repository:repository-management:repository-management-common"))
 }

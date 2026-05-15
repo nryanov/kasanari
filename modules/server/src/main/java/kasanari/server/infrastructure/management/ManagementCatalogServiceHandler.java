@@ -4,9 +4,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.management.api.ManagementRestCatalogsService;
-import kasanari.catalog.management.model.CatalogPublicInfo;
-import kasanari.catalog.management.model.CreateCatalogRequest;
-import kasanari.catalog.management.model.UpdateCatalogRequest;
+import kasanari.catalog.management.dto.CatalogPublicInfoDto;
+import kasanari.catalog.management.dto.CreateCatalogRequestDto;
+import kasanari.catalog.management.dto.UpdateCatalogRequestDto;
 import kasanari.management.catalog.ManagementCatalogService;
 import kasanari.repository.management.catalog.model.CatalogMetadata;
 import kasanari.server.infrastructure.http.ApiFallbacks;
@@ -20,7 +20,7 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     }
 
     @Override
-    public Response createCatalog(CreateCatalogRequest createCatalogRequest, SecurityContext securityContext) {
+    public Response createCatalog(CreateCatalogRequestDto createCatalogRequest, SecurityContext securityContext) {
         if (createCatalogRequest == null
                 || createCatalogRequest.getCatalogId() == null
                 || createCatalogRequest.getCatalogType() == null
@@ -30,13 +30,23 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
         }
 
         try {
-            CatalogSpecMapper.validate(createCatalogRequest.getCatalogType(), createCatalogRequest.getMode(), createCatalogRequest.getSpec());
+            CatalogSpecMapper.validate(
+                    CatalogSpecMapper.toDomain(createCatalogRequest.getCatalogType()),
+                    CatalogSpecMapper.toDomain(createCatalogRequest.getMode()),
+                    createCatalogRequest.getSpec()
+            );
         } catch (IllegalArgumentException e) {
             return ApiFallbacks.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
 
-        var spec = CatalogSpecMapper.copy(createCatalogRequest.getSpec());
-        var metadata = new CatalogMetadata(createCatalogRequest.getCatalogId(), createCatalogRequest.getCatalogType(), createCatalogRequest.getMode(), spec, 1L);
+        var spec = CatalogSpecMapper.toDomain(createCatalogRequest.getSpec());
+        var metadata = new CatalogMetadata(
+                createCatalogRequest.getCatalogId(),
+                CatalogSpecMapper.toDomain(createCatalogRequest.getCatalogType()),
+                CatalogSpecMapper.toDomain(createCatalogRequest.getMode()),
+                spec,
+                1L
+        );
         var created = catalogService.create(metadata);
 
         if (created) {
@@ -69,7 +79,7 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     }
 
     @Override
-    public Response updateCatalog(String catalogId, UpdateCatalogRequest updateCatalogRequest, SecurityContext securityContext) {
+    public Response updateCatalog(String catalogId, UpdateCatalogRequestDto updateCatalogRequest, SecurityContext securityContext) {
         if (updateCatalogRequest == null || updateCatalogRequest.getSpec() == null) {
             return ApiFallbacks.error(Response.Status.BAD_REQUEST, "Catalog update requires spec");
         }
@@ -85,7 +95,7 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
             return ApiFallbacks.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
 
-        var spec = CatalogSpecMapper.copy(updateCatalogRequest.getSpec());
+        var spec = CatalogSpecMapper.toDomain(updateCatalogRequest.getSpec());
 
         try {
             var updated = catalogService.update(catalogId, spec, updateCatalogRequest.getExpectedVersion());
@@ -94,18 +104,18 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
                 return ApiFallbacks.error(Response.Status.NOT_FOUND, "Catalog not found");
             }
 
-            return Response.status(Response.Status.OK).entity(updated).build();
+            return Response.status(Response.Status.OK).entity(toPublicInfo(updated.get())).build();
         } catch (IllegalStateException e) {
             return ApiFallbacks.error(Response.Status.CONFLICT, e.getMessage());
         }
     }
 
-    private CatalogPublicInfo toPublicInfo(CatalogMetadata metadata) {
-        var info = new CatalogPublicInfo();
+    private CatalogPublicInfoDto toPublicInfo(CatalogMetadata metadata) {
+        var info = new CatalogPublicInfoDto();
         info.setCatalogId(metadata.catalogId());
-        info.setCatalogType(metadata.catalogType());
-        info.setMode(metadata.catalogMode());
-        info.setSpec(CatalogSpecMapper.copy(metadata.spec()));
+        info.setCatalogType(CatalogSpecMapper.toApi(metadata.catalogType()));
+        info.setMode(CatalogSpecMapper.toApi(metadata.catalogMode()));
+        info.setSpec(CatalogSpecMapper.toApi(metadata.spec()));
         info.setVersion(metadata.version());
         return info;
     }

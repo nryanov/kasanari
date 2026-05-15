@@ -1,12 +1,12 @@
 package kasanari.management.catalog;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import kasanari.catalog.management.model.CatalogSpec;
 import kasanari.repository.core.TransactionManager;
 import kasanari.repository.jdbc.JdbcTransactionManager;
 import kasanari.repository.jdbc.KasanariDataSource;
 import kasanari.repository.management.catalog.CatalogMetadataRepository;
 import kasanari.repository.management.catalog.model.CatalogMetadata;
+import kasanari.repository.management.catalog.model.CatalogSpec;
 import kasanari.repository.management.catalog.postgres.JdbcCatalogMetadataRepository;
 import kasanari.repository.management.catalog.postgres.JdbcManagementCatalogQueries;
 import org.jdbi.v3.core.Handle;

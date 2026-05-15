@@ -1,4 +1,4 @@
-package kasanari.catalog.management.model;
+package kasanari.repository.management.catalog.model;
 
 public enum CatalogMode {
     INTERNAL("INTERNAL"),

@@ -2,11 +2,11 @@ package kasanari.repository.management.catalog.postgres;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import kasanari.catalog.management.model.CatalogMode;
-import kasanari.catalog.management.model.CatalogSpec;
-import kasanari.catalog.management.model.CatalogType;
 import kasanari.repository.management.catalog.CatalogMetadataRepository;
+import kasanari.repository.management.catalog.model.CatalogMode;
 import kasanari.repository.management.catalog.model.CatalogMetadata;
+import kasanari.repository.management.catalog.model.CatalogSpec;
+import kasanari.repository.management.common.model.CatalogType;
 import org.jdbi.v3.core.Handle;
 
 import java.util.Optional;

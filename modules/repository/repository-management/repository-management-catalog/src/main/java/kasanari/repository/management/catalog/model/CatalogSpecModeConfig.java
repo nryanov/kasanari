@@ -1,9 +1,9 @@
-package kasanari.catalog.management.model;
+package kasanari.repository.management.catalog.model;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class IcebergCatalogSpecModeConfig {
+public class CatalogSpecModeConfig {
     private Map<String, String> properties = new HashMap<>();
     private String endpoint;
 

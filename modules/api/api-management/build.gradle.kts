@@ -41,8 +41,9 @@ openApiGenerate {
 
     additionalProperties.put("apiNamePrefix", "ManagementRest")
     additionalProperties.put("apiNameSuffix", "")
+    additionalProperties.put("modelNameSuffix", "Dto")
     additionalProperties.put("apiPackage", "kasanari.catalog.management.api")
-    additionalProperties.put("modelPackage", "kasanari.catalog.management.model")
+    additionalProperties.put("modelPackage", "kasanari.catalog.management.dto")
     additionalProperties.put("dateLibrary", "java8")
 }
 

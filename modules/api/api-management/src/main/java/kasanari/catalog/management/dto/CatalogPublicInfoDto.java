@@ -1,10 +1,10 @@
-package kasanari.catalog.management.model;
+package kasanari.catalog.management.dto;
 
-public class CatalogPublicInfo {
+public class CatalogPublicInfoDto {
     private String catalogId;
-    private CatalogType catalogType;
-    private CatalogMode mode;
-    private CatalogSpec spec;
+    private CatalogTypeDto catalogType;
+    private CatalogModeDto mode;
+    private CatalogSpecDto spec;
     private Long version;
 
     public String getCatalogId() {
@@ -15,27 +15,27 @@ public class CatalogPublicInfo {
         this.catalogId = catalogId;
     }
 
-    public CatalogType getCatalogType() {
+    public CatalogTypeDto getCatalogType() {
         return catalogType;
     }
 
-    public void setCatalogType(CatalogType catalogType) {
+    public void setCatalogType(CatalogTypeDto catalogType) {
         this.catalogType = catalogType;
     }
 
-    public CatalogMode getMode() {
+    public CatalogModeDto getMode() {
         return mode;
     }
 
-    public void setMode(CatalogMode mode) {
+    public void setMode(CatalogModeDto mode) {
         this.mode = mode;
     }
 
-    public CatalogSpec getSpec() {
+    public CatalogSpecDto getSpec() {
         return spec;
     }
 
-    public void setSpec(CatalogSpec spec) {
+    public void setSpec(CatalogSpecDto spec) {
         this.spec = spec;
     }
 

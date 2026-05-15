@@ -1,4 +1,4 @@
-package kasanari.catalog.management.model;
+package kasanari.repository.management.common.model;
 
 public enum CatalogType {
     ICEBERG("ICEBERG"),

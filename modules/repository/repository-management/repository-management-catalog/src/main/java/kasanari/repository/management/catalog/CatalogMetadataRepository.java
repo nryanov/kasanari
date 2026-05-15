@@ -1,8 +1,8 @@
 package kasanari.repository.management.catalog;
 
 
-import kasanari.catalog.management.model.CatalogSpec;
 import kasanari.repository.management.catalog.model.CatalogMetadata;
+import kasanari.repository.management.catalog.model.CatalogSpec;
 
 import java.util.Optional;
 

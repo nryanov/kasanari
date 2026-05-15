@@ -1,8 +1,8 @@
 package kasanari.repository.management.security.postgres;
 
-import kasanari.catalog.management.model.CatalogType;
-import kasanari.catalog.management.model.RoleBinding;
 import kasanari.repository.management.security.RoleBindingRepository;
+import kasanari.repository.management.common.model.CatalogType;
+import kasanari.repository.management.security.model.Role;
 import kasanari.repository.management.security.model.StoredRoleBinding;
 import org.jdbi.v3.core.Handle;
 
@@ -20,7 +20,7 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
         return query.map((rs, ctx) -> new StoredRoleBinding(
                 rs.getString("subject"),
                 CatalogType.fromValue(rs.getString("catalog_type")),
-                RoleBinding.RoleEnum.fromValue(rs.getString("role_name"))
+                Role.fromValue(rs.getString("role_name"))
         )).list();
     }
 

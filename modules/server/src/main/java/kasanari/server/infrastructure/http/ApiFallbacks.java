@@ -1,7 +1,7 @@
 package kasanari.server.infrastructure.http;
 
 import jakarta.ws.rs.core.Response;
-import kasanari.catalog.management.model.ErrorResponse;
+import kasanari.catalog.management.dto.ErrorResponseDto;
 
 import java.util.Map;
 
@@ -19,7 +19,7 @@ public final class ApiFallbacks {
     }
 
     public static Response error(Response.Status status, String message) {
-        var error = new ErrorResponse();
+        var error = new ErrorResponseDto();
         error.setMessage(message);
         return Response.status(status).entity(error).build();
     }
