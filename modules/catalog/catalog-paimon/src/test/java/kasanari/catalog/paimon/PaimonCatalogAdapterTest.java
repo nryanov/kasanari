@@ -60,7 +60,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class PaimonCatalogAdapterTest {
     protected PaimonCatalogAdapter catalog;
-    protected String prefix;
     protected String database;
     protected String table;
     protected String renamedTable;
@@ -79,7 +78,6 @@ public abstract class PaimonCatalogAdapterTest {
     @BeforeEach
     public final void beforeEach() {
         reset();
-        prefix = "";
         database = uniqueName("db");
         table = uniqueName("table");
         renamedTable = uniqueName("table_renamed");
@@ -207,9 +205,9 @@ public abstract class PaimonCatalogAdapterTest {
         assumeTrue(supportsDatabases());
 
         var request = new CreateDatabaseRequest(database, Collections.emptyMap());
-        catalog.createDatabase(prefix, request);
+        catalog.createDatabase(request);
 
-        assertTrue(catalog.listDatabases(prefix, 100, null).getDatabases().contains(database));
+        assertTrue(catalog.listDatabases(100, null).getDatabases().contains(database));
     }
 
     @Test
@@ -217,9 +215,9 @@ public abstract class PaimonCatalogAdapterTest {
         assumeTrue(supportsDatabases());
 
         var request = new CreateDatabaseRequest(database, Map.of("owner", "test"));
-        catalog.createDatabase(prefix, request);
+        catalog.createDatabase(request);
 
-        var created = catalog.getDatabase(prefix, database);
+        var created = catalog.getDatabase(database);
 
         assertEquals(database, created.getName());
 
@@ -233,10 +231,10 @@ public abstract class PaimonCatalogAdapterTest {
         assumeTrue(supportsDatabases());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
-        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createDatabase(createDatabaseRequest);
 
         var expected = database;
-        var result = catalog.getDatabase(prefix, database).getName();
+        var result = catalog.getDatabase(database).getName();
 
         assertEquals(expected, result);
     }
@@ -246,10 +244,10 @@ public abstract class PaimonCatalogAdapterTest {
         assumeTrue(supportsDatabases());
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.dropDatabase(prefix, database);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.dropDatabase(database);
 
-        assertFalse(catalog.listDatabases(prefix, 100, null).getDatabases().contains(database));
+        assertFalse(catalog.listDatabases(100, null).getDatabases().contains(database));
     }
 
     @Test
@@ -258,9 +256,9 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var alterDatabaseRequest = new AlterDatabaseRequest(List.of("owner"), Map.of("owner", "updated"));
-        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createDatabase(createDatabaseRequest);
 
-        var result = catalog.alterDatabase(prefix, database, alterDatabaseRequest);
+        var result = catalog.alterDatabase(database, alterDatabaseRequest);
         assertTrue(result.getUpdated().contains("owner"));
     }
 
@@ -270,10 +268,10 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var alterDatabaseRequest = new AlterDatabaseRequest(null, null);
-        catalog.createDatabase(prefix, createDatabaseRequest);
+        catalog.createDatabase(createDatabaseRequest);
 
         var expected = Collections.emptyList();
-        var result = catalog.alterDatabase(prefix, database, alterDatabaseRequest).getUpdated();
+        var result = catalog.alterDatabase(database, alterDatabaseRequest).getUpdated();
 
         assertEquals(expected, result);
     }
@@ -284,10 +282,10 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var registerTableRequest = new RegisterTableRequest(Identifier.create(database, table), registeredTablePath(database, table));
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.registerTable(prefix, database, registerTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.registerTable(database, registerTableRequest);
 
-        assertEquals(table, catalog.getTable(prefix, database, table).getName());
+        assertEquals(table, catalog.getTable(database, table).getName());
     }
 
     @Test
@@ -296,10 +294,10 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
-        assertTrue(catalog.listTables(prefix, database, 100, null, null).getTables().contains(table));
+        assertTrue(catalog.listTables(database, 100, null, null).getTables().contains(table));
     }
 
     @Test
@@ -308,13 +306,13 @@ public abstract class PaimonCatalogAdapterTest {
 
         var secondTable = uniqueName("table");
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, new CreateTableRequest(Identifier.create(database, table), tableSchema()));
-        catalog.createTable(prefix, database, new CreateTableRequest(Identifier.create(database, secondTable), tableSchema()));
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, new CreateTableRequest(Identifier.create(database, table), tableSchema()));
+        catalog.createTable(database, new CreateTableRequest(Identifier.create(database, secondTable), tableSchema()));
 
-        var firstPage = catalog.listTables(prefix, database, 1, null, null);
+        var firstPage = catalog.listTables(database, 1, null, null);
         var nextPageToken = firstPage.getNextPageToken();
-        var secondPage = catalog.listTables(prefix, database, 1, nextPageToken, null);
+        var secondPage = catalog.listTables(database, 1, nextPageToken, null);
 
         assertEquals(1, firstPage.getTables().size());
         assertNotNull(nextPageToken);
@@ -333,10 +331,10 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
-        assertEquals(table, catalog.getTable(prefix, database, table).getName());
+        assertEquals(table, catalog.getTable(database, table).getName());
     }
 
     @Test
@@ -345,10 +343,10 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
-        var result = catalog.listTableDetails(prefix, database, 100, null, null, null)
+        var result = catalog.listTableDetails(database, 100, null, null, null)
                 .getTableDetails()
                 .stream()
                 .anyMatch(it -> table.equals(it.getName()));
@@ -362,11 +360,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
         var expected = List.of(Identifier.create(database, table));
-        var result = catalog.listTablesGlobally(prefix, database, table, 100, null).getTables();
+        var result = catalog.listTablesGlobally(database, table, 100, null).getTables();
 
         assertEquals(expected, result);
     }
@@ -377,13 +375,13 @@ public abstract class PaimonCatalogAdapterTest {
 
         var secondTable = uniqueName("table");
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, new CreateTableRequest(Identifier.create(database, table), tableSchema()));
-        catalog.createTable(prefix, database, new CreateTableRequest(Identifier.create(database, secondTable), tableSchema()));
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, new CreateTableRequest(Identifier.create(database, table), tableSchema()));
+        catalog.createTable(database, new CreateTableRequest(Identifier.create(database, secondTable), tableSchema()));
 
-        var firstPage = catalog.listTablesGlobally(prefix, database, null, 1, null);
+        var firstPage = catalog.listTablesGlobally(database, null, 1, null);
         var nextPageToken = firstPage.getNextPageToken();
-        var secondPage = catalog.listTablesGlobally(prefix, database, null, 1, nextPageToken);
+        var secondPage = catalog.listTablesGlobally(database, null, 1, nextPageToken);
 
         assertEquals(1, firstPage.getTables().size());
         assertNotNull(nextPageToken);
@@ -402,11 +400,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
         var expected = table;
-        var result = catalog.getTable(prefix, database, table).getName();
+        var result = catalog.getTable(database, table).getName();
 
         assertEquals(expected, result);
     }
@@ -418,11 +416,11 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         var alterTableRequest = new AlterTableRequest(Collections.emptyList());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
-        catalog.alterTable(prefix, database, table, alterTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
+        catalog.alterTable(database, table, alterTableRequest);
 
-        assertEquals(table, catalog.getTable(prefix, database, table).getName());
+        assertEquals(table, catalog.getTable(database, table).getName());
     }
 
     @Test
@@ -432,11 +430,11 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         var alterTableRequest = new AlterTableRequest(null);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
-        catalog.alterTable(prefix, database, table, alterTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
+        catalog.alterTable(database, table, alterTableRequest);
 
-        assertEquals(table, catalog.getTable(prefix, database, table).getName());
+        assertEquals(table, catalog.getTable(database, table).getName());
     }
 
     @Test
@@ -445,11 +443,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
-        catalog.dropTable(prefix, database, table);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
+        catalog.dropTable(database, table);
 
-        assertFalse(catalog.listTables(prefix, database, 100, null, null).getTables().contains(table));
+        assertFalse(catalog.listTables(database, 100, null, null).getTables().contains(table));
     }
 
     @Test
@@ -459,11 +457,11 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         var renameTableRequest = new RenameTableRequest(Identifier.create(database, table), Identifier.create(database, renamedTable));
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
-        catalog.renameTable(prefix, renameTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
+        catalog.renameTable(renameTableRequest);
 
-        var tables = catalog.listTables(prefix, database, 100, null, null).getTables();
+        var tables = catalog.listTables(database, 100, null, null).getTables();
         assertFalse(tables.contains(table));
         assertTrue(tables.contains(renamedTable));
     }
@@ -475,9 +473,9 @@ public abstract class PaimonCatalogAdapterTest {
         createDatabaseAndTable();
 
         // commitTable (commitSnapshot) is triggered internally via table.commit operation
-        var latestSnapshotBeforeCommit = catalog.getVersionSnapshot(prefix, database, table, "LATEST").getSnapshot();
+        var latestSnapshotBeforeCommit = catalog.getVersionSnapshot(database, table, "LATEST").getSnapshot();
         triggerTableSnapshot(database, table);
-        var latestSnapshotAfterCommit = catalog.getVersionSnapshot(prefix, database, table, "LATEST").getSnapshot();
+        var latestSnapshotAfterCommit = catalog.getVersionSnapshot(database, table, "LATEST").getSnapshot();
 
         assertNull(latestSnapshotBeforeCommit);
         assertNotNull(latestSnapshotAfterCommit);
@@ -489,11 +487,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         createDatabaseAndTable();
         triggerTableSnapshot(database, table);
-        var snapshotId = catalog.getVersionSnapshot(prefix, database, table, "LATEST").getSnapshot().id();
+        var snapshotId = catalog.getVersionSnapshot(database, table, "LATEST").getSnapshot().id();
         var rollbackTableRequest = new RollbackTableRequest(Instant.snapshot(snapshotId), null);
-        catalog.rollbackTable(prefix, database, table, rollbackTableRequest);
+        catalog.rollbackTable(database, table, rollbackTableRequest);
 
-        assertEquals(snapshotId, catalog.getVersionSnapshot(prefix, database, table, "LATEST").getSnapshot().id());
+        assertEquals(snapshotId, catalog.getVersionSnapshot(database, table, "LATEST").getSnapshot().id());
     }
 
     @Test
@@ -507,12 +505,12 @@ public abstract class PaimonCatalogAdapterTest {
         ));
 
         var rollbackSchemaRequest = new RollbackSchemaRequest(0L);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
-        catalog.alterTable(prefix, database, table, alterTableRequest);
-        catalog.rollbackSchema(prefix, database, table, rollbackSchemaRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
+        catalog.alterTable(database, table, alterTableRequest);
+        catalog.rollbackSchema(database, table, rollbackSchemaRequest);
 
-        assertEquals(table, catalog.getTable(prefix, database, table).getName());
+        assertEquals(table, catalog.getTable(database, table).getName());
     }
 
     @Test
@@ -525,15 +523,15 @@ public abstract class PaimonCatalogAdapterTest {
                 SchemaChange.addColumn("newField", DataTypes.INT())
         ));
 
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
         // 2 schemas (0, 1) existing
-        catalog.alterTable(prefix, database, table, alterTableRequest);
+        catalog.alterTable(database, table, alterTableRequest);
 
         // 1 schemas (0) existing
-        assertDoesNotThrow(() -> catalog.rollbackSchema(prefix, database, table, new RollbackSchemaRequest(0L)));
-        assertThrows(RuntimeException.class, () -> catalog.rollbackSchema(prefix, database, table, new RollbackSchemaRequest(1L)));
+        assertDoesNotThrow(() -> catalog.rollbackSchema(database, table, new RollbackSchemaRequest(0L)));
+        assertThrows(RuntimeException.class, () -> catalog.rollbackSchema(database, table, new RollbackSchemaRequest(1L)));
     }
 
     @Test
@@ -546,15 +544,15 @@ public abstract class PaimonCatalogAdapterTest {
                 SchemaChange.addColumn("newField", DataTypes.INT())
         ));
 
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
         // 2 schemas (0, 1) existing
-        catalog.alterTable(prefix, database, table, alterTableRequest);
+        catalog.alterTable(database, table, alterTableRequest);
         triggerTableSnapshotAltered(database, table);
 
         // failed attempt to roll back to previous schema
-        assertThrows(RuntimeException.class, () -> catalog.rollbackSchema(prefix, database, table, new RollbackSchemaRequest(0L)));
+        assertThrows(RuntimeException.class, () -> catalog.rollbackSchema(database, table, new RollbackSchemaRequest(0L)));
     }
 
     @Test
@@ -570,10 +568,10 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         var authTableQueryRequest = new AuthTableQueryRequest(null);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
-        assertNotNull(catalog.authTableQuery(prefix, database, table, authTableQueryRequest));
+        assertNotNull(catalog.authTableQuery(database, table, authTableQueryRequest));
     }
 
     @Test
@@ -582,8 +580,8 @@ public abstract class PaimonCatalogAdapterTest {
 
         createDatabaseAndTable();
         triggerTableSnapshot(database, table);
-        var latestSnapshot = catalog.getVersionSnapshot(prefix, database, table, "LATEST").getSnapshot();
-        var result = catalog.getTableSnapshot(prefix, database, table).getSnapshot();
+        var latestSnapshot = catalog.getVersionSnapshot(database, table, "LATEST").getSnapshot();
+        var result = catalog.getTableSnapshot(database, table).getSnapshot();
 
         assertNotNull(result);
         assertEquals(latestSnapshot.id(), result.snapshot().id());
@@ -595,11 +593,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
         triggerTableSnapshot(database, table);
-        var latestSnapshot = catalog.getVersionSnapshot(prefix, database, table, "LATEST").getSnapshot();
-        var result = catalog.getVersionSnapshot(prefix, database, table, "LATEST").getSnapshot();
+        var latestSnapshot = catalog.getVersionSnapshot(database, table, "LATEST").getSnapshot();
+        var result = catalog.getVersionSnapshot(database, table, "LATEST").getSnapshot();
 
         assertNotNull(result);
         assertEquals(latestSnapshot.id(), result.id());
@@ -611,12 +609,12 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
         triggerTableSnapshot(database, table);
 
-        var expected = List.of(catalog.getVersionSnapshot(prefix, database, table, "LATEST").getSnapshot().id());
-        var result = catalog.listSnapshots(prefix, database, table, 100, null).getSnapshots();
+        var expected = List.of(catalog.getVersionSnapshot(database, table, "LATEST").getSnapshot().id());
+        var result = catalog.listSnapshots(database, table, 100, null).getSnapshots();
         var resultIds = result.stream().map(Snapshot::id).toList();
 
         assertEquals(expected, resultIds);
@@ -628,12 +626,12 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
         triggerPartitionedTableSnapshot(database, table, 1, "dt_a");
         triggerPartitionedTableSnapshot(database, table, 2, "dt_b");
 
-        var result = catalog.listPartitions(prefix, database, table, 100, null, null).getPartitions();
+        var result = catalog.listPartitions(database, table, 100, null, null).getPartitions();
         var specs = result.stream().map(PartitionStatistics::spec).toList();
 
         assertEquals(2, result.size());
@@ -647,14 +645,14 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
         triggerPartitionedTableSnapshot(database, table, 1, "dt_a");
         triggerPartitionedTableSnapshot(database, table, 2, "dt_b");
 
-        var firstPage = catalog.listPartitions(prefix, database, table, 1, null, null);
+        var firstPage = catalog.listPartitions(database, table, 1, null, null);
         var nextPageToken = firstPage.getNextPageToken();
-        var secondPage = catalog.listPartitions(prefix, database, table, 1, nextPageToken, null);
+        var secondPage = catalog.listPartitions(database, table, 1, nextPageToken, null);
 
         assertEquals(1, firstPage.getPartitions().size());
         assertNotNull(nextPageToken);
@@ -674,11 +672,11 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
         var markDonePartitionsRequest = new MarkDonePartitionsRequest(List.of(Map.of("dt", "dt_a")));
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
         triggerPartitionedTableSnapshot(database, table, 1, "dt_a");
-        catalog.markDonePartitions(prefix, database, table, markDonePartitionsRequest);
-        var result = catalog.listPartitions(prefix, database, table, 100, null, null).getPartitions();
+        catalog.markDonePartitions(database, table, markDonePartitionsRequest);
+        var result = catalog.listPartitions(database, table, 100, null, null).getPartitions();
         var partition = result.stream()
                 .filter(it -> Map.of("dt", "dt_a").equals(it.spec()))
                 .findFirst()
@@ -695,12 +693,12 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
         var listPartitionsByNamesRequest = new ListPartitionsByNamesRequest(List.of(Map.of("dt", "dt_a")));
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
         triggerPartitionedTableSnapshot(database, table, 1, "dt_a");
         triggerPartitionedTableSnapshot(database, table, 2, "dt_b");
 
-        var result = catalog.listPartitionsByNames(prefix, database, table, listPartitionsByNamesRequest).getPartitions();
+        var result = catalog.listPartitionsByNames(database, table, listPartitionsByNamesRequest).getPartitions();
         var specs = result.stream().map(PartitionStatistics::spec).toList();
 
         assertEquals(1, result.size());
@@ -713,8 +711,8 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
         try {
             catalog.getUnderlyingCatalog().createPartitions(
@@ -725,7 +723,7 @@ public abstract class PaimonCatalogAdapterTest {
             throw new RuntimeException(e);
         }
 
-        var partitions = catalog.listPartitions(prefix, database, table, 100, null, null).getPartitions();
+        var partitions = catalog.listPartitions(database, table, 100, null, null).getPartitions();
         var specs = partitions.stream().map(PartitionStatistics::spec).toList();
         assertTrue(specs.contains(Map.of("dt", "dt_created")));
     }
@@ -736,8 +734,8 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
         try {
             var tableIdentifier = Identifier.create(database, table);
@@ -753,7 +751,7 @@ public abstract class PaimonCatalogAdapterTest {
             throw new RuntimeException(e);
         }
 
-        var partitions = catalog.listPartitions(prefix, database, table, 100, null, null).getPartitions();
+        var partitions = catalog.listPartitions(database, table, 100, null, null).getPartitions();
         var specs = partitions.stream().map(PartitionStatistics::spec).toList();
         assertFalse(specs.contains(Map.of("dt", "dt_drop")));
     }
@@ -764,8 +762,8 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), partitionedTableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
         try {
             catalog.getUnderlyingCatalog().alterPartitions(
@@ -783,7 +781,7 @@ public abstract class PaimonCatalogAdapterTest {
             throw new RuntimeException(e);
         }
 
-        var partitions = catalog.listPartitions(prefix, database, table, 100, null, null).getPartitions();
+        var partitions = catalog.listPartitions(database, table, 100, null, null).getPartitions();
         var altered = partitions.stream()
                 .filter(partition -> Map.of("dt", "dt_altered").equals(partition.spec()))
                 .findFirst()
@@ -802,11 +800,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
         var expected = List.of("main");
-        var result = catalog.listBranches(prefix, database, table).branches();
+        var result = catalog.listBranches(database, table).branches();
 
         assertEquals(expected, result);
     }
@@ -818,10 +816,10 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         var createBranchRequest = new CreateBranchRequest(branch, null);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
-        catalog.createBranch(prefix, database, table, createBranchRequest);
-        var branches = catalog.listBranches(prefix, database, table).branches();
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
+        catalog.createBranch(database, table, createBranchRequest);
+        var branches = catalog.listBranches(database, table).branches();
 
         assertTrue(branches.contains(branch));
     }
@@ -833,11 +831,11 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         var createBranchRequest = new CreateBranchRequest(branch, null);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
-        catalog.createBranch(prefix, database, table, createBranchRequest);
-        catalog.dropBranch(prefix, database, table, branch);
-        var branches = catalog.listBranches(prefix, database, table).branches();
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
+        catalog.createBranch(database, table, createBranchRequest);
+        catalog.dropBranch(database, table, branch);
+        var branches = catalog.listBranches(database, table).branches();
 
         assertFalse(branches.contains(branch));
     }
@@ -850,11 +848,11 @@ public abstract class PaimonCatalogAdapterTest {
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         var createBranchRequest = new CreateBranchRequest(branch, null);
         var renameBranchRequest = new RenameBranchRequest(renamedBranch);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
-        catalog.createBranch(prefix, database, table, createBranchRequest);
-        catalog.renameBranch(prefix, database, table, branch, renameBranchRequest);
-        var branches = catalog.listBranches(prefix, database, table).branches();
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
+        catalog.createBranch(database, table, createBranchRequest);
+        catalog.renameBranch(database, table, branch, renameBranchRequest);
+        var branches = catalog.listBranches(database, table).branches();
 
         assertFalse(branches.contains(branch));
         assertTrue(branches.contains(renamedBranch));
@@ -869,21 +867,21 @@ public abstract class PaimonCatalogAdapterTest {
         var createBranchRequest = new CreateBranchRequest(branch, null);
         var forwardBranchRequest = new ForwardBranchRequest();
 
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
         triggerTableSnapshot(database, table);
 
-        catalog.createBranch(prefix, database, table, createBranchRequest);
+        catalog.createBranch(database, table, createBranchRequest);
         triggerTableSnapshotInBranch(database, table, branch);
-        var snapshot = catalog.getTableSnapshot(prefix, database, table);
+        var snapshot = catalog.getTableSnapshot(database, table);
         var snapshotId = snapshot.getSnapshot().snapshot().id();
 
         // paimon requires to have at least one tag on branch for fast-forward
         catalog.getUnderlyingCatalog().createTag(new Identifier(database, table, branch), tag, snapshotId, null, true);
 
-        catalog.forwardBranch(prefix, database, table, branch, forwardBranchRequest);
+        catalog.forwardBranch(database, table, branch, forwardBranchRequest);
 
-        var branches = catalog.listBranches(prefix, database, table).branches();
+        var branches = catalog.listBranches(database, table).branches();
 
         assertTrue(branches.contains(branch));
     }
@@ -895,13 +893,13 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         var createTagRequest = new CreateTagRequest(tag, null, null);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
         triggerTableSnapshot(database, table);
-        catalog.createTag(prefix, database, table, createTagRequest);
+        catalog.createTag(database, table, createTagRequest);
 
         var expected = List.of(tag);
-        var result = catalog.listTags(prefix, database, table, 100, null, null).tags();
+        var result = catalog.listTags(database, table, 100, null, null).tags();
 
         assertEquals(expected, result);
     }
@@ -913,15 +911,15 @@ public abstract class PaimonCatalogAdapterTest {
         var secondTag = uniqueName("tag");
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
         triggerTableSnapshot(database, table);
-        catalog.createTag(prefix, database, table, new CreateTagRequest(tag, null, null));
-        catalog.createTag(prefix, database, table, new CreateTagRequest(secondTag, null, null));
+        catalog.createTag(database, table, new CreateTagRequest(tag, null, null));
+        catalog.createTag(database, table, new CreateTagRequest(secondTag, null, null));
 
-        var firstPage = catalog.listTags(prefix, database, table, 1, null, null);
+        var firstPage = catalog.listTags(database, table, 1, null, null);
         var nextPageToken = firstPage.getNextPageToken();
-        var secondPage = catalog.listTags(prefix, database, table, 1, nextPageToken, null);
+        var secondPage = catalog.listTags(database, table, 1, nextPageToken, null);
 
         assertEquals(1, firstPage.tags().size());
         assertNotNull(nextPageToken);
@@ -941,12 +939,12 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         var createTagRequest = new CreateTagRequest(tag, null, null);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
         triggerTableSnapshot(database, table);
-        catalog.createTag(prefix, database, table, createTagRequest);
+        catalog.createTag(database, table, createTagRequest);
 
-        assertEquals(tag, catalog.getTag(prefix, database, table, tag).tagName());
+        assertEquals(tag, catalog.getTag(database, table, tag).tagName());
     }
 
     @Test
@@ -956,13 +954,13 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         var createTagRequest = new CreateTagRequest(tag, null, null);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
         triggerTableSnapshot(database, table);
-        catalog.createTag(prefix, database, table, createTagRequest);
+        catalog.createTag(database, table, createTagRequest);
 
         var expected = tag;
-        var result = catalog.getTag(prefix, database, table, tag).tagName();
+        var result = catalog.getTag(database, table, tag).tagName();
 
         assertEquals(expected, result);
     }
@@ -974,13 +972,13 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
         var createTagRequest = new CreateTagRequest(tag, null, null);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
         triggerTableSnapshot(database, table);
-        catalog.createTag(prefix, database, table, createTagRequest);
-        catalog.deleteTag(prefix, database, table, tag);
+        catalog.createTag(database, table, createTagRequest);
+        catalog.deleteTag(database, table, tag);
 
-        assertEquals(Collections.emptyList(), catalog.listTags(prefix, database, table, 100, null, null).tags());
+        assertEquals(Collections.emptyList(), catalog.listTags(database, table, 100, null, null).tags());
     }
 
     @Test
@@ -989,11 +987,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
         var expected = Collections.emptyList();
-        var result = catalog.listConsumers(prefix, database, table, 100, null).getConsumers();
+        var result = catalog.listConsumers(database, table, 100, null).getConsumers();
 
         assertEquals(expected, result);
     }
@@ -1005,17 +1003,17 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createTableRequest = new CreateTableRequest(Identifier.create(database, table), tableSchema());
 
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createTable(prefix, database, createTableRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createTable(database, createTableRequest);
 
         triggerTableSnapshot(database, table);
-        var snapshot = catalog.getTableSnapshot(prefix, database, table);
+        var snapshot = catalog.getTableSnapshot(database, table);
         var snapshotId = snapshot.getSnapshot().snapshot().id();
         var resetConsumerRequest = new ResetConsumerRequest(uniqueName("consumer"), snapshotId);
 
-        catalog.resetConsumer(prefix, database, table, resetConsumerRequest);
+        catalog.resetConsumer(database, table, resetConsumerRequest);
 
-        var consumers = catalog.listConsumers(prefix, database, table, 100, null).getConsumers();
+        var consumers = catalog.listConsumers(database, table, 100, null).getConsumers();
         var consumerIds = consumers.stream().map(ConsumerInfo::getConsumerId).toList();
 
         assertEquals(List.of(resetConsumerRequest.consumerId()), consumerIds);
@@ -1027,11 +1025,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createView(prefix, database, createViewRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createView(database, createViewRequest);
 
         var expected = List.of(view);
-        var result = catalog.listViews(prefix, database, 100, null, null).getViews().stream()
+        var result = catalog.listViews(database, 100, null, null).getViews().stream()
                 .filter(expected::contains)
                 .toList();
 
@@ -1044,13 +1042,13 @@ public abstract class PaimonCatalogAdapterTest {
 
         var secondView = uniqueName("view");
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createView(prefix, database, new CreateViewRequest(Identifier.create(database, view), viewSchema()));
-        catalog.createView(prefix, database, new CreateViewRequest(Identifier.create(database, secondView), viewSchema()));
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createView(database, new CreateViewRequest(Identifier.create(database, view), viewSchema()));
+        catalog.createView(database, new CreateViewRequest(Identifier.create(database, secondView), viewSchema()));
 
-        var firstPage = catalog.listViews(prefix, database, 1, null, null);
+        var firstPage = catalog.listViews(database, 1, null, null);
         var nextPageToken = firstPage.getNextPageToken();
-        var secondPage = catalog.listViews(prefix, database, 1, nextPageToken, null);
+        var secondPage = catalog.listViews(database, 1, nextPageToken, null);
 
         assertEquals(1, firstPage.getViews().size());
         assertNotNull(nextPageToken);
@@ -1069,10 +1067,10 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createView(prefix, database, createViewRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createView(database, createViewRequest);
 
-        assertEquals(view, catalog.getView(prefix, database, view).getName());
+        assertEquals(view, catalog.getView(database, view).getName());
     }
 
     @Test
@@ -1081,11 +1079,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createView(prefix, database, createViewRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createView(database, createViewRequest);
 
         var expected = List.of(view);
-        var result = catalog.listViewDetails(prefix, database, 100, null, null)
+        var result = catalog.listViewDetails(database, 100, null, null)
                 .getViewDetails()
                 .stream()
                 .map(GetViewResponse::getName)
@@ -1101,11 +1099,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createView(prefix, database, createViewRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createView(database, createViewRequest);
 
         var expected = List.of(Identifier.create(database, view));
-        var result = catalog.listViewsGlobally(prefix, database, view, 100, null).getViews();
+        var result = catalog.listViewsGlobally(database, view, 100, null).getViews();
 
         assertEquals(expected, result);
     }
@@ -1116,13 +1114,13 @@ public abstract class PaimonCatalogAdapterTest {
 
         var secondView = uniqueName("view");
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createView(prefix, database, new CreateViewRequest(Identifier.create(database, view), viewSchema()));
-        catalog.createView(prefix, database, new CreateViewRequest(Identifier.create(database, secondView), viewSchema()));
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createView(database, new CreateViewRequest(Identifier.create(database, view), viewSchema()));
+        catalog.createView(database, new CreateViewRequest(Identifier.create(database, secondView), viewSchema()));
 
-        var firstPage = catalog.listViewsGlobally(prefix, database, null, 1, null);
+        var firstPage = catalog.listViewsGlobally(database, null, 1, null);
         var nextPageToken = firstPage.getNextPageToken();
-        var secondPage = catalog.listViewsGlobally(prefix, database, null, 1, nextPageToken);
+        var secondPage = catalog.listViewsGlobally(database, null, 1, nextPageToken);
 
         assertEquals(1, firstPage.getViews().size());
         assertNotNull(nextPageToken);
@@ -1141,11 +1139,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createView(prefix, database, createViewRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createView(database, createViewRequest);
 
         var expected = view;
-        var result = catalog.getView(prefix, database, view).getName();
+        var result = catalog.getView(database, view).getName();
 
         assertEquals(expected, result);
     }
@@ -1157,11 +1155,11 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
         var alterViewRequest = new AlterViewRequest(Collections.emptyList());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createView(prefix, database, createViewRequest);
-        catalog.alterView(prefix, database, view, alterViewRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createView(database, createViewRequest);
+        catalog.alterView(database, view, alterViewRequest);
 
-        assertEquals(view, catalog.getView(prefix, database, view).getName());
+        assertEquals(view, catalog.getView(database, view).getName());
     }
 
     @Test
@@ -1170,11 +1168,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createView(prefix, database, createViewRequest);
-        catalog.dropView(prefix, database, view);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createView(database, createViewRequest);
+        catalog.dropView(database, view);
 
-        assertEquals(Collections.emptyList(), catalog.listViews(prefix, database, 100, null, null).getViews());
+        assertEquals(Collections.emptyList(), catalog.listViews(database, 100, null, null).getViews());
     }
 
     @Test
@@ -1184,10 +1182,10 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createViewRequest = new CreateViewRequest(Identifier.create(database, view), viewSchema());
         var renameViewRequest = new RenameTableRequest(Identifier.create(database, view), Identifier.create(database, renamedView));
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createView(prefix, database, createViewRequest);
-        catalog.renameView(prefix, renameViewRequest);
-        var views = catalog.listViews(prefix, database, 100, null, null).getViews();
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createView(database, createViewRequest);
+        catalog.renameView(renameViewRequest);
+        var views = catalog.listViews(database, 100, null, null).getViews();
 
         assertFalse(views.contains(view));
         assertTrue(views.contains(renamedView));
@@ -1199,11 +1197,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createFunctionRequest = functionRequest(function);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createFunction(prefix, database, createFunctionRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createFunction(database, createFunctionRequest);
 
         var expected = List.of(function);
-        var result = catalog.listFunctions(prefix, database, 100, null, null).functions().stream()
+        var result = catalog.listFunctions(database, 100, null, null).functions().stream()
                 .filter(expected::contains)
                 .toList();
 
@@ -1216,13 +1214,13 @@ public abstract class PaimonCatalogAdapterTest {
 
         var secondFunction = uniqueName("fn");
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createFunction(prefix, database, functionRequest(function));
-        catalog.createFunction(prefix, database, functionRequest(secondFunction));
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createFunction(database, functionRequest(function));
+        catalog.createFunction(database, functionRequest(secondFunction));
 
-        var firstPage = catalog.listFunctions(prefix, database, 1, null, null);
+        var firstPage = catalog.listFunctions(database, 1, null, null);
         var nextPageToken = firstPage.getNextPageToken();
-        var secondPage = catalog.listFunctions(prefix, database, 1, nextPageToken, null);
+        var secondPage = catalog.listFunctions(database, 1, nextPageToken, null);
 
         assertEquals(1, firstPage.functions().size());
         assertNotNull(nextPageToken);
@@ -1241,10 +1239,10 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createFunctionRequest = functionRequest(function);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createFunction(prefix, database, createFunctionRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createFunction(database, createFunctionRequest);
 
-        assertEquals(function, catalog.getFunction(prefix, database, function).name());
+        assertEquals(function, catalog.getFunction(database, function).name());
     }
 
     @Test
@@ -1254,11 +1252,11 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createFunctionRequest = functionRequest(function);
 
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createFunction(prefix, database, createFunctionRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createFunction(database, createFunctionRequest);
 
         var expected = List.of(function);
-        var result = catalog.listFunctionDetails(prefix, database, 100, null, null)
+        var result = catalog.listFunctionDetails(database, 100, null, null)
                 .getFunctionDetails()
                 .stream()
                 .map(GetFunctionResponse::name)
@@ -1273,11 +1271,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createFunctionRequest = functionRequest(function);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createFunction(prefix, database, createFunctionRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createFunction(database, createFunctionRequest);
 
         var expected = List.of(Identifier.create(database, function));
-        var result = catalog.listFunctionsGlobally(prefix, database, function, 100, null).functions();
+        var result = catalog.listFunctionsGlobally(database, function, 100, null).functions();
 
         assertEquals(expected, result);
     }
@@ -1288,13 +1286,13 @@ public abstract class PaimonCatalogAdapterTest {
 
         var secondFunction = uniqueName("fn");
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createFunction(prefix, database, functionRequest(function));
-        catalog.createFunction(prefix, database, functionRequest(secondFunction));
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createFunction(database, functionRequest(function));
+        catalog.createFunction(database, functionRequest(secondFunction));
 
-        var firstPage = catalog.listFunctionsGlobally(prefix, database, null, 1, null);
+        var firstPage = catalog.listFunctionsGlobally(database, null, 1, null);
         var nextPageToken = firstPage.getNextPageToken();
-        var secondPage = catalog.listFunctionsGlobally(prefix, database, null, 1, nextPageToken);
+        var secondPage = catalog.listFunctionsGlobally(database, null, 1, nextPageToken);
 
         assertEquals(1, firstPage.functions().size());
         assertNotNull(nextPageToken);
@@ -1313,11 +1311,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createFunctionRequest = functionRequest(function);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createFunction(prefix, database, createFunctionRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createFunction(database, createFunctionRequest);
 
         var expected = function;
-        var result = catalog.getFunction(prefix, database, function).name();
+        var result = catalog.getFunction(database, function).name();
 
         assertEquals(expected, result);
     }
@@ -1329,11 +1327,11 @@ public abstract class PaimonCatalogAdapterTest {
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createFunctionRequest = functionRequest(function);
         var alterFunctionRequest = new AlterFunctionRequest(Collections.emptyList());
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createFunction(prefix, database, createFunctionRequest);
-        catalog.alterFunction(prefix, database, function, alterFunctionRequest);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createFunction(database, createFunctionRequest);
+        catalog.alterFunction(database, function, alterFunctionRequest);
 
-        assertEquals(function, catalog.getFunction(prefix, database, function).name());
+        assertEquals(function, catalog.getFunction(database, function).name());
     }
 
     @Test
@@ -1342,11 +1340,11 @@ public abstract class PaimonCatalogAdapterTest {
 
         var createDatabaseRequest = new CreateDatabaseRequest(database, Collections.emptyMap());
         var createFunctionRequest = functionRequest(function);
-        catalog.createDatabase(prefix, createDatabaseRequest);
-        catalog.createFunction(prefix, database, createFunctionRequest);
-        catalog.dropFunction(prefix, database, function);
+        catalog.createDatabase(createDatabaseRequest);
+        catalog.createFunction(database, createFunctionRequest);
+        catalog.dropFunction(database, function);
 
-        assertEquals(Collections.emptyList(), catalog.listFunctions(prefix, database, 100, null, null).functions());
+        assertEquals(Collections.emptyList(), catalog.listFunctions(database, 100, null, null).functions());
     }
 
     protected CreateFunctionRequest functionRequest(String name) {
@@ -1362,8 +1360,8 @@ public abstract class PaimonCatalogAdapterTest {
     }
 
     protected void createDatabaseAndTable() {
-        catalog.createDatabase(prefix, new CreateDatabaseRequest(database, Collections.emptyMap()));
-        catalog.createTable(prefix, database, new CreateTableRequest(Identifier.create(database, table), tableSchema()));
+        catalog.createDatabase(new CreateDatabaseRequest(database, Collections.emptyMap()));
+        catalog.createTable(database, new CreateTableRequest(Identifier.create(database, table), tableSchema()));
     }
 
     protected void triggerTableSnapshot(String database, String table) {

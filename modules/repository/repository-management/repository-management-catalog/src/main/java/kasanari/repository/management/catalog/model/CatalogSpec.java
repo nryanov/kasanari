@@ -4,7 +4,6 @@ import java.util.Map;
 
 public record CatalogSpec(
         Map<String, String> fileIoProperties,
-        Map<String, String> catalogProperties,
-        String endpoint
+        Map<String, String> catalogProperties
 ) {
 }

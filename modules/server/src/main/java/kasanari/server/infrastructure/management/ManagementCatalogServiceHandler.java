@@ -11,25 +11,24 @@ import kasanari.catalog.management.dto.UpdateCatalogRequestDto;
 import kasanari.management.catalog.ManagementCatalogService;
 import kasanari.repository.management.catalog.model.CatalogMetadata;
 import kasanari.server.infrastructure.http.ApiFallbacks;
+import kasanari.server.infrastructure.iceberg.IcebergCatalogRouter;
 
+// todo: add validation for request bodies
 @ApplicationScoped
 public class ManagementCatalogServiceHandler implements ManagementRestCatalogsService {
     private final ManagementCatalogService catalogService;
+    private final IcebergCatalogRouter icebergCatalogRouter;
 
-    public ManagementCatalogServiceHandler(ManagementCatalogService catalogService) {
+    public ManagementCatalogServiceHandler(
+            ManagementCatalogService catalogService,
+            IcebergCatalogRouter icebergCatalogRouter
+    ) {
         this.catalogService = catalogService;
+        this.icebergCatalogRouter = icebergCatalogRouter;
     }
 
     @Override
     public Response createCatalog(CreateCatalogRequestDto createCatalogRequest, SecurityContext securityContext) {
-        if (createCatalogRequest == null
-                || createCatalogRequest.getCatalogId() == null
-                || createCatalogRequest.getCatalogType() == null
-                || createCatalogRequest.getMode() == null
-                || createCatalogRequest.getSpec() == null) {
-            return ApiFallbacks.error(Response.Status.BAD_REQUEST, "Catalog payload is incomplete");
-        }
-
         var spec = CatalogSpecMapper.toDomain(createCatalogRequest.getSpec());
         var metadata = new CatalogMetadata(
                 createCatalogRequest.getCatalogId(),
@@ -71,10 +70,6 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
 
     @Override
     public Response updateCatalog(CatalogTypeDto catalogType, String catalogId, UpdateCatalogRequestDto updateCatalogRequest, SecurityContext securityContext) {
-        if (updateCatalogRequest == null || updateCatalogRequest.getSpec() == null) {
-            return ApiFallbacks.error(Response.Status.BAD_REQUEST, "Catalog update requires spec");
-        }
-
         var domainType = CatalogSpecMapper.toDomain(catalogType);
         var existing = catalogService.get(domainType, catalogId);
         if (existing.isEmpty()) {
@@ -98,7 +93,7 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
 
     private CatalogPublicInfoDto toPublicInfo(CatalogMetadata metadata) {
         var info = new CatalogPublicInfoDto();
-        info.setCatalogId(metadata.catalogId());
+        info.setCatalogId(metadata.catalogName());
         info.setCatalogType(CatalogSpecMapper.toApi(metadata.catalogType()));
         info.setMode(CatalogSpecMapper.toApi(metadata.catalogMode()));
         info.setSpec(CatalogSpecMapper.toApi(metadata.spec()));

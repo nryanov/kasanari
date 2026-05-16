@@ -1,48 +1,60 @@
 package kasanari.server.infrastructure.paimon;
 
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.paimon.api.PaimonRestFunctionService;
-import kasanari.server.infrastructure.http.ApiFallbacks;
 import org.apache.paimon.rest.requests.AlterFunctionRequest;
 import org.apache.paimon.rest.requests.CreateFunctionRequest;
 
 @ApplicationScoped
 public class PaimonFunctionServiceHandler implements PaimonRestFunctionService {
-    @Override
-    public Response alterFunction(String prefix, String database, String function, AlterFunctionRequest orgApachePaimonRestRequestsAlterFunctionRequest, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonFunctionService.alterFunction");
+    private final PaimonCatalogRouter paimonCatalogRouter;
+
+    public PaimonFunctionServiceHandler(PaimonCatalogRouter paimonCatalogRouter) {
+        this.paimonCatalogRouter = paimonCatalogRouter;
     }
 
     @Override
-    public Response createFunction(String prefix, String database, CreateFunctionRequest orgApachePaimonRestRequestsCreateFunctionRequest, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonFunctionService.createFunction");
+    public Response alterFunction(String catalogName, String database, String function, AlterFunctionRequest request, SecurityContext securityContext) {
+        paimonCatalogRouter.getOrThrow(catalogName).alterFunction(database, function, request);
+        return Response.ok().build();
     }
 
     @Override
-    public Response dropFunction(String prefix, String database, String function, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonFunctionService.dropFunction");
+    public Response createFunction(String catalogName, String database, CreateFunctionRequest request, SecurityContext securityContext) {
+        paimonCatalogRouter.getOrThrow(catalogName).createFunction(database, request);
+        return Response.ok().build();
     }
 
     @Override
-    public Response getFunction(String prefix, String database, String function, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonFunctionService.getFunction");
+    public Response dropFunction(String catalogName, String database, String function, SecurityContext securityContext) {
+        paimonCatalogRouter.getOrThrow(catalogName).dropFunction(database, function);
+        return Response.ok().build();
     }
 
     @Override
-    public Response listFunctionDetails(String prefix, String database, Integer maxResults, String pageToken, String functionNamePattern, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonFunctionService.listFunctionDetails");
+    public Response getFunction(String catalogName, String database, String function, SecurityContext securityContext) {
+        var functionResp = paimonCatalogRouter.getOrThrow(catalogName).getFunction(database, function);
+        return Response.ok(functionResp).build();
     }
 
     @Override
-    public Response listFunctions(String prefix, String database, Integer maxResults, String pageToken, String functionNamePattern, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonFunctionService.listFunctions");
+    public Response listFunctionDetails(String catalogName, String database, Integer maxResults, String pageToken, String functionNamePattern, SecurityContext securityContext) {
+        var list = paimonCatalogRouter.getOrThrow(catalogName).listFunctionDetails(database, maxResults, pageToken, functionNamePattern);
+        return Response.ok(list).build();
     }
 
     @Override
-    public Response listFunctionsGlobally(String prefix, String databaseNamePattern, String functionNamePattern, Integer maxResults, String pageToken, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonFunctionService.listFunctionsGlobally");
+    public Response listFunctions(String catalogName, String database, Integer maxResults, String pageToken, String functionNamePattern, SecurityContext securityContext) {
+        var list = paimonCatalogRouter.getOrThrow(catalogName).listFunctions(database, maxResults, pageToken, functionNamePattern);
+        return Response.ok(list).build();
+    }
+
+    @Override
+    public Response listFunctionsGlobally(String catalogName, String databaseNamePattern, String functionNamePattern, Integer maxResults, String pageToken, SecurityContext securityContext) {
+        var list =
+                paimonCatalogRouter.getOrThrow(catalogName).listFunctionsGlobally(databaseNamePattern, functionNamePattern, maxResults, pageToken);
+        return Response.ok(list).build();
     }
 }

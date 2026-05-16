@@ -297,7 +297,7 @@ components:
     CatalogSpec:
       type: object
       description: >-
-        Flat catalog connector configuration (file IO props, catalog props, optional proxy endpoint).
+        Flat catalog connector configuration (file IO props, catalog props).
       properties:
         fileIoProperties:
           type: object
@@ -307,9 +307,6 @@ components:
           type: object
           additionalProperties:
             type: string
-        endpoint:
-          type: string
-          nullable: true
     RoleBinding:
       type: object
       required:

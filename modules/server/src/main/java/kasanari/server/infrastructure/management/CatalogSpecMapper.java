@@ -14,8 +14,7 @@ public final class CatalogSpecMapper {
     public static CatalogSpec toDomain(CatalogSpecDto spec) {
         return new CatalogSpec(
                 spec.getFileIoProperties(),
-                spec.getCatalogProperties(),
-                spec.getEndpoint()
+                spec.getCatalogProperties()
         );
     }
 
@@ -23,7 +22,6 @@ public final class CatalogSpecMapper {
         var copy = new CatalogSpecDto();
         copy.setFileIoProperties(spec.fileIoProperties());
         copy.setCatalogProperties(spec.catalogProperties());
-        copy.setEndpoint(spec.endpoint());
 
         return copy;
     }

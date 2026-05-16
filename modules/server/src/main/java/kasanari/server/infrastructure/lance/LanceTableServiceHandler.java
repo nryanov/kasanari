@@ -35,6 +35,12 @@ import java.io.File;
 
 @ApplicationScoped
 public class LanceTableServiceHandler implements LanceRestTableService {
+    private final LanceCatalogRouter lanceCatalogRouter;
+
+    public LanceTableServiceHandler(LanceCatalogRouter lanceCatalogRouter) {
+        this.lanceCatalogRouter = lanceCatalogRouter;
+    }
+
     @Override
     public Response alterTableAddColumns(String id, AlterTableAddColumnsRequest orgLanceNamespaceModelAlterTableAddColumnsRequest, String delimiter, SecurityContext securityContext) {
         return ApiFallbacks.notImplemented("LanceTableService.alterTableAddColumns");

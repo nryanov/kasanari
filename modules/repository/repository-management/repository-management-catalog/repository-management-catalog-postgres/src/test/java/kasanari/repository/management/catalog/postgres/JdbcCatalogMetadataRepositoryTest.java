@@ -156,7 +156,7 @@ class JdbcCatalogMetadataRepositoryTest {
     }
 
     private static CatalogSpec catalogSpec() {
-        return new CatalogSpec(new HashMap<>(), new HashMap<>(), "endpoint");
+        return new CatalogSpec(new HashMap<>(), new HashMap<>());
     }
 
     private record BothTypesPresent(boolean icebergPresent, boolean paimonPresent) {

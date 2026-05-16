@@ -12,6 +12,12 @@ import org.lance.namespace.model.NamespaceExistsRequest;
 
 @ApplicationScoped
 public class LanceNamespaceServiceHandler implements LanceRestNamespaceService {
+    private final LanceCatalogRouter lanceCatalogRouter;
+
+    public LanceNamespaceServiceHandler(LanceCatalogRouter lanceCatalogRouter) {
+        this.lanceCatalogRouter = lanceCatalogRouter;
+    }
+
     @Override
     public Response createNamespace(String id, CreateNamespaceRequest orgLanceNamespaceModelCreateNamespaceRequest, String delimiter, SecurityContext securityContext) {
         return ApiFallbacks.notImplemented("LanceNamespaceService.createNamespace");

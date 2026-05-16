@@ -52,29 +52,27 @@ import org.apache.paimon.rest.responses.ListViewsResponse;
 
 public interface PaimonCatalogAdapter {
 
-    ListDatabasesResponse listDatabases(String prefix, Integer maxResults, String pageToken);
+    ListDatabasesResponse listDatabases(Integer maxResults, String pageToken);
 
-    void createDatabase(String prefix, CreateDatabaseRequest request);
+    void createDatabase(CreateDatabaseRequest request);
 
-    GetDatabaseResponse getDatabase(String prefix, String database);
+    GetDatabaseResponse getDatabase(String database);
 
-    void dropDatabase(String prefix, String database);
+    void dropDatabase(String database);
 
-    AlterDatabaseResponse alterDatabase(String prefix, String database, AlterDatabaseRequest request);
+    AlterDatabaseResponse alterDatabase(String database, AlterDatabaseRequest request);
 
-    void registerTable(String prefix, String database, RegisterTableRequest request);
+    void registerTable(String database, RegisterTableRequest request);
 
     ListTablesResponse listTables(
-            String prefix,
             String database,
             Integer maxResults,
             String pageToken,
             String tableNamePattern);
 
-    void createTable(String prefix, String database, CreateTableRequest request);
+    void createTable(String database, CreateTableRequest request);
 
     ListTableDetailsResponse listTableDetails(
-            String prefix,
             String database,
             Integer maxResults,
             String pageToken,
@@ -82,151 +80,139 @@ public interface PaimonCatalogAdapter {
             String tableType);
 
     ListTablesGloballyResponse listTablesGlobally(
-            String prefix,
             String databaseNamePattern,
             String tableNamePattern,
             Integer maxResults,
             String pageToken);
 
-    GetTableResponse getTableById(String prefix, String tableId);
+    GetTableResponse getTableById(String tableId);
 
-    GetTableResponse getTable(String prefix, String database, String table);
+    GetTableResponse getTable(String database, String table);
 
-    void alterTable(String prefix, String database, String table, AlterTableRequest request);
+    void alterTable(String database, String table, AlterTableRequest request);
 
-    void dropTable(String prefix, String database, String table);
+    void dropTable(String database, String table);
 
-    void renameTable(String prefix, RenameTableRequest request);
+    void renameTable(RenameTableRequest request);
 
-    CommitTableResponse commitTable(String prefix, String database, String table, CommitTableRequest request);
+    CommitTableResponse commitTable(String database, String table, CommitTableRequest request);
 
-    void rollbackTable(String prefix, String database, String table, RollbackTableRequest request);
+    void rollbackTable(String database, String table, RollbackTableRequest request);
 
-    void rollbackSchema(String prefix, String database, String table, RollbackSchemaRequest request);
+    void rollbackSchema(String database, String table, RollbackSchemaRequest request);
 
-    GetTableTokenResponse getTableToken(String prefix, String database, String table);
+    GetTableTokenResponse getTableToken(String database, String table);
 
-    AuthTableQueryResponse authTableQuery(String prefix, String database, String table, AuthTableQueryRequest request);
+    AuthTableQueryResponse authTableQuery(String database, String table, AuthTableQueryRequest request);
 
-    GetTableSnapshotResponse getTableSnapshot(String prefix, String database, String table);
+    GetTableSnapshotResponse getTableSnapshot(String database, String table);
 
-    GetVersionSnapshotResponse getVersionSnapshot(String prefix, String database, String table, String version);
+    GetVersionSnapshotResponse getVersionSnapshot(String database, String table, String version);
 
     ListSnapshotsResponse listSnapshots(
-            String prefix,
             String database,
             String table,
             Integer maxResults,
             String pageToken);
 
     ListPartitionsResponse listPartitions(
-            String prefix,
             String database,
             String table,
             Integer maxResults,
             String pageToken,
             String partitionNamePattern);
 
-    void markDonePartitions(String prefix, String database, String table, MarkDonePartitionsRequest request);
+    void markDonePartitions(String database, String table, MarkDonePartitionsRequest request);
 
     ListPartitionsResponse listPartitionsByNames(
-            String prefix,
             String database,
             String table,
             ListPartitionsByNamesRequest request);
 
-    ListBranchesResponse listBranches(String prefix, String database, String table);
+    ListBranchesResponse listBranches(String database, String table);
 
-    void createBranch(String prefix, String database, String table, CreateBranchRequest request);
+    void createBranch(String database, String table, CreateBranchRequest request);
 
-    void dropBranch(String prefix, String database, String table, String branch);
+    void dropBranch(String database, String table, String branch);
 
-    void renameBranch(String prefix, String database, String table, String branch, RenameBranchRequest request);
+    void renameBranch(String database, String table, String branch, RenameBranchRequest request);
 
-    void forwardBranch(String prefix, String database, String table, String branch, ForwardBranchRequest request);
+    void forwardBranch(String database, String table, String branch, ForwardBranchRequest request);
 
     ListTagsResponse listTags(
-            String prefix,
             String database,
             String table,
             Integer maxResults,
             String pageToken,
             String tagNamePrefix);
 
-    void createTag(String prefix, String database, String table, CreateTagRequest request);
+    void createTag(String database, String table, CreateTagRequest request);
 
-    GetTagResponse getTag(String prefix, String database, String table, String tag);
+    GetTagResponse getTag(String database, String table, String tag);
 
-    void deleteTag(String prefix, String database, String table, String tag);
+    void deleteTag(String database, String table, String tag);
 
     ListConsumersResponse listConsumers(
-            String prefix,
             String database,
             String table,
             Integer maxResults,
             String pageToken);
 
-    void resetConsumer(String prefix, String database, String table, ResetConsumerRequest request);
+    void resetConsumer(String database, String table, ResetConsumerRequest request);
 
     ListViewsResponse listViews(
-            String prefix,
             String database,
             Integer maxResults,
             String pageToken,
             String viewNamePattern);
 
-    void createView(String prefix, String database, CreateViewRequest request);
+    void createView(String database, CreateViewRequest request);
 
     ListViewDetailsResponse listViewDetails(
-            String prefix,
             String database,
             Integer maxResults,
             String pageToken,
             String viewNamePattern);
 
     ListViewsGloballyResponse listViewsGlobally(
-            String prefix,
             String databaseNamePattern,
             String viewNamePattern,
             Integer maxResults,
             String pageToken);
 
-    GetViewResponse getView(String prefix, String database, String view);
+    GetViewResponse getView(String database, String view);
 
-    void alterView(String prefix, String database, String view, AlterViewRequest request);
+    void alterView(String database, String view, AlterViewRequest request);
 
-    void dropView(String prefix, String database, String view);
+    void dropView(String database, String view);
 
-    void renameView(String prefix, RenameTableRequest request);
+    void renameView(RenameTableRequest request);
 
     ListFunctionsResponse listFunctions(
-            String prefix,
             String database,
             Integer maxResults,
             String pageToken,
             String functionNamePattern);
 
-    void createFunction(String prefix, String database, CreateFunctionRequest request);
+    void createFunction(String database, CreateFunctionRequest request);
 
     ListFunctionDetailsResponse listFunctionDetails(
-            String prefix,
             String database,
             Integer maxResults,
             String pageToken,
             String functionNamePattern);
 
     ListFunctionsGloballyResponse listFunctionsGlobally(
-            String prefix,
             String databaseNamePattern,
             String functionNamePattern,
             Integer maxResults,
             String pageToken);
 
-    GetFunctionResponse getFunction(String prefix, String database, String function);
+    GetFunctionResponse getFunction(String database, String function);
 
-    void alterFunction(String prefix, String database, String function, AlterFunctionRequest request);
+    void alterFunction(String database, String function, AlterFunctionRequest request);
 
-    void dropFunction(String prefix, String database, String function);
+    void dropFunction(String database, String function);
 
     // for testing only
     Catalog getUnderlyingCatalog();

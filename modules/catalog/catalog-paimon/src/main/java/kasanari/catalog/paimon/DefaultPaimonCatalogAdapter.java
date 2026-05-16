@@ -71,18 +71,18 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public ListDatabasesResponse listDatabases(String prefix, Integer maxResults, String pageToken) {
+    public ListDatabasesResponse listDatabases(Integer maxResults, String pageToken) {
         var paged = call(() -> catalog.listDatabasesPaged(maxResults, pageToken, null));
         return new ListDatabasesResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
-    public void createDatabase(String prefix, CreateDatabaseRequest request) {
+    public void createDatabase(CreateDatabaseRequest request) {
         run(() -> catalog.createDatabase(request.getName(), false, mapOrEmpty(request.getOptions())));
     }
 
     @Override
-    public GetDatabaseResponse getDatabase(String prefix, String database) {
+    public GetDatabaseResponse getDatabase(String database) {
         var loaded = call(() -> catalog.getDatabase(database));
         return new GetDatabaseResponse(
                 loaded.name(),
@@ -98,12 +98,12 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public void dropDatabase(String prefix, String database) {
+    public void dropDatabase(String database) {
         run(() -> catalog.dropDatabase(database, false, false));
     }
 
     @Override
-    public AlterDatabaseResponse alterDatabase(String prefix, String database, AlterDatabaseRequest request) {
+    public AlterDatabaseResponse alterDatabase(String database, AlterDatabaseRequest request) {
         var changes = new ArrayList<PropertyChange>();
 
         for (var removal : listOrEmpty(request.getRemovals())) {
@@ -125,23 +125,23 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public void registerTable(String prefix, String database, RegisterTableRequest request) {
+    public void registerTable(String database, RegisterTableRequest request) {
         run(() -> catalog.registerTable(request.getIdentifier(), request.getPath()));
     }
 
     @Override
-    public ListTablesResponse listTables(String prefix, String database, Integer maxResults, String pageToken, String tableNamePattern) {
+    public ListTablesResponse listTables(String database, Integer maxResults, String pageToken, String tableNamePattern) {
         var paged = call(() -> catalog.listTablesPaged(database, maxResults, pageToken, tableNamePattern, null));
         return new ListTablesResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
-    public void createTable(String prefix, String database, CreateTableRequest request) {
+    public void createTable(String database, CreateTableRequest request) {
         run(() -> catalog.createTable(request.getIdentifier(), request.getSchema(), false));
     }
 
     @Override
-    public ListTableDetailsResponse listTableDetails(String prefix, String database, Integer maxResults, String pageToken, String tableNamePattern, String tableType) {
+    public ListTableDetailsResponse listTableDetails(String database, Integer maxResults, String pageToken, String tableNamePattern, String tableType) {
         var paged = call(() -> catalog.listTableDetailsPaged(database, maxResults, pageToken, tableNamePattern, tableType));
         var tableDetails = new ArrayList<GetTableResponse>();
 
@@ -169,13 +169,13 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public ListTablesGloballyResponse listTablesGlobally(String prefix, String databaseNamePattern, String tableNamePattern, Integer maxResults, String pageToken) {
+    public ListTablesGloballyResponse listTablesGlobally(String databaseNamePattern, String tableNamePattern, Integer maxResults, String pageToken) {
         var paged = call(() -> catalog.listTablesPagedGlobally(databaseNamePattern, tableNamePattern, maxResults, pageToken));
         return new ListTablesGloballyResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
-    public GetTableResponse getTableById(String prefix, String tableId) {
+    public GetTableResponse getTableById(String tableId) {
         var table = call(() -> catalog.getTableById(tableId));
 
         long schemaId = -1;
@@ -219,7 +219,7 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public GetTableResponse getTable(String prefix, String database, String table) {
+    public GetTableResponse getTable(String database, String table) {
         var loaded = call(() -> catalog.getTable(Identifier.create(database, table)));
         return new GetTableResponse(
                 loaded.uuid(),
@@ -238,22 +238,22 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public void alterTable(String prefix, String database, String table, AlterTableRequest request) {
+    public void alterTable(String database, String table, AlterTableRequest request) {
         run(() -> catalog.alterTable(Identifier.create(database, table), listOrEmpty(request.getChanges()), false));
     }
 
     @Override
-    public void dropTable(String prefix, String database, String table) {
+    public void dropTable(String database, String table) {
         run(() -> catalog.dropTable(Identifier.create(database, table), false));
     }
 
     @Override
-    public void renameTable(String prefix, RenameTableRequest request) {
+    public void renameTable(RenameTableRequest request) {
         run(() -> catalog.renameTable(request.getSource(), request.getDestination(), false));
     }
 
     @Override
-    public CommitTableResponse commitTable(String prefix, String database, String table, CommitTableRequest request) {
+    public CommitTableResponse commitTable(String database, String table, CommitTableRequest request) {
         var success = call(() -> catalog.commitSnapshot(
                 Identifier.create(database, table),
                 request.getTableId(),
@@ -265,44 +265,44 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public void rollbackTable(String prefix, String database, String table, RollbackTableRequest request) {
+    public void rollbackTable(String database, String table, RollbackTableRequest request) {
         run(() -> catalog.rollbackTo(Identifier.create(database, table), request.getInstant(), request.getFromSnapshot()));
     }
 
     @Override
-    public void rollbackSchema(String prefix, String database, String table, RollbackSchemaRequest request) {
+    public void rollbackSchema(String database, String table, RollbackSchemaRequest request) {
         run(() -> catalog.rollbackSchema(Identifier.create(database, table), request.getSchemaId()));
     }
 
     @Override
-    public GetTableTokenResponse getTableToken(String prefix, String database, String table) {
+    public GetTableTokenResponse getTableToken(String database, String table) {
         throw new UnsupportedOperationException("Current catalog does not support loading table token.");
     }
 
     @Override
-    public AuthTableQueryResponse authTableQuery(String prefix, String database, String table, AuthTableQueryRequest request) {
+    public AuthTableQueryResponse authTableQuery(String database, String table, AuthTableQueryRequest request) {
         throw new UnsupportedOperationException("Current catalog does not support loading table token.");
     }
 
     @Override
-    public GetTableSnapshotResponse getTableSnapshot(String prefix, String database, String table) {
+    public GetTableSnapshotResponse getTableSnapshot(String database, String table) {
         var snapshot = call(() -> catalog.loadSnapshot(Identifier.create(database, table)));
         return new GetTableSnapshotResponse(snapshot.orElse(null));
     }
 
     @Override
-    public GetVersionSnapshotResponse getVersionSnapshot(String prefix, String database, String table, String version) {
+    public GetVersionSnapshotResponse getVersionSnapshot(String database, String table, String version) {
         return new GetVersionSnapshotResponse(call(() -> catalog.loadSnapshot(Identifier.create(database, table), version)).orElse(null));
     }
 
     @Override
-    public ListSnapshotsResponse listSnapshots(String prefix, String database, String table, Integer maxResults, String pageToken) {
+    public ListSnapshotsResponse listSnapshots(String database, String table, Integer maxResults, String pageToken) {
         var paged = call(() -> catalog.listSnapshotsPaged(Identifier.create(database, table), maxResults, pageToken));
         return new ListSnapshotsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
-    public ListPartitionsResponse listPartitions(String prefix, String database, String table, Integer maxResults, String pageToken, String partitionNamePattern) {
+    public ListPartitionsResponse listPartitions(String database, String table, Integer maxResults, String pageToken, String partitionNamePattern) {
         var paged = call(() -> catalog.listPartitionsPaged(
                 Identifier.create(database, table),
                 maxResults,
@@ -314,43 +314,43 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public void markDonePartitions(String prefix, String database, String table, MarkDonePartitionsRequest request) {
+    public void markDonePartitions(String database, String table, MarkDonePartitionsRequest request) {
         run(() -> catalog.markDonePartitions(Identifier.create(database, table), request.getPartitionSpecs()));
     }
 
     @Override
-    public ListPartitionsResponse listPartitionsByNames(String prefix, String database, String table, ListPartitionsByNamesRequest request) {
+    public ListPartitionsResponse listPartitionsByNames(String database, String table, ListPartitionsByNamesRequest request) {
         var partitions = call(() -> catalog.listPartitionsByNames(Identifier.create(database, table), request.getPartitionSpecs()));
         return new ListPartitionsResponse(partitions, null);
     }
 
     @Override
-    public ListBranchesResponse listBranches(String prefix, String database, String table) {
+    public ListBranchesResponse listBranches(String database, String table) {
         return new ListBranchesResponse(call(() -> catalog.listBranches(Identifier.create(database, table))));
     }
 
     @Override
-    public void createBranch(String prefix, String database, String table, CreateBranchRequest request) {
+    public void createBranch(String database, String table, CreateBranchRequest request) {
         run(() -> catalog.createBranch(Identifier.create(database, table), request.branch(), request.fromTag()));
     }
 
     @Override
-    public void dropBranch(String prefix, String database, String table, String branch) {
+    public void dropBranch(String database, String table, String branch) {
         run(() -> catalog.dropBranch(Identifier.create(database, table), branch));
     }
 
     @Override
-    public void renameBranch(String prefix, String database, String table, String branch, RenameBranchRequest request) {
+    public void renameBranch(String database, String table, String branch, RenameBranchRequest request) {
         run(() -> catalog.renameBranch(Identifier.create(database, table), branch, request.toBranch()));
     }
 
     @Override
-    public void forwardBranch(String prefix, String database, String table, String branch, ForwardBranchRequest request) {
+    public void forwardBranch(String database, String table, String branch, ForwardBranchRequest request) {
         run(() -> catalog.fastForward(Identifier.create(database, table), branch));
     }
 
     @Override
-    public ListTagsResponse listTags(String prefix, String database, String table, Integer maxResults, String pageToken, String tagNamePrefix) {
+    public ListTagsResponse listTags(String database, String table, Integer maxResults, String pageToken, String tagNamePrefix) {
         var paged = call(() -> catalog.listTagsPaged(
                 Identifier.create(database, table),
                 maxResults,
@@ -361,7 +361,7 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public void createTag(String prefix, String database, String table, CreateTagRequest request) {
+    public void createTag(String database, String table, CreateTagRequest request) {
         run(() -> catalog.createTag(
                 Identifier.create(database, table),
                 request.tagName(),
@@ -372,34 +372,34 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public GetTagResponse getTag(String prefix, String database, String table, String tag) {
+    public GetTagResponse getTag(String database, String table, String tag) {
         return call(() -> catalog.getTag(Identifier.create(database, table), tag));
     }
 
     @Override
-    public void deleteTag(String prefix, String database, String table, String tag) {
+    public void deleteTag(String database, String table, String tag) {
         run(() -> catalog.deleteTag(Identifier.create(database, table), tag));
     }
 
     @Override
-    public ListConsumersResponse listConsumers(String prefix, String database, String table, Integer maxResults, String pageToken) {
+    public ListConsumersResponse listConsumers(String database, String table, Integer maxResults, String pageToken) {
         var paged = call(() -> catalog.listConsumersPaged(Identifier.create(database, table), maxResults, pageToken));
         return new ListConsumersResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
-    public void resetConsumer(String prefix, String database, String table, ResetConsumerRequest request) {
+    public void resetConsumer(String database, String table, ResetConsumerRequest request) {
         run(() -> catalog.resetConsumer(Identifier.create(database, table), request.consumerId(), request.nextSnapshotId()));
     }
 
     @Override
-    public ListViewsResponse listViews(String prefix, String database, Integer maxResults, String pageToken, String viewNamePattern) {
+    public ListViewsResponse listViews(String database, Integer maxResults, String pageToken, String viewNamePattern) {
         var paged = call(() -> catalog.listViewsPaged(database, maxResults, pageToken, viewNamePattern));
         return new ListViewsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
-    public void createView(String prefix, String database, CreateViewRequest request) {
+    public void createView(String database, CreateViewRequest request) {
         var schema = request.getSchema();
         var view = new ViewImpl(
                 request.getIdentifier(),
@@ -413,7 +413,7 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public ListViewDetailsResponse listViewDetails(String prefix, String database, Integer maxResults, String pageToken, String viewNamePattern) {
+    public ListViewDetailsResponse listViewDetails(String database, Integer maxResults, String pageToken, String viewNamePattern) {
         var paged = call(() -> catalog.listViewDetailsPaged(database, maxResults, pageToken, viewNamePattern));
         var viewDetails = new ArrayList<GetViewResponse>();
 
@@ -443,13 +443,13 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public ListViewsGloballyResponse listViewsGlobally(String prefix, String databaseNamePattern, String viewNamePattern, Integer maxResults, String pageToken) {
+    public ListViewsGloballyResponse listViewsGlobally(String databaseNamePattern, String viewNamePattern, Integer maxResults, String pageToken) {
         var paged = call(() -> catalog.listViewsPagedGlobally(databaseNamePattern, viewNamePattern, maxResults, pageToken));
         return new ListViewsGloballyResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
-    public GetViewResponse getView(String prefix, String database, String view) {
+    public GetViewResponse getView(String database, String view) {
         var loaded = call(() -> catalog.getView(Identifier.create(database, view)));
         var schema = new ViewSchema(
                 loaded.rowType().getFields(),
@@ -471,28 +471,28 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public void alterView(String prefix, String database, String view, AlterViewRequest request) {
+    public void alterView(String database, String view, AlterViewRequest request) {
         run(() -> catalog.alterView(Identifier.create(database, view), listOrEmpty(request.viewChanges()), false));
     }
 
     @Override
-    public void dropView(String prefix, String database, String view) {
+    public void dropView(String database, String view) {
         run(() -> catalog.dropView(Identifier.create(database, view), false));
     }
 
     @Override
-    public void renameView(String prefix, RenameTableRequest request) {
+    public void renameView(RenameTableRequest request) {
         run(() -> catalog.renameView(request.getSource(), request.getDestination(), false));
     }
 
     @Override
-    public ListFunctionsResponse listFunctions(String prefix, String database, Integer maxResults, String pageToken, String functionNamePattern) {
+    public ListFunctionsResponse listFunctions(String database, Integer maxResults, String pageToken, String functionNamePattern) {
         var paged = call(() -> catalog.listFunctionsPaged(database, maxResults, pageToken, functionNamePattern));
         return new ListFunctionsResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
-    public void createFunction(String prefix, String database, CreateFunctionRequest request) {
+    public void createFunction(String database, CreateFunctionRequest request) {
         var identifier = Identifier.create(database, request.name());
         var function = new FunctionImpl(
                 identifier,
@@ -507,7 +507,7 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public ListFunctionDetailsResponse listFunctionDetails(String prefix, String database, Integer maxResults, String pageToken, String functionNamePattern) {
+    public ListFunctionDetailsResponse listFunctionDetails(String database, Integer maxResults, String pageToken, String functionNamePattern) {
         var paged = call(() -> catalog.listFunctionDetailsPaged(database, maxResults, pageToken, functionNamePattern));
         var functionDetails = new ArrayList<GetFunctionResponse>();
 
@@ -536,13 +536,13 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public ListFunctionsGloballyResponse listFunctionsGlobally(String prefix, String databaseNamePattern, String functionNamePattern, Integer maxResults, String pageToken) {
+    public ListFunctionsGloballyResponse listFunctionsGlobally(String databaseNamePattern, String functionNamePattern, Integer maxResults, String pageToken) {
         var paged = call(() -> catalog.listFunctionsPagedGlobally(databaseNamePattern, functionNamePattern, maxResults, pageToken));
         return new ListFunctionsGloballyResponse(paged.getElements(), paged.getNextPageToken());
     }
 
     @Override
-    public GetFunctionResponse getFunction(String prefix, String database, String function) {
+    public GetFunctionResponse getFunction(String database, String function) {
         var loaded = call(() -> catalog.getFunction(Identifier.create(database, function)));
         return new GetFunctionResponse(
                 Identifier.create(database, function).getFullName(),
@@ -562,12 +562,12 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     }
 
     @Override
-    public void alterFunction(String prefix, String database, String function, AlterFunctionRequest request) {
+    public void alterFunction(String database, String function, AlterFunctionRequest request) {
         run(() -> catalog.alterFunction(Identifier.create(database, function), request.changes(), false));
     }
 
     @Override
-    public void dropFunction(String prefix, String database, String function) {
+    public void dropFunction(String database, String function) {
         run(() -> catalog.dropFunction(Identifier.create(database, function), false));
     }
 

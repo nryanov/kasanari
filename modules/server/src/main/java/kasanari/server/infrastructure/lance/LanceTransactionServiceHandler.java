@@ -10,6 +10,12 @@ import org.lance.namespace.model.DescribeTransactionRequest;
 
 @ApplicationScoped
 public class LanceTransactionServiceHandler implements LanceRestTransactionService {
+    private final LanceCatalogRouter lanceCatalogRouter;
+
+    public LanceTransactionServiceHandler(LanceCatalogRouter lanceCatalogRouter) {
+        this.lanceCatalogRouter = lanceCatalogRouter;
+    }
+
     @Override
     public Response alterTransaction(String id, AlterTransactionRequest orgLanceNamespaceModelAlterTransactionRequest, String delimiter, SecurityContext securityContext) {
         return ApiFallbacks.notImplemented("LanceTransactionService.alterTransaction");

@@ -1,11 +1,9 @@
 package kasanari.server.infrastructure.paimon;
 
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.paimon.api.PaimonRestTableService;
-import kasanari.server.infrastructure.http.ApiFallbacks;
 import org.apache.paimon.rest.requests.AlterTableRequest;
 import org.apache.paimon.rest.requests.AuthTableQueryRequest;
 import org.apache.paimon.rest.requests.CommitTableRequest;
@@ -18,103 +16,129 @@ import org.apache.paimon.rest.requests.RollbackTableRequest;
 
 @ApplicationScoped
 public class PaimonTableServiceHandler implements PaimonRestTableService {
-    @Override
-    public Response alterTable(String prefix, String database, String table, AlterTableRequest orgApachePaimonRestRequestsAlterTableRequest, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.alterTable");
+    private final PaimonCatalogRouter paimonCatalogRouter;
+
+    public PaimonTableServiceHandler(PaimonCatalogRouter paimonCatalogRouter) {
+        this.paimonCatalogRouter = paimonCatalogRouter;
     }
 
     @Override
-    public Response authTableQuery(String prefix, String database, String table, AuthTableQueryRequest orgApachePaimonRestRequestsAuthTableQueryRequest, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.authTableQuery");
+    public Response alterTable(String catalogName, String database, String table, AlterTableRequest request, SecurityContext securityContext) {
+        paimonCatalogRouter.getOrThrow(catalogName).alterTable(database, table, request);
+        return Response.ok().build();
     }
 
     @Override
-    public Response commitTable(String prefix, String database, String table, CommitTableRequest orgApachePaimonRestRequestsCommitTableRequest, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.commitTable");
+    public Response authTableQuery(String catalogName, String database, String table, AuthTableQueryRequest request, SecurityContext securityContext) {
+        var result = paimonCatalogRouter.getOrThrow(catalogName).authTableQuery(database, table, request);
+        return Response.ok(result).build();
     }
 
     @Override
-    public Response createTable(String prefix, String database, CreateTableRequest orgApachePaimonRestRequestsCreateTableRequest, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.createTable");
+    public Response commitTable(String catalogName, String database, String table, CommitTableRequest request, SecurityContext securityContext) {
+        var result = paimonCatalogRouter.getOrThrow(catalogName).commitTable(database, table, request);
+        return Response.ok(result).build();
     }
 
     @Override
-    public Response dropTable(String prefix, String database, String table, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.dropTable");
+    public Response createTable(String catalogName, String database, CreateTableRequest request, SecurityContext securityContext) {
+        paimonCatalogRouter.getOrThrow(catalogName).createTable(database, request);
+        return Response.ok().build();
     }
 
     @Override
-    public Response getTable(String prefix, String database, String table, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.getTable");
+    public Response dropTable(String catalogName, String database, String table, SecurityContext securityContext) {
+        paimonCatalogRouter.getOrThrow(catalogName).dropTable(database, table);
+        return Response.ok().build();
     }
 
     @Override
-    public Response getTableById(String prefix, String tableId, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.getTableById");
+    public Response getTable(String catalogName, String database, String table, SecurityContext securityContext) {
+        var tableResp = paimonCatalogRouter.getOrThrow(catalogName).getTable(database, table);
+        return Response.ok(tableResp).build();
     }
 
     @Override
-    public Response getTableSnapshot(String prefix, String database, String table, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.getTableSnapshot");
+    public Response getTableById(String catalogName, String tableId, SecurityContext securityContext) {
+        var tableResp = paimonCatalogRouter.getOrThrow(catalogName).getTableById(tableId);
+        return Response.ok(tableResp).build();
     }
 
     @Override
-    public Response getTableToken(String prefix, String database, String table, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.getTableToken");
+    public Response getTableSnapshot(String catalogName, String database, String table, SecurityContext securityContext) {
+        var snapshot = paimonCatalogRouter.getOrThrow(catalogName).getTableSnapshot(database, table);
+        return Response.ok(snapshot).build();
     }
 
     @Override
-    public Response getVersionSnapshot(String prefix, String database, String table, String version, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.getVersionSnapshot");
+    public Response getTableToken(String catalogName, String database, String table, SecurityContext securityContext) {
+        var token = paimonCatalogRouter.getOrThrow(catalogName).getTableToken(database, table);
+        return Response.ok(token).build();
     }
 
     @Override
-    public Response listConsumers(String prefix, String database, String table, Integer maxResults, String pageToken, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.listConsumers");
+    public Response getVersionSnapshot(String catalogName, String database, String table, String version, SecurityContext securityContext) {
+        var snapshot = paimonCatalogRouter.getOrThrow(catalogName).getVersionSnapshot(database, table, version);
+        return Response.ok(snapshot).build();
     }
 
     @Override
-    public Response listSnapshots(String prefix, String database, String table, Integer maxResults, String pageToken, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.listSnapshots");
+    public Response listConsumers(String catalogName, String database, String table, Integer maxResults, String pageToken, SecurityContext securityContext) {
+        var list = paimonCatalogRouter.getOrThrow(catalogName).listConsumers(database, table, maxResults, pageToken);
+        return Response.ok(list).build();
     }
 
     @Override
-    public Response listTableDetails(String prefix, String database, Integer maxResults, String pageToken, String tableNamePattern, String tableType, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.listTableDetails");
+    public Response listSnapshots(String catalogName, String database, String table, Integer maxResults, String pageToken, SecurityContext securityContext) {
+        var list = paimonCatalogRouter.getOrThrow(catalogName).listSnapshots(database, table, maxResults, pageToken);
+        return Response.ok(list).build();
     }
 
     @Override
-    public Response listTables(String prefix, String database, Integer maxResults, String pageToken, String tableNamePattern, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.listTables");
+    public Response listTableDetails(String catalogName, String database, Integer maxResults, String pageToken, String tableNamePattern, String tableType, SecurityContext securityContext) {
+        var list = paimonCatalogRouter.getOrThrow(catalogName).listTableDetails(database, maxResults, pageToken, tableNamePattern, tableType);
+        return Response.ok(list).build();
     }
 
     @Override
-    public Response listTablesGlobally(String prefix, String databaseNamePattern, String tableNamePattern, Integer maxResults, String pageToken, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.listTablesGlobally");
+    public Response listTables(String catalogName, String database, Integer maxResults, String pageToken, String tableNamePattern, SecurityContext securityContext) {
+        var list = paimonCatalogRouter.getOrThrow(catalogName).listTables(database, maxResults, pageToken, tableNamePattern);
+        return Response.ok(list).build();
     }
 
     @Override
-    public Response registerTable(String prefix, String database, RegisterTableRequest orgApachePaimonRestRequestsRegisterTableRequest, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.registerTable");
+    public Response listTablesGlobally(String catalogName, String databaseNamePattern, String tableNamePattern, Integer maxResults, String pageToken, SecurityContext securityContext) {
+        var list = paimonCatalogRouter.getOrThrow(catalogName).listTablesGlobally(databaseNamePattern, tableNamePattern, maxResults, pageToken);
+        return Response.ok(list).build();
     }
 
     @Override
-    public Response renameTable(String prefix, RenameTableRequest orgApachePaimonRestRequestsRenameTableRequest, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.renameTable");
+    public Response registerTable(String catalogName, String database, RegisterTableRequest request, SecurityContext securityContext) {
+        paimonCatalogRouter.getOrThrow(catalogName).registerTable(database, request);
+        return Response.ok().build();
     }
 
     @Override
-    public Response resetConsumer(String prefix, String database, String table, ResetConsumerRequest orgApachePaimonRestRequestsResetConsumerRequest, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.resetConsumer");
+    public Response renameTable(String catalogName, RenameTableRequest request, SecurityContext securityContext) {
+        paimonCatalogRouter.getOrThrow(catalogName).renameTable(request);
+        return Response.ok().build();
     }
 
     @Override
-    public Response rollbackSchema(String prefix, String database, String table, RollbackSchemaRequest orgApachePaimonRestRequestsRollbackSchemaRequest, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.rollbackSchema");
+    public Response resetConsumer(String catalogName, String database, String table, ResetConsumerRequest request, SecurityContext securityContext) {
+        paimonCatalogRouter.getOrThrow(catalogName).resetConsumer(database, table, request);
+        return Response.ok().build();
     }
 
     @Override
-    public Response rollbackTable(String prefix, String database, String table, RollbackTableRequest orgApachePaimonRestRequestsRollbackTableRequest, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonTableService.rollbackTable");
+    public Response rollbackSchema(String catalogName, String database, String table, RollbackSchemaRequest request, SecurityContext securityContext) {
+        paimonCatalogRouter.getOrThrow(catalogName).rollbackSchema(database, table, request);
+        return Response.ok().build();
+    }
+
+    @Override
+    public Response rollbackTable(String catalogName, String database, String table, RollbackTableRequest request, SecurityContext securityContext) {
+        paimonCatalogRouter.getOrThrow(catalogName).rollbackTable(database, table, request);
+        return Response.ok().build();
     }
 }

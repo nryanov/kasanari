@@ -42,13 +42,13 @@ public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<
 
     @Override
     public boolean create(Handle tx, CatalogMetadata metadata) {
-        if (getByName(tx, metadata.catalogType(), metadata.catalogId()).isPresent()) {
+        if (getByName(tx, metadata.catalogType(), metadata.catalogName()).isPresent()) {
             return false;
         }
 
         var insert = tx.createUpdate(JdbcManagementCatalogQueries.INSERT_CATALOG);
         insert.bind(0, metadata.catalogType().toString());
-        insert.bind(1, metadata.catalogId());
+        insert.bind(1, metadata.catalogName());
         insert.bind(2, metadata.catalogMode().toString());
         insert.bind(3, serialize(metadata.spec()));
         insert.bind(4, metadata.version());
@@ -82,7 +82,7 @@ public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<
         }
 
         return Optional.of(new CatalogMetadata(
-                existing.catalogId(),
+                existing.catalogName(),
                 existing.catalogType(),
                 existing.catalogMode(),
                 spec,
