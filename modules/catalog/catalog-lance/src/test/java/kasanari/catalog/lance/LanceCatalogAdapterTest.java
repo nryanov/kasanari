@@ -48,7 +48,6 @@ import org.lance.namespace.model.TableExistsRequest;
 import org.lance.namespace.model.UpdateTableRequest;
 import org.lance.namespace.model.UpdateTableTagRequest;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -105,7 +104,11 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     protected byte[] requestData() {
-        return uniqueName("payload").getBytes(StandardCharsets.UTF_8);
+        return LanceArrowIpc.emptyBatch();
+    }
+
+    protected byte[] requestDataWithRows() {
+        return LanceArrowIpc.singleRowBatch();
     }
 
     protected List<String> namespaceId() {
@@ -534,7 +537,7 @@ public abstract class LanceCatalogAdapterTest {
     void insertIntoTable() {
         assumeTrue(supportsCreateTable() && supportsInsertIntoTable() && supportsCountTableRows());
         createTableEntity();
-        adapter.insertIntoTable(new InsertIntoTableRequest().id(tableId()).mode("append"), requestData());
+        adapter.insertIntoTable(new InsertIntoTableRequest().id(tableId()).mode("append"), requestDataWithRows());
         var rows = adapter.countTableRows(new CountTableRowsRequest().id(tableId()));
         assertTrue(rows >= 0);
     }
@@ -609,7 +612,9 @@ public abstract class LanceCatalogAdapterTest {
     void mergeInsertIntoTable() {
         assumeTrue(supportsCreateTable() && supportsMergeInsertIntoTable() && supportsCountTableRows());
         createTableEntity();
-        adapter.mergeInsertIntoTable(new MergeInsertIntoTableRequest().id(tableId()).on("source.id = target.id"), requestData());
+        adapter.mergeInsertIntoTable(
+                new MergeInsertIntoTableRequest().id(tableId()).on("source.id = target.id"),
+                requestDataWithRows());
         var rows = adapter.countTableRows(new CountTableRowsRequest().id(tableId()));
         assertTrue(rows >= 0);
     }

@@ -2,12 +2,10 @@ package kasanari.catalog.lance;
 
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
-import org.junit.jupiter.api.Disabled;
 
 import java.util.HashMap;
 import java.util.List;
 
-@Disabled("Fixes required")
 public class DirLanceCatalogTest extends LanceCatalogAdapterTest {
     private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
@@ -65,5 +63,180 @@ public class DirLanceCatalogTest extends LanceCatalogAdapterTest {
     @Override
     protected void createNamespaceEntity() {
         // No-op: child namespaces are unsupported in non-manifest dir mode.
+    }
+
+    @Override
+    protected boolean supportsCreateNamespace() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsDescribeNamespace() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsDropNamespace() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsListNamespaces() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsRegisterTable() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsAlterTableAddColumns() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsAlterTableAlterColumns() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsAlterTableDropColumns() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsAnalyzeTableQueryPlan() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsCountTableRows() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsCreateTableIndex() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsCreateTableTag() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsDeleteFromTable() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsDeleteTableTag() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsDescribeTableIndexStats() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsDropTableIndex() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsExplainTableQueryPlan() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsGetTableStats() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsGetTableTagVersion() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsInsertIntoTable() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsListTableIndices() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsListTableTags() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsListTableVersions() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsCreateTableVersion() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsDescribeTableVersion() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsBatchDeleteTableVersions() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsBatchCreateTableVersions() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsBatchCommitTables() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsMergeInsertIntoTable() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsQueryTable() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsRestoreTable() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsUpdateTable() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsUpdateTableTag() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsDescribeTransaction() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsAlterTransaction() {
+        return false;
     }
 }
