@@ -155,6 +155,32 @@ class JdbcCatalogMetadataRepositoryTest {
         assertEquals(false, deleted);
     }
 
+    @Test
+    void listByTypeReturnsOnlyMatchingCatalogs() {
+        var spec = catalogSpec();
+        jdbi.inTransaction(tx -> {
+            repository.create(tx, new CatalogMetadata("alpha", CatalogType.ICEBERG, CatalogMode.INTERNAL, spec, 1L));
+            repository.create(tx, new CatalogMetadata("beta", CatalogType.ICEBERG, CatalogMode.INTERNAL, spec, 1L));
+            repository.create(tx, new CatalogMetadata("gamma", CatalogType.PAIMON, CatalogMode.INTERNAL, spec, 1L));
+            repository.create(tx, new CatalogMetadata("delta", CatalogType.LANCE, CatalogMode.INTERNAL, spec, 1L));
+            return null;
+        });
+
+        var icebergCatalogs = jdbi.inTransaction(tx -> repository.list(tx, CatalogType.ICEBERG));
+
+        assertEquals(List.of(
+                new CatalogMetadata("alpha", CatalogType.ICEBERG, CatalogMode.INTERNAL, spec, 1L),
+                new CatalogMetadata("beta", CatalogType.ICEBERG, CatalogMode.INTERNAL, spec, 1L)
+        ), icebergCatalogs);
+    }
+
+    @Test
+    void listByTypeEmptyWhenNone() {
+        var result = jdbi.inTransaction(tx -> repository.list(tx, CatalogType.LANCE));
+
+        assertEquals(List.of(), result);
+    }
+
     private static CatalogSpec catalogSpec() {
         return new CatalogSpec(new HashMap<>(), new HashMap<>());
     }

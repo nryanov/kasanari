@@ -5,9 +5,12 @@ import kasanari.repository.management.catalog.model.CatalogMetadata;
 import kasanari.repository.management.catalog.model.CatalogSpec;
 import kasanari.repository.management.common.model.CatalogType;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface CatalogMetadataRepository<T> {
+    List<CatalogMetadata> list(T tx, CatalogType catalogType);
+
     Optional<CatalogMetadata> getByName(T tx, CatalogType catalogType, String catalogName);
 
     boolean create(T tx, CatalogMetadata metadata);

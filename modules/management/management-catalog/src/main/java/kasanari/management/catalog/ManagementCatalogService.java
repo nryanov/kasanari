@@ -12,6 +12,7 @@ import kasanari.repository.management.catalog.postgres.JdbcManagementCatalogQuer
 import kasanari.repository.management.common.model.CatalogType;
 import org.jdbi.v3.core.Handle;
 
+import java.util.List;
 import java.util.Optional;
 
 public class ManagementCatalogService {
@@ -34,6 +35,10 @@ public class ManagementCatalogService {
 
     public boolean delete(CatalogType catalogType, String catalogName) {
         return txManager.inTransactionR(tx -> catalogRepository.delete(tx, catalogType, catalogName));
+    }
+
+    public List<CatalogMetadata> list(CatalogType catalogType) {
+        return txManager.inTransactionR(tx -> catalogRepository.list(tx, catalogType));
     }
 
     public Optional<CatalogMetadata> get(CatalogType catalogType, String catalogName) {

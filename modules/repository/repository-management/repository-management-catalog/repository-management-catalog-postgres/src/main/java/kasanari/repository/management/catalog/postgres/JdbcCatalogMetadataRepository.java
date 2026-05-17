@@ -9,6 +9,9 @@ import kasanari.repository.management.catalog.model.CatalogSpec;
 import kasanari.repository.management.common.model.CatalogType;
 import org.jdbi.v3.core.Handle;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<Handle> {
@@ -19,25 +22,20 @@ public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<
     }
 
     @Override
+    public List<CatalogMetadata> list(Handle tx, CatalogType catalogType) {
+        var query = tx.createQuery(JdbcManagementCatalogQueries.SELECT_CATALOGS_BY_TYPE);
+        query.bind(0, catalogType.toString());
+
+        return query.map((rs, ctx) -> mapCatalogMetadata(rs)).list();
+    }
+
+    @Override
     public Optional<CatalogMetadata> getByName(Handle tx, CatalogType catalogType, String catalogName) {
         var query = tx.createQuery(JdbcManagementCatalogQueries.SELECT_CATALOG);
         query.bind(0, catalogType.toString());
         query.bind(1, catalogName);
 
-        return query.map((rs, ctx) -> {
-            try {
-                var spec = objectMapper.readValue(rs.getString("spec_json"), CatalogSpec.class);
-                return new CatalogMetadata(
-                        rs.getString("catalog_name"),
-                        CatalogType.fromValue(rs.getString("catalog_type")),
-                        CatalogMode.fromValue(rs.getString("catalog_mode")),
-                        spec,
-                        rs.getLong("version")
-                );
-            } catch (JsonProcessingException e) {
-                throw new IllegalStateException("Failed to deserialize catalog spec JSON", e);
-            }
-        }).findFirst();
+        return query.map((rs, ctx) -> mapCatalogMetadata(rs)).findFirst();
     }
 
     @Override
@@ -96,6 +94,21 @@ public class JdbcCatalogMetadataRepository implements CatalogMetadataRepository<
         delete.bind(0, catalogType.toString());
         delete.bind(1, catalogName);
         return delete.execute() > 0;
+    }
+
+    private CatalogMetadata mapCatalogMetadata(ResultSet rs) throws SQLException {
+        try {
+            var spec = objectMapper.readValue(rs.getString("spec_json"), CatalogSpec.class);
+            return new CatalogMetadata(
+                    rs.getString("catalog_name"),
+                    CatalogType.fromValue(rs.getString("catalog_type")),
+                    CatalogMode.fromValue(rs.getString("catalog_mode")),
+                    spec,
+                    rs.getLong("version")
+            );
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to deserialize catalog spec JSON", e);
+        }
     }
 
     private String serialize(CatalogSpec spec) {

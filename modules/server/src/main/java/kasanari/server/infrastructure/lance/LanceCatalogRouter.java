@@ -3,7 +3,9 @@ package kasanari.server.infrastructure.lance;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.NotFoundException;
+import kasanari.catalog.lance.KasanariLanceCatalogFactory;
 import kasanari.catalog.lance.LanceCatalogAdapter;
+import kasanari.catalog.lance.ProxyLanceCatalogFactory;
 import kasanari.management.catalog.ManagementCatalogService;
 import org.jboss.logging.Logger;
 
@@ -18,9 +20,15 @@ public class LanceCatalogRouter {
     private final ManagementCatalogService catalogService;
     private final Map<String, LanceCatalogAdapter> lanceCatalogs;
 
+    private final KasanariLanceCatalogFactory kasanariLanceCatalogFactory;
+    private final ProxyLanceCatalogFactory proxyLanceCatalogFactory;
+
     public LanceCatalogRouter(ManagementCatalogService catalogService) {
         this.catalogService = catalogService;
         this.lanceCatalogs = new ConcurrentHashMap<>();
+
+        this.kasanariLanceCatalogFactory = new KasanariLanceCatalogFactory();
+        this.proxyLanceCatalogFactory = new ProxyLanceCatalogFactory();
     }
 
     @PostConstruct

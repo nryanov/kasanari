@@ -39,4 +39,11 @@ public final class JdbcManagementCatalogQueries {
             FROM kasanari_catalogs
             WHERE catalog_type = ? AND catalog_name = ?
             """;
+
+    public static final String SELECT_CATALOGS_BY_TYPE = """
+            SELECT catalog_type, catalog_name, catalog_mode, spec_json, version
+            FROM kasanari_catalogs
+            WHERE catalog_type = ?
+            ORDER BY catalog_name
+            """;
 }

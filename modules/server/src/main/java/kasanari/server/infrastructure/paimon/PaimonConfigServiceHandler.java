@@ -5,12 +5,21 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.catalog.paimon.api.PaimonRestConfigService;
-import kasanari.server.infrastructure.http.ApiFallbacks;
+import org.apache.paimon.rest.responses.ConfigResponse;
+
+import java.util.Map;
 
 @ApplicationScoped
 public class PaimonConfigServiceHandler implements PaimonRestConfigService {
     @Override
     public Response getConfig(String warehouse, SecurityContext securityContext) {
-        return ApiFallbacks.notImplemented("PaimonConfigService.getConfig");
+        var config = new ConfigResponse(
+                Map.of(),
+                Map.of(
+                        "prefix", warehouse
+                )
+        );
+
+        return Response.ok(config).build();
     }
 }
