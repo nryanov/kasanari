@@ -16,6 +16,7 @@ import org.apache.iceberg.catalog.ViewCatalog;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.rest.requests.CreateViewRequest;
+import org.apache.iceberg.rest.requests.ReportMetricsRequest;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
 import org.apache.iceberg.rest.responses.CreateNamespaceResponse;
 import org.apache.iceberg.rest.responses.GetNamespaceResponse;
@@ -401,6 +402,9 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
 
         awaitingTransactions.forEach(Transaction::commitTransaction);
     }
+
+    @Override
+    public void reportMetrics(String namespace, String table, ReportMetricsRequest rq) {}
 
     @Override
     public Catalog delegate() {

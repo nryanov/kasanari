@@ -83,11 +83,11 @@ paths:
   /iceberg/v1/{prefix}/views/rename:
     $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1views~1rename'
 
-  # /iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics:
-  # TODO: Not implemented
+  /iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics:
+    $ref: './iceberg-openapi-1.10.1.yaml#/paths/~1v1~1{prefix}~1namespaces~1{namespace}~1tables~1{table}~1metrics'
 
   # /iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials:
-  # TODO: Not implemented
+  # Not implemented
 
   # /iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan:
   # Not implemented

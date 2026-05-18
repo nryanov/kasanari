@@ -5,6 +5,7 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.rest.requests.CreateViewRequest;
+import org.apache.iceberg.rest.requests.ReportMetricsRequest;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
 import org.apache.iceberg.rest.responses.CreateNamespaceResponse;
 import org.apache.iceberg.rest.responses.GetNamespaceResponse;
@@ -67,6 +68,8 @@ public interface IcebergCatalogAdapter {
     LoadTableResponse loadTable(TableIdentifier table);
 
     void commitTransaction(List<UpdateTableRequest> transactions);
+
+    void reportMetrics(String namespace, String table, ReportMetricsRequest rq);
 
     Catalog delegate();
 }

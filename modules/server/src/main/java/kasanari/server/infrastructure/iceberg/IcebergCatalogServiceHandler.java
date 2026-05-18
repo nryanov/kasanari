@@ -12,6 +12,7 @@ import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.rest.requests.CreateViewRequest;
 import org.apache.iceberg.rest.requests.RegisterTableRequest;
 import org.apache.iceberg.rest.requests.RenameTableRequest;
+import org.apache.iceberg.rest.requests.ReportMetricsRequest;
 import org.apache.iceberg.rest.requests.UpdateNamespacePropertiesRequest;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
 
@@ -196,5 +197,11 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
         }
 
         return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    @Override
+    public Response reportMetrics(String catalogName, String namespace, String table, ReportMetricsRequest reportMetricsRequest, SecurityContext securityContext) {
+        icebergCatalogRouter.getOrThrow(catalogName).reportMetrics(namespace, table, reportMetricsRequest);
+        return Response.status(Response.Status.NO_CONTENT).build();
     }
 }
