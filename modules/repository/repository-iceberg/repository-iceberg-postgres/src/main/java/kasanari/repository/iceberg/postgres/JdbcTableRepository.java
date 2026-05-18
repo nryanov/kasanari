@@ -10,6 +10,7 @@ import org.jdbi.v3.core.Handle;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTableRepository implements TableRepository<Handle> {
     private final String catalogName;
@@ -19,7 +20,15 @@ public class JdbcTableRepository implements TableRepository<Handle> {
     }
 
     @Override
-    public IcebergTableRecord load(Handle tx, TableIdentifier tableIdentifier) {
+    public IcebergTableRecord findUnsafe(Handle tx, TableIdentifier tableIdentifier) {
+        var namespaceName = IcebergUtils.namespaceName(tableIdentifier.namespace());
+        return find(tx, tableIdentifier).orElseThrow(() -> new NoSuchTableException(
+                String.format("Table `%s` does not exist in namespace `%s` and catalog `%s`",
+                        tableIdentifier.name(), namespaceName, catalogName)));
+    }
+
+    @Override
+    public Optional<IcebergTableRecord> find(Handle tx, TableIdentifier tableIdentifier) {
         var namespaceName = IcebergUtils.namespaceName(tableIdentifier.namespace());
 
         var query = tx.createQuery(JdbcQueries.SELECT_TABLE);
@@ -27,22 +36,13 @@ public class JdbcTableRepository implements TableRepository<Handle> {
         query.bind(1, namespaceName);
         query.bind(2, tableIdentifier.name());
 
-        var result = query.map((rs, ctx) -> new IcebergTableRecord(
+        return query.map((rs, ctx) -> new IcebergTableRecord(
                 rs.getString("catalog_name"),
                 rs.getString("namespace_name"),
                 rs.getString("table_name"),
                 rs.getString("metadata_location"),
                 rs.getString("previous_metadata_location")
-        ));
-
-        var maybeTable = result.findFirst();
-
-        if (maybeTable.isEmpty()) {
-            throw new NoSuchTableException(String.format("Table `%s` does not exist in namespace `%s` and catalog `%s`",
-                    tableIdentifier.name(), namespaceName, catalogName));
-        }
-
-        return maybeTable.get();
+        )).findFirst();
     }
 
     @Override

@@ -8,6 +8,7 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.jdbi.v3.core.Handle;
 
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTableRepositoryStub implements TableRepository<Handle> {
     private final TableRepository<Handle> delegate;
@@ -17,8 +18,13 @@ public class JdbcTableRepositoryStub implements TableRepository<Handle> {
     }
 
     @Override
-    public IcebergTableRecord load(Handle tx, TableIdentifier tableIdentifier) {
-        return delegate.load(tx, tableIdentifier);
+    public IcebergTableRecord findUnsafe(Handle tx, TableIdentifier tableIdentifier) {
+        return delegate.findUnsafe(tx, tableIdentifier);
+    }
+
+    @Override
+    public Optional<IcebergTableRecord> find(Handle tx, TableIdentifier tableIdentifier) {
+        return delegate.find(tx, tableIdentifier);
     }
 
     @Override

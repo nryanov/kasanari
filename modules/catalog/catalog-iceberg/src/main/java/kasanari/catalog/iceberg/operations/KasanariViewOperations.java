@@ -16,10 +16,14 @@ import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.view.BaseViewOperations;
 import org.apache.iceberg.view.ViewMetadata;
 import org.jdbi.v3.core.Handle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
 public class KasanariViewOperations extends BaseViewOperations {
+    private final static Logger logger = LoggerFactory.getLogger(KasanariViewOperations.class);
+
     private final TransactionManager<Handle> transactionManager;
     private final NamespaceRepository<Handle> namespaceRepository;
     private final TableRepository<Handle> tableRepository;
@@ -48,29 +52,25 @@ public class KasanariViewOperations extends BaseViewOperations {
 
     @Override
     protected void doRefresh() {
-        // todo: optimize
-        transactionManager.inTransaction(tx -> {
-            if (viewRepository.exists(tx, viewIdentifier)) {
-                var view = viewRepository.load(tx, viewIdentifier);
+        var maybeView = transactionManager.inTransactionR(tx -> viewRepository.find(tx, viewIdentifier));
 
-                if (view.metadataLocation() == null) {
-                    throw new ValidationException("State of view `%s` is incorrect: metadata location is null", viewIdentifier);
-                }
+        if (maybeView.isPresent()) {
+            var view = maybeView.get();
 
-                refreshFromMetadataLocation(view.metadataLocation());
-            } else {
-                // if table does not exist but there is a metadata info
-                if (currentMetadataLocation() != null) {
-                    throw new NoSuchViewException(
-                            "View `%s` doesn't exist in catalog `%s`",
-                            viewIdentifier.toString(), catalogName
-                    );
-                } else {
-                    // table does not exist and there is no existing metadata
-                    disableRefresh();
-                }
+            if (view.metadataLocation() == null) {
+                throw new ValidationException("State of view `%s` is incorrect: metadata location is null", viewIdentifier);
             }
-        });
+
+            refreshFromMetadataLocation(view.metadataLocation());
+        } else {
+            // if view does not exist but there is a metadata info
+            if (currentMetadataLocation() != null) {
+                throw new NoSuchViewException("View `%s` doesn't exist in catalog `%s`", viewIdentifier.toString(), catalogName);
+            } else {
+                // table does not exist and there is no existing metadata
+                disableRefresh();
+            }
+        }
     }
 
     @Override
@@ -84,15 +84,16 @@ public class KasanariViewOperations extends BaseViewOperations {
                 createView(newMetadataLocation);
             } else {
                 transactionManager.inTransaction(tx -> {
-                    var existingView = viewRepository.load(tx, viewIdentifier);
+                    var existingView = viewRepository.findUnsafe(tx, viewIdentifier);
                     // check that current location didn't change yet
                     validateMetadataLocation(existingView, base);
                     updateView(tx, existingView.metadataLocation(), newMetadataLocation);
                 });
             }
         } catch (Exception e) {
+            logger.warn("Error happened while commiting to view `{}`: {}", viewIdentifier, e.getMessage());
             failure = true;
-            // todo: log & throw error
+            throw e;
         } finally {
             if (failure) {
                 fileIO.deleteFile(newMetadataLocation);

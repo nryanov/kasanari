@@ -5,9 +5,12 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ViewRepository<T> {
-    IcebergViewRecord load(T tx, TableIdentifier tableIdentifier);
+    IcebergViewRecord findUnsafe(T tx, TableIdentifier tableIdentifier);
+
+    Optional<IcebergViewRecord> find(T tx, TableIdentifier tableIdentifier);
 
     boolean exists(T tx, TableIdentifier tableIdentifier);
 

@@ -447,10 +447,6 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
         return ops.current();
     }
 
-    private SQLViewRepresentation asSQLViewRepresentation(ViewRepresentation value) {
-        return (SQLViewRepresentation) value;
-    }
-
     protected BaseView asBaseView(View value) {
         return (BaseView) value;
     }

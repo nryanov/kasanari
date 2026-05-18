@@ -10,6 +10,7 @@ import org.jdbi.v3.core.Handle;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcViewRepository implements ViewRepository<Handle> {
     private final String catalogName;
@@ -19,7 +20,15 @@ public class JdbcViewRepository implements ViewRepository<Handle> {
     }
 
     @Override
-    public IcebergViewRecord load(Handle tx, TableIdentifier tableIdentifier) {
+    public IcebergViewRecord findUnsafe(Handle tx, TableIdentifier tableIdentifier) {
+        var namespaceName = IcebergUtils.namespaceName(tableIdentifier.namespace());
+        return find(tx, tableIdentifier).orElseThrow(() -> new NoSuchTableException(
+                String.format("View `%s` does not exist in namespace `%s` and catalog `%s`",
+                        tableIdentifier.name(), namespaceName, catalogName)));
+    }
+
+    @Override
+    public Optional<IcebergViewRecord> find(Handle tx, TableIdentifier tableIdentifier) {
         var namespaceName = IcebergUtils.namespaceName(tableIdentifier.namespace());
 
         var query = tx.createQuery(JdbcQueries.SELECT_VIEW);
@@ -27,22 +36,13 @@ public class JdbcViewRepository implements ViewRepository<Handle> {
         query.bind(1, namespaceName);
         query.bind(2, tableIdentifier.name());
 
-        var result = query.map((rs, ctx) -> new IcebergViewRecord(
+        return query.map((rs, ctx) -> new IcebergViewRecord(
                 rs.getString("catalog_name"),
                 rs.getString("namespace_name"),
                 rs.getString("view_name"),
                 rs.getString("metadata_location"),
                 rs.getString("previous_metadata_location")
-        ));
-
-        var maybeTable = result.findFirst();
-
-        if (maybeTable.isEmpty()) {
-            throw new NoSuchTableException(String.format("View `%s` does not exist in namespace `%s` and catalog `%s`",
-                    tableIdentifier.name(), namespaceName, catalogName));
-        }
-
-        return maybeTable.get();
+        )).findFirst();
     }
 
     @Override

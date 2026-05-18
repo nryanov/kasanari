@@ -63,29 +63,24 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
 
     @Override
     protected void doRefresh() {
-        // todo: optimize
-        transactionManager.inTransaction(tx -> {
-            if (tableRepository.exists(tx, tableIdentifier)) {
-                var table = tableRepository.load(tx, tableIdentifier);
+        var maybeTable = transactionManager.inTransactionR(tx -> tableRepository.find(tx, tableIdentifier));
 
-                if (table.metadataLocation() == null) {
-                    throw new ValidationException("State of table `%s` is incorrect: metadata location is null", tableIdentifier);
-                }
-
-                refreshFromMetadataLocation(table.metadataLocation());
-            } else {
-                // if table does not exist but there is a metadata info
-                if (currentMetadataLocation() != null) {
-                    throw new NoSuchTableException(
-                            "Table `%s` couldn't be loaded from catalog `%s` because it was dropped",
-                            tableIdentifier.toString(), catalogName
-                    );
-                } else {
-                    // table does not exist and there is no existing metadata
-                    disableRefresh();
-                }
+        if (maybeTable.isPresent()) {
+            var table = maybeTable.get();
+            if (table.metadataLocation() == null) {
+                throw new ValidationException("State of table `%s` is incorrect: metadata location is null", tableIdentifier);
             }
-        });
+
+            refreshFromMetadataLocation(table.metadataLocation());
+        } else {
+            // if table does not exist but there is a metadata info
+            if (currentMetadataLocation() != null) {
+                throw new NoSuchTableException("Table `%s` couldn't be loaded from catalog `%s` because it was dropped", tableIdentifier.toString(), catalogName);
+            } else {
+                // table does not exist and there is no existing metadata
+                disableRefresh();
+            }
+        }
     }
 
 
@@ -126,7 +121,7 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
                 throw new IllegalStateException("Only DMK operations supported for multi-table transactions");
             } else {
                 logger.debug("Updating table: {}", tableIdentifier);
-                var existingTable = tableRepository.load(tx, tableIdentifier);
+                var existingTable = tableRepository.findUnsafe(tx, tableIdentifier);
                 // check that current location didn't change yet
                 validateMetadataLocation(existingTable, base);
                 updateTable(tx, existingTable.metadataLocation(), newMetadataLocation);
@@ -157,7 +152,7 @@ public class KasanariTableOperations extends BaseMetastoreTableOperations {
             } else {
                 logger.debug("Updating table: {}", tableIdentifier);
                 transactionManager.inTransaction(tx -> {
-                    var existingTable = tableRepository.load(tx, tableIdentifier);
+                    var existingTable = tableRepository.findUnsafe(tx, tableIdentifier);
                     // check that current location didn't change yet
                     validateMetadataLocation(existingTable, base);
                     updateTable(tx, existingTable.metadataLocation(), newMetadataLocation);
