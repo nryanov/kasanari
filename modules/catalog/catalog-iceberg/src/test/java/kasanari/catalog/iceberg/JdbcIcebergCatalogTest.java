@@ -12,10 +12,7 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.jdbc.JdbcCatalog;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JdbcIcebergCatalogTest extends IcebergCatalogAdapterTest {
     private final PostgresFixtureContainer postgres = new PostgresFixtureContainer();
@@ -66,37 +63,7 @@ public class JdbcIcebergCatalogTest extends IcebergCatalogAdapterTest {
     }
 
     @Override
-    public String entityLocation(String name) {
-        return "s3a://warehouse/" + name;
-    }
-
-    @Override
-    public String tableName() {
-        return "table";
-    }
-
-    @Override
-    public String viewName() {
-        return "view";
-    }
-
-    @Override
-    public Namespace namespaceName() {
-        return Namespace.empty();
-    }
-
-    @Override
-    public void returnNonEmptyListOfViews() {
-        var namespace = Namespace.empty();
-        var viewName = viewName();
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
-
-        catalog.createView(namespace, rq);
-
-        var result = catalog.listViews(namespace, null, 10);
-
-        // returned view will have name `.view`
-        var expectedViews = List.of(TableIdentifier.of(namespace, "." + viewName));
-        assertEquals(expectedViews, result.identifiers());
+    public String entityLocation(TableIdentifier identifier) {
+        return "s3a://warehouse/" + identifier.namespace() + "/" + identifier.name();
     }
 }

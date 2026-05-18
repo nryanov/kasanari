@@ -23,8 +23,6 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -33,9 +31,6 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
     private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
     private PostgresHelper postgresHelper;
-
-    private IcebergCatalogAdapter adapter;
-    private final AtomicInteger namespaceId = new AtomicInteger(1);
 
     @Override
     public IcebergCatalogAdapter setupCatalog() {
@@ -60,8 +55,7 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
         properties.put(S3FileIOProperties.PATH_STYLE_ACCESS, "true");
         properties.put(S3FileIOProperties.CLIENT_FACTORY, NoneRegionS3FileIOAwsClientFactory.class.getName());
 
-        adapter = factory.create("kasanari", Map.of(), properties);
-        return adapter;
+        return factory.create("kasanari", Map.of(), properties);
     }
 
     @Override
@@ -80,37 +74,22 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
     }
 
     @Override
-    public String entityLocation(String name) {
-        return "s3a://warehouse/" + name;
-    }
-
-    @Override
-    public String tableName() {
-        return "table";
-    }
-
-    @Override
-    public String viewName() {
-        return "view";
-    }
-
-    @Override
-    public Namespace namespaceName() {
-        var ns = Namespace.of("ns_" + namespaceId.getAndIncrement());
-        adapter.createNamespace(ns);
-        return ns;
+    public String entityLocation(TableIdentifier identifier) {
+        return "s3a://warehouse/" + identifier.namespace() + "/" + identifier.name();
     }
 
     @Test
     public void successfullyCommitMultiTableTransaction() {
         var namespace = namespaceName();
-        var tableOne = TableIdentifier.of(namespace, "table_1");
-        var tableTwo = TableIdentifier.of(namespace, "table_2");
+        var tableOneName = uniqueTableName();
+        var tableTwoName = uniqueTableName();
+        var tableOne = TableIdentifier.of(namespace, tableOneName);
+        var tableTwo = TableIdentifier.of(namespace, tableTwoName);
 
         var createTableOneRq = CreateTableRequest
                 .builder()
-                .withName("table_1")
-                .withLocation(entityLocation(tableOne.toString()))
+                .withName(tableOneName)
+                .withLocation(entityLocation(tableOne))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -118,8 +97,8 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
         var createTableTwoRq = CreateTableRequest
                 .builder()
-                .withName("table_2")
-                .withLocation(entityLocation(tableTwo.toString()))
+                .withName(tableTwoName)
+                .withLocation(entityLocation(tableTwo))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -152,13 +131,17 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
     @Test
     public void correctlyRollbackFailedMultiTableTransaction() {
+        var namespace = namespaceName();
+        var tableOneName = uniqueTableName();
+        var tableTwoName = uniqueTableName();
+
         var kasanariCatalog = (KasanariIcebergCatalog) catalog.delegate();
         var tableRepository = kasanariCatalog.getTableRepository();
         kasanariCatalog.setTableRepository(new JdbcTableRepositoryStub(tableRepository) {
             @Override
             public boolean update(Handle tx, TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation) {
                 // fail no commit changes to second table
-                if (tableIdentifier.name().equals("table_2")) {
+                if (tableIdentifier.name().equals(tableTwoName)) {
                     // to avoid commit retries
                     throw new RuntimeException("Intentional commit failure");
                 }
@@ -166,15 +149,13 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
                 return super.update(tx, tableIdentifier, previousMetadataLocation, newMetadataLocation);
             }
         });
-
-        var namespace = namespaceName();
-        var tableOne = TableIdentifier.of(namespace, "table_1");
-        var tableTwo = TableIdentifier.of(namespace, "table_2");
+        var tableOne = TableIdentifier.of(namespace, tableOneName);
+        var tableTwo = TableIdentifier.of(namespace, tableTwoName);
 
         var createTableOneRq = CreateTableRequest
                 .builder()
-                .withName("table_1")
-                .withLocation(entityLocation(tableOne.toString()))
+                .withName(tableOneName)
+                .withLocation(entityLocation(tableOne))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -182,8 +163,8 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
         var createTableTwoRq = CreateTableRequest
                 .builder()
-                .withName("table_2")
-                .withLocation(entityLocation(tableTwo.toString()))
+                .withName(tableTwoName)
+                .withLocation(entityLocation(tableTwo))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -220,6 +201,12 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
     @Test
     public void doNotRollbackAllChangesInMultiTableTransactionUsingDefaultCatalogImplementation() {
+        var namespace = namespaceName();
+        var tableOneName = uniqueTableName();
+        var tableTwoName = uniqueTableName();
+        var tableOne = TableIdentifier.of(namespace, tableOneName);
+        var tableTwo = TableIdentifier.of(namespace, tableTwoName);
+
         var defaultCatalog = new KasanariIcebergCatalogAdapter((KasanariIcebergCatalog) catalog.delegate(), false);
         var kasanariCatalog = (KasanariIcebergCatalog) defaultCatalog.delegate();
         var tableRepository = kasanariCatalog.getTableRepository();
@@ -227,7 +214,7 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
             @Override
             public boolean update(Handle tx, TableIdentifier tableIdentifier, String previousMetadataLocation, String newMetadataLocation) {
                 // fail no commit changes to second table
-                if (tableIdentifier.name().equals("table_2")) {
+                if (tableIdentifier.name().equals(tableTwoName)) {
                     // to avoid commit retries
                     throw new RuntimeException("Intentional commit failure");
                 }
@@ -236,14 +223,10 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
             }
         });
 
-        var namespace = namespaceName();
-        var tableOne = TableIdentifier.of(namespace, "table_1");
-        var tableTwo = TableIdentifier.of(namespace, "table_2");
-
         var createTableOneRq = CreateTableRequest
                 .builder()
-                .withName("table_1")
-                .withLocation(entityLocation(tableOne.toString()))
+                .withName(tableOneName)
+                .withLocation(entityLocation(tableOne))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -251,8 +234,8 @@ public class KasanariIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
         var createTableTwoRq = CreateTableRequest
                 .builder()
-                .withName("table_2")
-                .withLocation(entityLocation(tableTwo.toString()))
+                .withName(tableTwoName)
+                .withLocation(entityLocation(tableTwo))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())

@@ -6,7 +6,7 @@ import kasanari.fixtures.s3.S3Helper;
 import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
-import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.hadoop.HadoopCatalog;
 import org.junit.jupiter.api.Assumptions;
 
@@ -52,23 +52,8 @@ public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogAdapterTest 
     }
 
     @Override
-    public String entityLocation(String name) {
-        return "s3a://warehouse/" + name;
-    }
-
-    @Override
-    public String tableName() {
-        return "table";
-    }
-
-    @Override
-    public String viewName() {
-        return "view";
-    }
-
-    @Override
-    public Namespace namespaceName() {
-        return Namespace.empty();
+    public String entityLocation(TableIdentifier identifier) {
+        return "s3a://warehouse/" + identifier.namespace() + "/" + identifier.name();
     }
 
     @Override
@@ -78,6 +63,11 @@ public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogAdapterTest 
 
     @Override
     public boolean isViewSupported() {
+        return false;
+    }
+
+    @Override
+    public boolean isRegisterTableSupported() {
         return false;
     }
 

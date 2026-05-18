@@ -25,15 +25,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class IcebergCatalogAdapterTest {
     protected IcebergCatalogAdapter catalog;
+
+    private final AtomicInteger uniqueId = new AtomicInteger();
 
     @BeforeAll
     public final void setup() {
@@ -42,19 +47,64 @@ public abstract class IcebergCatalogAdapterTest {
 
     abstract public IcebergCatalogAdapter setupCatalog();
 
-    abstract public String entityLocation(String name);
+    abstract public String entityLocation(TableIdentifier identifier);
 
-    abstract public String tableName();
+    protected final String nextUniqueSuffix() {
+        return String.valueOf(uniqueId.incrementAndGet());
+    }
 
-    abstract public String viewName();
+    protected String uniqueNamespaceName() {
+        return "ns_" + nextUniqueSuffix();
+    }
 
-    abstract public Namespace namespaceName();
+    protected String uniqueTableName() {
+        return "table_" + nextUniqueSuffix();
+    }
+
+    protected String uniqueViewName() {
+        return "view_" + nextUniqueSuffix();
+    }
+
+    protected String tableName() {
+        return uniqueTableName();
+    }
+
+    protected String viewName() {
+        return uniqueViewName();
+    }
+
+    protected boolean usesDefaultEmptyNamespace() {
+        return false;
+    }
+
+    protected void ensureNamespaceExists(Namespace namespace) {
+        if (isNamespaceSupported() && !catalog.namespaceExists(namespace)) {
+            catalog.createNamespace(namespace);
+        }
+    }
+
+    protected Namespace namespaceName() {
+        if (usesDefaultEmptyNamespace()) {
+            return Namespace.empty();
+        }
+        var namespace = Namespace.of(uniqueNamespaceName());
+        ensureNamespaceExists(namespace);
+        return namespace;
+    }
+
+    protected TableIdentifier viewIdentifier(Namespace namespace, String viewName) {
+        return TableIdentifier.of(namespace, viewName);
+    }
 
     public boolean isNamespaceSupported() {
         return true;
     }
 
     public boolean isViewSupported() {
+        return true;
+    }
+
+    public boolean isRegisterTableSupported() {
         return true;
     }
 
@@ -83,7 +133,7 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void returnFalseIfNamespaceDoesNotExist() {
         Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
-        var namespaceName = Namespace.of("ns1");
+        var namespaceName = Namespace.of(uniqueNamespaceName());
         var result = catalog.namespaceExists(namespaceName);
 
         assertFalse(result);
@@ -92,17 +142,20 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void successfullyCreateNamespace() {
         Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
-        var namespace = Namespace.of("ns2");
-        catalog.createNamespace(namespace);
+        var namespace = Namespace.of(uniqueNamespaceName());
+        var properties = new HashMap<>(Map.of("prop1", "value"));
+        var response = catalog.createNamespace(namespace, properties);
         var result = catalog.namespaceExists(namespace);
 
         assertTrue(result);
+        assertEquals(namespace, response.namespace());
+        assertEquals("value", response.properties().get("prop1"));
     }
 
     @Test
     public void successfullyDeleteExistingNamespace() {
         Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
-        var namespace = Namespace.of("ns3");
+        var namespace = Namespace.of(uniqueNamespaceName());
         catalog.createNamespace(namespace);
         var result = catalog.namespaceExists(namespace);
 
@@ -118,7 +171,7 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void returnNonEmptyNamespaceList() {
         Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
-        var namespace = Namespace.of("ns4");
+        var namespace = Namespace.of(uniqueNamespaceName());
         catalog.createNamespace(namespace);
 
         var result = catalog.listNamespaces(null, 10, null);
@@ -129,7 +182,7 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void successfullyLoadNamespace() {
         Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
-        var namespace = Namespace.of("ns5");
+        var namespace = Namespace.of(uniqueNamespaceName());
         catalog.createNamespace(namespace, new HashMap<>(Map.of("prop1", "value")));
         var loadedNamespace = catalog.loadNamespaceMetadata(namespace);
 
@@ -140,7 +193,7 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void successfullyUpdateNamespaceProperties() {
         Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
-        var namespace = Namespace.of("ns6");
+        var namespace = Namespace.of(uniqueNamespaceName());
         var properties = new HashMap<>(Map.of(
                 "property1", "value1",
                 "property2", "value2",
@@ -162,20 +215,65 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void correctlyPaginateNamespaceListing() {
         Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
-        var namespaceParent = Namespace.of("ns7");
-        var namespace1 = Namespace.of("ns7", "1");
-        var namespace2 = Namespace.of("ns7", "2");
+        var parent = uniqueNamespaceName();
+        var namespaceParent = Namespace.of(parent);
+        var namespace1 = Namespace.of(parent, "1");
+        var namespace2 = Namespace.of(parent, "2");
 
         catalog.createNamespace(namespaceParent);
         catalog.createNamespace(namespace1);
         catalog.createNamespace(namespace2);
 
-        var page1 = catalog.listNamespaces(null, 1, "ns7");
+        var page1 = catalog.listNamespaces(null, 1, parent);
 
         assertEquals(List.of(namespace1), page1.namespaces());
 
-        var page2 = catalog.listNamespaces(page1.nextPageToken(), 1, "ns7");
+        var page2 = catalog.listNamespaces(page1.nextPageToken(), 1, parent);
         assertEquals(List.of(namespace2), page2.namespaces());
+        assertNotNull(page1.nextPageToken());
+        assertNull(page2.nextPageToken());
+    }
+
+    @Test
+    public void returnAllNamespacesWhenPageSizeExceedsTotal() {
+        Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
+        var parent = uniqueNamespaceName();
+        var namespaceParent = Namespace.of(parent);
+        var namespace1 = Namespace.of(parent, "a");
+        var namespace2 = Namespace.of(parent, "b");
+
+        catalog.createNamespace(namespaceParent);
+        catalog.createNamespace(namespace1);
+        catalog.createNamespace(namespace2);
+
+        var result = catalog.listNamespaces(null, 100, parent);
+
+        assertEquals(Set.of(namespace1, namespace2), new HashSet<>(result.namespaces()));
+        assertNull(result.nextPageToken());
+    }
+
+    @Test
+    public void returnEmptyNamespacePageWhenPageTokenBeyondTotal() {
+        Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
+        var namespace = Namespace.of(uniqueNamespaceName());
+        catalog.createNamespace(namespace);
+
+        var result = catalog.listNamespaces("100", 10, null);
+
+        assertTrue(result.namespaces().isEmpty());
+        assertNull(result.nextPageToken());
+    }
+
+    @Test
+    public void returnEmptyNamespacePageWhenPageSizeIsZero() {
+        Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
+        var namespace = Namespace.of(uniqueNamespaceName());
+        catalog.createNamespace(namespace);
+
+        var result = catalog.listNamespaces(null, 0, null);
+
+        assertTrue(result.namespaces().isEmpty());
+        assertNotNull(result.nextPageToken());
     }
 
     @Test
@@ -185,6 +283,57 @@ public abstract class IcebergCatalogAdapterTest {
         var result = catalog.listTables(namespace, null, 10);
 
         assertTrue(result.identifiers().isEmpty());
+    }
+
+    @Test
+    public void returnNonEmptyTableList() {
+        var namespace = namespaceName();
+        var tableName = tableName();
+        var table = TableIdentifier.of(namespace, tableName);
+        catalog.createTable(namespace, createTableRequest(table));
+
+        var result = catalog.listTables(namespace, null, 10);
+
+        assertEquals(List.of(table), result.identifiers());
+    }
+
+    @Test
+    public void correctlyPaginateTableListing() {
+        var namespace = namespaceName();
+        var table1Name = uniqueTableName();
+        var table2Name = uniqueTableName();
+
+        var table1 = TableIdentifier.of(namespace, table1Name);
+        var table2 = TableIdentifier.of(namespace, table2Name);
+
+        catalog.createTable(namespace, createTableRequest(table1));
+        catalog.createTable(namespace, createTableRequest(table2));
+
+        var allTables = catalog.listTables(namespace, null, 100).identifiers();
+
+        var page1 = catalog.listTables(namespace, null, 1);
+        assertEquals(allTables.subList(0, 1), page1.identifiers());
+        assertNotNull(page1.nextPageToken());
+
+        var page2 = catalog.listTables(namespace, page1.nextPageToken(), 1);
+        assertEquals(allTables.subList(1, 2), page2.identifiers());
+
+//        may be not null
+//        assertNull(page2.nextPageToken());
+    }
+
+    @Test
+    public void returnEmptyTablePageWhenPageTokenBeyondTotal() {
+        var namespace = namespaceName();
+        var tableName = tableName();
+        var table = TableIdentifier.of(namespace, tableName);
+
+        catalog.createTable(namespace, createTableRequest(table));
+
+        var result = catalog.listTables(namespace, "100", 10);
+
+        assertTrue(result.identifiers().isEmpty());
+        assertNull(result.nextPageToken());
     }
 
     @Test
@@ -204,7 +353,7 @@ public abstract class IcebergCatalogAdapterTest {
         var rq = CreateTableRequest
                 .builder()
                 .withName(tableName)
-                .withLocation(entityLocation(tableName))
+                .withLocation(entityLocation(table))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -223,7 +372,7 @@ public abstract class IcebergCatalogAdapterTest {
         var rq = CreateTableRequest
                 .builder()
                 .withName(tableName)
-                .withLocation(entityLocation(tableName))
+                .withLocation(entityLocation(table))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(
@@ -248,7 +397,7 @@ public abstract class IcebergCatalogAdapterTest {
         var rq = CreateTableRequest
                 .builder()
                 .withName(tableName)
-                .withLocation(entityLocation(tableName))
+                .withLocation(entityLocation(table))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withPartitionSpec(PartitionSpec.unpartitioned())
                 .withWriteOrder(SortOrder
@@ -272,7 +421,7 @@ public abstract class IcebergCatalogAdapterTest {
         var rq = CreateTableRequest
                 .builder()
                 .withName(tableName)
-                .withLocation(entityLocation(tableName))
+                .withLocation(entityLocation(table))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -292,11 +441,11 @@ public abstract class IcebergCatalogAdapterTest {
         var namespace = namespaceName();
         var tableName = tableName();
         var table = TableIdentifier.of(namespace, tableName);
-        var newTable = TableIdentifier.of(namespace, "newTable");
+        var newTable = TableIdentifier.of(namespace, uniqueTableName());
         var rq = CreateTableRequest
                 .builder()
                 .withName(tableName)
-                .withLocation(entityLocation(tableName))
+                .withLocation(entityLocation(table))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -320,7 +469,7 @@ public abstract class IcebergCatalogAdapterTest {
         var rq = CreateTableRequest
                 .builder()
                 .withName(tableName)
-                .withLocation(entityLocation(tableName))
+                .withLocation(entityLocation(table))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -352,7 +501,7 @@ public abstract class IcebergCatalogAdapterTest {
         var rq = CreateTableRequest
                 .builder()
                 .withName(tableName)
-                .withLocation(entityLocation(tableName))
+                .withLocation(entityLocation(table))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -364,6 +513,23 @@ public abstract class IcebergCatalogAdapterTest {
         assertEquals(createdTable.tableMetadata().uuid(), loadedTable.tableMetadata().uuid());
     }
 
+    @Test
+    public void successfullyRegisterExistingTable() {
+        Assumptions.assumeTrue(this::isRegisterTableSupported, "Test skipped: registerTable is not supported in this catalog");
+        var namespace = namespaceName();
+        var registeredTableName = uniqueTableName();
+        var table = TableIdentifier.of(namespace, registeredTableName);
+        var createdTable = catalog.createTable(namespace, createTableRequest(table));
+        var metadataLocation = createdTable.tableMetadata().metadataFileLocation();
+
+        catalog.dropTable(table, false);
+        assertFalse(catalog.tableExists(table));
+
+        var registeredTable = catalog.registerTable(table, metadataLocation);
+
+        assertTrue(catalog.tableExists(table));
+        assertEquals(createdTable.tableMetadata().uuid(), registeredTable.tableMetadata().uuid());
+    }
 
     @Test
     public void successfullyCommitTransaction() {
@@ -373,7 +539,7 @@ public abstract class IcebergCatalogAdapterTest {
         var rq = CreateTableRequest
                 .builder()
                 .withName(tableName)
-                .withLocation(entityLocation(tableName))
+                .withLocation(entityLocation(table))
                 .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .withWriteOrder(SortOrder.unsorted())
                 .withPartitionSpec(PartitionSpec.unpartitioned())
@@ -411,7 +577,7 @@ public abstract class IcebergCatalogAdapterTest {
         Assumptions.assumeTrue(this::isViewSupported, "Test skipped: views are not supported in this catalog");
         var namespace = namespaceName();
         var viewName = viewName();
-        var view = TableIdentifier.of(namespace, viewName);
+        var view = viewIdentifier(namespace, viewName);
         var result = catalog.viewExists(view);
 
         assertFalse(result);
@@ -422,11 +588,11 @@ public abstract class IcebergCatalogAdapterTest {
         Assumptions.assumeTrue(this::isViewSupported, "Test skipped: views are not supported in this catalog");
         var namespace = namespaceName();
         var viewName = viewName();
-        var view = TableIdentifier.of(namespace, viewName);
+        var view = viewIdentifier(namespace, viewName);
         var rq = ImmutableCreateViewRequest
                 .builder()
                 .name(viewName)
-                .location(entityLocation(viewName))
+                .location(entityLocation(view))
                 .schema(IcebergCatalogCommons.DEFAULT_SCHEMA)
                 .viewVersion(
                         ImmutableViewVersion
@@ -460,8 +626,8 @@ public abstract class IcebergCatalogAdapterTest {
         Assumptions.assumeTrue(this::isViewSupported, "Test skipped: views are not supported in this catalog");
         var namespace = namespaceName();
         var viewName = viewName();
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
-        var view = TableIdentifier.of(namespace, viewName);
+        var view = viewIdentifier(namespace, viewName);
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(view));
 
         catalog.createView(namespace, rq);
 
@@ -475,8 +641,8 @@ public abstract class IcebergCatalogAdapterTest {
         Assumptions.assumeTrue(this::isViewSupported, "Test skipped: views are not supported in this catalog");
         var namespace = namespaceName();
         var viewName = viewName();
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
-        var view = TableIdentifier.of(namespace, viewName);
+        var view = viewIdentifier(namespace, viewName);
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(view));
 
         catalog.createView(namespace, rq);
 
@@ -487,13 +653,54 @@ public abstract class IcebergCatalogAdapterTest {
     }
 
     @Test
+    public void correctlyPaginateViewListing() {
+        Assumptions.assumeTrue(this::isViewSupported, "Test skipped: views are not supported in this catalog");
+        var namespace = namespaceName();
+        var view1Name = uniqueViewName();
+        var view2Name = uniqueViewName();
+
+        var view1 = viewIdentifier(namespace, view1Name);
+        var view2 = viewIdentifier(namespace, view2Name);
+
+        catalog.createView(namespace, IcebergCatalogCommons.defaultCreateViewRequest(namespace, view1Name, entityLocation(view1)));
+        catalog.createView(namespace, IcebergCatalogCommons.defaultCreateViewRequest(namespace, view2Name, entityLocation(view2)));
+
+        var allViews = catalog.listViews(namespace, null, 100).identifiers();
+
+        var page1 = catalog.listViews(namespace, null, 1);
+        assertEquals(allViews.subList(0, 1), page1.identifiers());
+        assertNotNull(page1.nextPageToken());
+
+        var page2 = catalog.listViews(namespace, page1.nextPageToken(), 1);
+        assertEquals(allViews.subList(1, 2), page2.identifiers());
+
+//        may be not null
+//        assertNull(page2.nextPageToken());
+    }
+
+    @Test
+    public void returnEmptyViewPageWhenPageTokenBeyondTotal() {
+        Assumptions.assumeTrue(this::isViewSupported, "Test skipped: views are not supported in this catalog");
+        var namespace = namespaceName();
+        var viewName = viewName();
+        var view = viewIdentifier(namespace, viewName);
+        catalog.createView(namespace, IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(view)));
+
+        var result = catalog.listViews(namespace, "100", 10);
+
+        assertTrue(result.identifiers().isEmpty());
+        assertNull(result.nextPageToken());
+    }
+
+    @Test
     public void successfullyRenameView() {
         Assumptions.assumeTrue(this::isViewSupported, "Test skipped: views are not supported in this catalog");
         var namespace = namespaceName();
         var viewName = viewName();
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
-        var view = TableIdentifier.of(namespace, viewName);
-        var newViewName = TableIdentifier.of(namespace, "renamed_view");
+        var view = viewIdentifier(namespace, viewName);
+        var newViewName = viewIdentifier(namespace, uniqueViewName());
+
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(view));
 
         catalog.createView(namespace, rq);
 
@@ -509,15 +716,15 @@ public abstract class IcebergCatalogAdapterTest {
         Assumptions.assumeTrue(this::isViewSupported, "Test skipped: views are not supported in this catalog");
         var namespace = namespaceName();
         var viewName = viewName();
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
-        var view = TableIdentifier.of(namespace, viewName);
+        var view = viewIdentifier(namespace, viewName);
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(view));
 
         catalog.createView(namespace, rq);
 
         var result = catalog.loadView(view);
 
         assertEquals(1, result.metadata().currentVersionId());
-        assertEquals(entityLocation(viewName), result.metadata().location());
+        assertEquals(entityLocation(view), result.metadata().location());
         assertEquals(1, result.metadata().formatVersion());
 
         assertEquals(1, result.metadata().versions().size());
@@ -527,7 +734,7 @@ public abstract class IcebergCatalogAdapterTest {
 
         assertEquals(1, resultVersion.representations().size());
 
-        var resultVersionRepresentation = (ImmutableSQLViewRepresentation) resultVersion.representations().get(0);
+        var resultVersionRepresentation = (ImmutableSQLViewRepresentation) resultVersion.representations().getFirst();
 
         assertEquals("sql", resultVersionRepresentation.type());
         assertEquals("select * from table", resultVersionRepresentation.sql());
@@ -539,9 +746,11 @@ public abstract class IcebergCatalogAdapterTest {
         Assumptions.assumeTrue(this::isViewSupported, "Test skipped: views are not supported in this catalog");
         var namespace = namespaceName();
         var viewName = viewName();
-        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(viewName));
-        var view = TableIdentifier.of(namespace, viewName);
-        var newLocation = entityLocation("newLocation");
+        var view = viewIdentifier(namespace, viewName);
+        var newView = viewIdentifier(namespace, uniqueViewName());
+
+        var rq = IcebergCatalogCommons.defaultCreateViewRequest(namespace, viewName, entityLocation(view));
+        var newLocation = entityLocation(newView);
 
         var createdView = catalog.createView(namespace, rq);
 
@@ -561,5 +770,16 @@ public abstract class IcebergCatalogAdapterTest {
         var result = catalog.loadView(view);
 
         assertEquals(newLocation, result.metadata().location());
+    }
+
+    protected CreateTableRequest createTableRequest(TableIdentifier tableIdentifier) {
+        return CreateTableRequest
+                .builder()
+                .withName(tableIdentifier.name())
+                .withLocation(entityLocation(tableIdentifier))
+                .withSchema(IcebergCatalogCommons.DEFAULT_SCHEMA)
+                .withWriteOrder(SortOrder.unsorted())
+                .withPartitionSpec(PartitionSpec.unpartitioned())
+                .build();
     }
 }

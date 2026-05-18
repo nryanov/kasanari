@@ -7,15 +7,14 @@ import kasanari.fixtures.s3.S3Helper;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.nessie.NessieCatalog;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
@@ -54,23 +53,8 @@ public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
     }
 
     @Override
-    public String entityLocation(String name) {
-        return "s3a://warehouse/" + name;
-    }
-
-    @Override
-    public String tableName() {
-        return "table_" + UUID.randomUUID();
-    }
-
-    @Override
-    public String viewName() {
-        return "view_" + UUID.randomUUID();
-    }
-
-    @Override
-    public Namespace namespaceName() {
-        return Namespace.empty();
+    public String entityLocation(TableIdentifier identifier) {
+        return "s3a://warehouse/" + identifier.name();
     }
 
     @Override
@@ -81,7 +65,7 @@ public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
     // nessie DOESN'T return location property
     @Override
     public void successfullyUpdateNamespaceProperties() {
-        var namespace = Namespace.of("ns6");
+        var namespace = Namespace.of(uniqueNamespaceName());
         var properties = new HashMap<>(Map.of(
                 "property1", "value1",
                 "property2", "value2",
@@ -104,7 +88,7 @@ public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
     // nessie DOESN'T return location property
     @Override
     public void successfullyLoadNamespace() {
-        var namespace = Namespace.of("ns5");
+        var namespace = Namespace.of(uniqueNamespaceName());
         catalog.createNamespace(namespace, new HashMap<>(Map.of("prop1", "value")));
         var loadedNamespace = catalog.loadNamespaceMetadata(namespace);
 
@@ -112,11 +96,5 @@ public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
 
         assertEquals(expectedProps, loadedNamespace.properties());
         assertEquals(namespace, loadedNamespace.namespace());
-    }
-
-    // todo: fix this test
-    @Override
-    public void correctlyPaginateNamespaceListing() {
-        assertTrue(true);
     }
 }
