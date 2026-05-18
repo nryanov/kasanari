@@ -1,0 +1,11 @@
+meta {
+  name: 10 Delete catalog (cleanup)
+  type: http
+  seq: 10
+}
+
+delete {
+  url: {{baseUrl}}/management/v1/catalogs/ICEBERG/{{catalogIdIcebergProxy}}
+  body: none
+  auth: inherit
+}

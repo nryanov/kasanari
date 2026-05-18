@@ -1,0 +1,34 @@
+meta {
+  name: 08 Alter table
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/iceberg/v1/{{catalogIdIcebergProxy}}/namespaces//tables/{{table}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    {
+      "requirements": [
+        {
+          "type": "assert-table-uuid",
+          "uuid": "{{tableUuid}}"
+        }
+      ],
+      "updates": [
+        {
+          "action": "set-properties",
+          "updates": {
+            "custom-property": "updated-value"
+          }
+        }
+      ]
+    }
+}

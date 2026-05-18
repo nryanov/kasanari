@@ -1,0 +1,39 @@
+meta {
+  name: 01 Register catalog
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/management/v1/catalogs
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    {
+      "catalogId": "{{catalogIdPaimonInternal}}",
+      "catalogType": "PAIMON",
+      "mode": "INTERNAL",
+      "spec": {
+        "fileIoProperties": {
+          "fs.s3a.access.key": "admin",
+          "fs.s3a.secret.key": "password",
+          "fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem",
+          "fs.s3a.path.style.access": "true",
+          "fs.s3a.endpoint": "{{s3Endpoint}}"
+        },
+        "catalogProperties": {
+          "warehouse": "s3a://warehouse",
+          "uri": "{{jdbcUri}}",
+          "kasanari.jdbc.user": "postgres",
+          "kasanari.jdbc.password": "postgres",
+          "kasanari.catalog.key": "{{catalogIdPaimonInternal}}"
+        }
+      }
+    }
+}

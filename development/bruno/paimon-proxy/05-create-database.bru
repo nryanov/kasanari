@@ -1,0 +1,22 @@
+meta {
+  name: 05 Create database
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/paimon/v1/{{catalogIdPaimonProxy}}/databases
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    {
+      "name": "{{database}}",
+      "options": {}
+    }
+}

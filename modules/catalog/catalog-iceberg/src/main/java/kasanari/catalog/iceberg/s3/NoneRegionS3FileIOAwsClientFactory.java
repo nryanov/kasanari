@@ -1,4 +1,4 @@
-package kasanari.fixtures.s3;
+package kasanari.catalog.iceberg.s3;
 
 import org.apache.iceberg.aws.AwsClientProperties;
 import org.apache.iceberg.aws.HttpClientProperties;

@@ -1,0 +1,43 @@
+meta {
+  name: 01 Register catalog
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/management/v1/catalogs
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    {
+      "catalogId": "{{catalogIdLanceProxy}}",
+      "catalogType": "LANCE",
+      "mode": "PROXY",
+      "spec": {
+        "fileIoProperties": {},
+        "catalogProperties": {
+          "implementation": "dir",
+          "root": "s3://warehouse",
+          "manifest_enabled": "false",
+          "dir_listing_enabled": "true",
+          "storage.aws_access_key_id": "admin",
+          "storage.aws_secret_access_key": "password",
+          "storage.aws_endpoint": "{{s3Endpoint}}",
+          "storage.aws_allow_http": "true",
+          "storage.aws_virtual_hosted_style_request": "false",
+          "storage.access_key_id": "admin",
+          "storage.secret_access_key": "password",
+          "storage.endpoint": "{{s3Endpoint}}",
+          "storage.allow_http": "true",
+          "storage.virtual_hosted_style_request": "false",
+          "storage.region": "us-east-1"
+        }
+      }
+    }
+}

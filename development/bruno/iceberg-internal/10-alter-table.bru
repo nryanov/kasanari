@@ -1,0 +1,38 @@
+meta {
+  name: 10 Alter table
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/iceberg/v1/{{catalogIdIcebergInternal}}/namespaces/{{namespace}}/tables/{{table}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    {
+      "requirements": [
+        {
+          "type": "assert-table-uuid",
+          "uuid": "{{tableUuid}}"
+        }
+      ],
+      "updates": [
+        {
+          "action": "set-properties",
+          "updates": {
+            "custom-property": "updated-value"
+          }
+        }
+      ]
+    }
+}
+
+docs {
+  Run 09 Get table first so tableUuid is set.
+}

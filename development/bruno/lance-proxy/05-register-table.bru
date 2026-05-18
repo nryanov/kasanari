@@ -1,0 +1,28 @@
+meta {
+  name: 05 Register table
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/lance/v1/table/{{table}}/register
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    {
+      "id": [
+        "{{table}}"
+      ],
+      "location": "s3://warehouse/{{table}}.lance",
+      "mode": "CREATE",
+      "properties": {
+        "stage": "manual-test"
+      }
+    }
+}

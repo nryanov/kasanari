@@ -1,0 +1,11 @@
+meta {
+  name: 04 List namespaces
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/iceberg/v1/{{catalogIdIcebergProxy}}/namespaces
+  body: none
+  auth: inherit
+}

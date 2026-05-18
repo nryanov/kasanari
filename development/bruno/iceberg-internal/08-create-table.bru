@@ -1,0 +1,44 @@
+meta {
+  name: 08 Create table
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/iceberg/v1/{{catalogIdIcebergInternal}}/namespaces/{{namespace}}/tables
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    {
+      "name": "{{table}}",
+      "location": "s3a://warehouse/{{namespace}}/{{table}}",
+      "schema": {
+        "type": "struct",
+        "fields": [
+          {
+            "id": 1,
+            "name": "id",
+            "type": "long",
+            "required": true
+          }
+        ]
+      },
+      "partition-spec": {
+        "spec-id": 0,
+        "fields": []
+      },
+      "write-order": {
+        "order-id": 0,
+        "fields": []
+      },
+      "properties": {
+        "custom-property": "value"
+      }
+    }
+}

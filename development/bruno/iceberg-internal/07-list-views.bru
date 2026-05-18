@@ -1,0 +1,11 @@
+meta {
+  name: 07 List views
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/iceberg/v1/{{catalogIdIcebergInternal}}/namespaces/{{namespace}}/views
+  body: none
+  auth: inherit
+}

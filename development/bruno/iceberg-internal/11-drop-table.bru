@@ -1,0 +1,11 @@
+meta {
+  name: 11 Drop table
+  type: http
+  seq: 11
+}
+
+delete {
+  url: {{baseUrl}}/iceberg/v1/{{catalogIdIcebergInternal}}/namespaces/{{namespace}}/tables/{{table}}
+  body: none
+  auth: inherit
+}

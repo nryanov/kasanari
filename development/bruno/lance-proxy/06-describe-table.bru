@@ -1,0 +1,23 @@
+meta {
+  name: 06 Describe table
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/lance/v1/table/{{table}}/describe
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    {
+      "id": [
+        "{{table}}"
+      ]
+    }
+}

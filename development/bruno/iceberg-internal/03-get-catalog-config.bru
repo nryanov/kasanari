@@ -1,0 +1,15 @@
+meta {
+  name: 03 Get catalog config
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/iceberg/v1/config
+  body: none
+  auth: inherit
+}
+
+params:query {
+  warehouse: {{catalogIdIcebergInternal}}
+}

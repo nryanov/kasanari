@@ -17,11 +17,11 @@ jackson = "2.20.1"
 jakarta-ws-rs-api = "4.0.0"
 jakarta-inject-api = "2.0.1"
 jakarta-annotations-api = "3.0.0"
+jdbc-postgresql = "42.7.5"
 # test dependencies
 junit = "5.12.2"
 testcontainers = "1.21.0"
 testcontainers-nessie = "0.104.1"
-jdbc-postgresql = "42.7.5"
 logback = "1.5.18"
 
 
@@ -72,6 +72,7 @@ agroal-pool = { group = "io.agroal", name = "agroal-pool", version.ref = "agroal
 casbin-jcasbin = { group = "org.casbin", name = "jcasbin", version.ref = "jcasbin" }
 
 slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slfj4" }
+jdbc-postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "jdbc-postgresql" }
 
 # test dependencies
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit" }
@@ -84,7 +85,6 @@ testcontainers-minio = { group = "org.testcontainers", name = "minio", version.r
 testcontainers-nessie = { group = "org.projectnessie.nessie", name = "nessie-nessie-testcontainer", version.ref = "testcontainers-nessie" }
 
 logback = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
-jdbc-postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "jdbc-postgresql" }
 
 [plugins]
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }

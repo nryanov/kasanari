@@ -1,0 +1,11 @@
+meta {
+  name: 09 Delete catalog (cleanup)
+  type: http
+  seq: 9
+}
+
+delete {
+  url: {{baseUrl}}/management/v1/catalogs/LANCE/{{catalogIdLanceProxy}}
+  body: none
+  auth: inherit
+}

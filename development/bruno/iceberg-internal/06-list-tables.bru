@@ -1,0 +1,11 @@
+meta {
+  name: 06 List tables
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/iceberg/v1/{{catalogIdIcebergInternal}}/namespaces/{{namespace}}/tables
+  body: none
+  auth: inherit
+}

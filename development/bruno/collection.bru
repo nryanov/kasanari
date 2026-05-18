@@ -1,0 +1,19 @@
+docs {
+  Manual API test pipelines for Kasanari (Iceberg, Paimon, Lance).
+
+  Prerequisites:
+  1. docker compose -f development/docker-compose.yml up -d
+  2. Start Quarkus with dev profile (port 9090)
+  3. Open this collection in Bruno and select the `dev` environment
+  4. Run each pipeline folder top-to-bottom
+
+  https://www.usebruno.com/
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

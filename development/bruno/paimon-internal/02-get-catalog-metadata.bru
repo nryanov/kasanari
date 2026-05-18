@@ -1,0 +1,11 @@
+meta {
+  name: 02 Get catalog metadata
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/management/v1/catalogs/PAIMON/{{catalogIdPaimonInternal}}
+  body: none
+  auth: inherit
+}

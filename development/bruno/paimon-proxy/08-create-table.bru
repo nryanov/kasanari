@@ -1,0 +1,37 @@
+meta {
+  name: 08 Create table
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/paimon/v1/{{catalogIdPaimonProxy}}/databases/{{database}}/tables
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    {
+      "identifier": {
+        "database": "{{database}}",
+        "object": "{{table}}"
+      },
+      "schema": {
+        "fields": [
+          {
+            "id": 0,
+            "name": "id",
+            "type": "INT"
+          }
+        ],
+        "partitionKeys": [],
+        "primaryKeys": [],
+        "options": {},
+        "comment": "test"
+      }
+    }
+}

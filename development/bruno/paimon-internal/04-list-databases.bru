@@ -1,0 +1,11 @@
+meta {
+  name: 04 List databases
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/paimon/v1/{{catalogIdPaimonInternal}}/databases
+  body: none
+  auth: inherit
+}

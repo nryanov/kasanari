@@ -1,0 +1,38 @@
+meta {
+  name: 01 Register catalog
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/management/v1/catalogs
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    {
+      "catalogId": "{{catalogIdIcebergInternal}}",
+      "catalogType": "ICEBERG",
+      "mode": "INTERNAL",
+      "spec": {
+        "fileIoProperties": {},
+        "catalogProperties": {
+          "kasanari.jdbc.user": "postgres",
+          "kasanari.jdbc.password": "postgres",
+          "uri": "{{jdbcUri}}",
+          "warehouse": "s3a://warehouse",
+          "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+          "s3.endpoint": "{{s3Endpoint}}",
+          "s3.access-key-id": "admin",
+          "s3.secret-access-key": "password",
+          "s3.path-style-access": "true",
+          "s3.client-factory": "kasanari.catalog.iceberg.s3.NoneRegionS3FileIOAwsClientFactory"
+        }
+      }
+    }
+}

@@ -13,4 +13,5 @@ dependencies {
     api("software.amazon.awssdk:s3-transfer-manager")
     api("software.amazon.awssdk:netty-nio-client")
     api("software.amazon.awssdk:kms")
+    api("software.amazon.awssdk:sts")
 }

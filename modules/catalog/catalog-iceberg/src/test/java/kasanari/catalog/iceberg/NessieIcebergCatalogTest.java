@@ -1,7 +1,7 @@
 package kasanari.catalog.iceberg;
 
 import kasanari.fixtures.nessie.NessieFixtureContainer;
-import kasanari.fixtures.s3.NoneRegionS3FileIOAwsClientFactory;
+import kasanari.catalog.iceberg.s3.NoneRegionS3FileIOAwsClientFactory;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 import org.apache.iceberg.CatalogProperties;

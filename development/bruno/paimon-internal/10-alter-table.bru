@@ -1,0 +1,21 @@
+meta {
+  name: 10 Alter table
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/paimon/v1/{{catalogIdPaimonInternal}}/databases/{{database}}/tables/{{table}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    {
+      "changes": []
+    }
+}

@@ -11,20 +11,14 @@ import kasanari.catalog.management.dto.UpdateCatalogRequestDto;
 import kasanari.management.catalog.ManagementCatalogService;
 import kasanari.repository.management.catalog.model.CatalogMetadata;
 import kasanari.server.infrastructure.http.ApiFallbacks;
-import kasanari.server.infrastructure.iceberg.IcebergCatalogRouter;
 
 // todo: add validation for request bodies
 @ApplicationScoped
 public class ManagementCatalogServiceHandler implements ManagementRestCatalogsService {
     private final ManagementCatalogService catalogService;
-    private final IcebergCatalogRouter icebergCatalogRouter;
 
-    public ManagementCatalogServiceHandler(
-            ManagementCatalogService catalogService,
-            IcebergCatalogRouter icebergCatalogRouter
-    ) {
+    public ManagementCatalogServiceHandler(ManagementCatalogService catalogService) {
         this.catalogService = catalogService;
-        this.icebergCatalogRouter = icebergCatalogRouter;
     }
 
     @Override

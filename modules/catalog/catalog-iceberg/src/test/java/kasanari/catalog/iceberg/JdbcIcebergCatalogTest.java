@@ -2,7 +2,7 @@ package kasanari.catalog.iceberg;
 
 import kasanari.fixtures.postgres.PostgresFixtureContainer;
 import kasanari.fixtures.postgres.PostgresHelper;
-import kasanari.fixtures.s3.NoneRegionS3FileIOAwsClientFactory;
+import kasanari.catalog.iceberg.s3.NoneRegionS3FileIOAwsClientFactory;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 import org.apache.iceberg.CatalogProperties;

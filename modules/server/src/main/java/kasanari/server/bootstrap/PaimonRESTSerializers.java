@@ -1,0 +1,113 @@
+package kasanari.server.bootstrap;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.apache.paimon.rest.requests.AlterDatabaseRequest;
+import org.apache.paimon.rest.requests.AlterFunctionRequest;
+import org.apache.paimon.rest.requests.AlterTableRequest;
+import org.apache.paimon.rest.requests.AlterViewRequest;
+import org.apache.paimon.rest.requests.AuthTableQueryRequest;
+import org.apache.paimon.rest.requests.CommitTableRequest;
+import org.apache.paimon.rest.requests.CreateBranchRequest;
+import org.apache.paimon.rest.requests.CreateDatabaseRequest;
+import org.apache.paimon.rest.requests.CreateFunctionRequest;
+import org.apache.paimon.rest.requests.CreateTableRequest;
+import org.apache.paimon.rest.requests.CreateTagRequest;
+import org.apache.paimon.rest.requests.CreateViewRequest;
+import org.apache.paimon.rest.requests.ForwardBranchRequest;
+import org.apache.paimon.rest.requests.ListPartitionsByNamesRequest;
+import org.apache.paimon.rest.requests.MarkDonePartitionsRequest;
+import org.apache.paimon.rest.requests.RegisterTableRequest;
+import org.apache.paimon.rest.requests.RenameBranchRequest;
+import org.apache.paimon.rest.requests.RenameTableRequest;
+import org.apache.paimon.rest.requests.ResetConsumerRequest;
+import org.apache.paimon.rest.requests.RollbackSchemaRequest;
+import org.apache.paimon.rest.requests.RollbackTableRequest;
+import org.apache.paimon.rest.responses.AlterDatabaseResponse;
+import org.apache.paimon.rest.responses.AuthTableQueryResponse;
+import org.apache.paimon.rest.responses.CommitTableResponse;
+import org.apache.paimon.rest.responses.ConfigResponse;
+import org.apache.paimon.rest.responses.ErrorResponse;
+import org.apache.paimon.rest.responses.GetDatabaseResponse;
+import org.apache.paimon.rest.responses.GetFunctionResponse;
+import org.apache.paimon.rest.responses.GetTableResponse;
+import org.apache.paimon.rest.responses.GetTableSnapshotResponse;
+import org.apache.paimon.rest.responses.GetTableTokenResponse;
+import org.apache.paimon.rest.responses.GetTagResponse;
+import org.apache.paimon.rest.responses.GetVersionSnapshotResponse;
+import org.apache.paimon.rest.responses.GetViewResponse;
+import org.apache.paimon.rest.responses.ListBranchesResponse;
+import org.apache.paimon.rest.responses.ListConsumersResponse;
+import org.apache.paimon.rest.responses.ListDatabasesResponse;
+import org.apache.paimon.rest.responses.ListFunctionDetailsResponse;
+import org.apache.paimon.rest.responses.ListFunctionsGloballyResponse;
+import org.apache.paimon.rest.responses.ListFunctionsResponse;
+import org.apache.paimon.rest.responses.ListPartitionsResponse;
+import org.apache.paimon.rest.responses.ListSnapshotsResponse;
+import org.apache.paimon.rest.responses.ListTableDetailsResponse;
+import org.apache.paimon.rest.responses.ListTablesGloballyResponse;
+import org.apache.paimon.rest.responses.ListTablesResponse;
+import org.apache.paimon.rest.responses.ListTagsResponse;
+import org.apache.paimon.rest.responses.ListViewDetailsResponse;
+import org.apache.paimon.rest.responses.ListViewsGloballyResponse;
+import org.apache.paimon.rest.responses.ListViewsResponse;
+
+/** Registers Jackson serializers that bridge Paimon REST types through {@link org.apache.paimon.rest.RESTApi}. */
+public final class PaimonRESTSerializers {
+
+    private PaimonRESTSerializers() {}
+
+    public static void registerAll(ObjectMapper objectMapper) {
+        SimpleModule module = new SimpleModule("paimon-rest");
+        PaimonRestJacksonBridge.register(module, AlterDatabaseRequest.class);
+        PaimonRestJacksonBridge.register(module, AlterDatabaseResponse.class);
+        PaimonRestJacksonBridge.register(module, AlterFunctionRequest.class);
+        PaimonRestJacksonBridge.register(module, AlterTableRequest.class);
+        PaimonRestJacksonBridge.register(module, AlterViewRequest.class);
+        PaimonRestJacksonBridge.register(module, AuthTableQueryRequest.class);
+        PaimonRestJacksonBridge.register(module, AuthTableQueryResponse.class);
+        PaimonRestJacksonBridge.register(module, CommitTableRequest.class);
+        PaimonRestJacksonBridge.register(module, CommitTableResponse.class);
+        PaimonRestJacksonBridge.register(module, ConfigResponse.class);
+        PaimonRestJacksonBridge.register(module, CreateBranchRequest.class);
+        PaimonRestJacksonBridge.register(module, CreateDatabaseRequest.class);
+        PaimonRestJacksonBridge.register(module, CreateFunctionRequest.class);
+        PaimonRestJacksonBridge.register(module, CreateTableRequest.class);
+        PaimonRestJacksonBridge.register(module, CreateTagRequest.class);
+        PaimonRestJacksonBridge.register(module, CreateViewRequest.class);
+        PaimonRestJacksonBridge.register(module, ErrorResponse.class);
+        PaimonRestJacksonBridge.register(module, ForwardBranchRequest.class);
+        PaimonRestJacksonBridge.register(module, GetDatabaseResponse.class);
+        PaimonRestJacksonBridge.register(module, GetFunctionResponse.class);
+        PaimonRestJacksonBridge.register(module, GetTableResponse.class);
+        PaimonRestJacksonBridge.register(module, GetTableSnapshotResponse.class);
+        PaimonRestJacksonBridge.register(module, GetTableTokenResponse.class);
+        PaimonRestJacksonBridge.register(module, GetTagResponse.class);
+        PaimonRestJacksonBridge.register(module, GetVersionSnapshotResponse.class);
+        PaimonRestJacksonBridge.register(module, GetViewResponse.class);
+        PaimonRestJacksonBridge.register(module, ListBranchesResponse.class);
+        PaimonRestJacksonBridge.register(module, ListConsumersResponse.class);
+        PaimonRestJacksonBridge.register(module, ListDatabasesResponse.class);
+        PaimonRestJacksonBridge.register(module, ListFunctionDetailsResponse.class);
+        PaimonRestJacksonBridge.register(module, ListFunctionsGloballyResponse.class);
+        PaimonRestJacksonBridge.register(module, ListFunctionsResponse.class);
+        PaimonRestJacksonBridge.register(module, ListPartitionsByNamesRequest.class);
+        PaimonRestJacksonBridge.register(module, ListPartitionsResponse.class);
+        PaimonRestJacksonBridge.register(module, ListSnapshotsResponse.class);
+        PaimonRestJacksonBridge.register(module, ListTableDetailsResponse.class);
+        PaimonRestJacksonBridge.register(module, ListTablesGloballyResponse.class);
+        PaimonRestJacksonBridge.register(module, ListTablesResponse.class);
+        PaimonRestJacksonBridge.register(module, ListTagsResponse.class);
+        PaimonRestJacksonBridge.register(module, ListViewDetailsResponse.class);
+        PaimonRestJacksonBridge.register(module, ListViewsGloballyResponse.class);
+        PaimonRestJacksonBridge.register(module, ListViewsResponse.class);
+        PaimonRestJacksonBridge.register(module, MarkDonePartitionsRequest.class);
+        PaimonRestJacksonBridge.register(module, RegisterTableRequest.class);
+        PaimonRestJacksonBridge.register(module, RenameBranchRequest.class);
+        PaimonRestJacksonBridge.register(module, RenameTableRequest.class);
+        PaimonRestJacksonBridge.register(module, ResetConsumerRequest.class);
+        PaimonRestJacksonBridge.register(module, RollbackSchemaRequest.class);
+        PaimonRestJacksonBridge.register(module, RollbackTableRequest.class);
+        objectMapper.registerModule(module);
+    }
+}

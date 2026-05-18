@@ -1,0 +1,11 @@
+meta {
+  name: 06 List tables
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/paimon/v1/{{catalogIdPaimonProxy}}/databases/{{database}}/tables
+  body: none
+  auth: inherit
+}

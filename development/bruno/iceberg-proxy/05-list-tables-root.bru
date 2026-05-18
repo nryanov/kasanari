@@ -1,0 +1,11 @@
+meta {
+  name: 05 List tables (root namespace)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/iceberg/v1/{{catalogIdIcebergProxy}}/namespaces//tables
+  body: none
+  auth: inherit
+}

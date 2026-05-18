@@ -1,0 +1,11 @@
+meta {
+  name: 09 Get table
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/paimon/v1/{{catalogIdPaimonInternal}}/databases/{{database}}/tables/{{table}}
+  body: none
+  auth: inherit
+}

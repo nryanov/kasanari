@@ -1,0 +1,15 @@
+meta {
+  name: 07 Get table
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/iceberg/v1/{{catalogIdIcebergProxy}}/namespaces//tables/{{table}}
+  body: none
+  auth: inherit
+}
+
+vars:post-response {
+  tableUuid: res.body.metadata['table-uuid']
+}
