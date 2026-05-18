@@ -77,11 +77,6 @@ jdbc-postgresql = { group = "org.postgresql", name = "postgresql", version.ref =
 # test dependencies
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit" }
 testcontainers-bom = { group = "org.testcontainers", name = "testcontainers-bom", version.ref = "testcontainers" }
-
-# todo: use bom-only
-testcontainers-core = { group = "org.testcontainers", name = "testcontainers", version.ref = "testcontainers" }
-testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql", version.ref = "testcontainers" }
-testcontainers-minio = { group = "org.testcontainers", name = "minio", version.ref = "testcontainers" }
 testcontainers-nessie = { group = "org.projectnessie.nessie", name = "nessie-nessie-testcontainer", version.ref = "testcontainers-nessie" }
 
 logback = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }

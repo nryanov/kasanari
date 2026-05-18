@@ -3,6 +3,7 @@ plugins {
 }
 
 dependencies {
+    testFixturesApi(testFixtures(project(":modules:fixtures:fixtures-common")))
     testFixturesImplementation(libs.jdbc.postgresql)
-    testFixturesImplementation(libs.testcontainers.postgresql)
+    testFixturesImplementation("org.testcontainers:postgresql")
 }

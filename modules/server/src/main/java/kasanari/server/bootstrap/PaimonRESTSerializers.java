@@ -52,8 +52,7 @@ import org.apache.paimon.rest.responses.ListViewDetailsResponse;
 import org.apache.paimon.rest.responses.ListViewsGloballyResponse;
 import org.apache.paimon.rest.responses.ListViewsResponse;
 
-/** Registers Jackson serializers that bridge Paimon REST types through {@link org.apache.paimon.rest.RESTApi}. */
-public final class PaimonRESTSerializers {
+public class PaimonRESTSerializers {
 
     private PaimonRESTSerializers() {}
 

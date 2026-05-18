@@ -3,7 +3,8 @@ plugins {
 }
 
 dependencies {
-    testFixturesImplementation(libs.testcontainers.minio)
+    testFixturesApi(testFixtures(project(":modules:fixtures:fixtures-common")))
+    testFixturesImplementation("org.testcontainers:minio")
 
     testFixturesImplementation(platform(libs.awssdk.bom))
     testFixturesImplementation("software.amazon.awssdk:s3")
