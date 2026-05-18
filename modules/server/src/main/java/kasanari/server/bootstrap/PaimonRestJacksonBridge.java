@@ -13,6 +13,7 @@ import org.apache.paimon.rest.RESTApi;
 import java.io.IOException;
 
 /** Delegates JSON (de)serialization of Paimon REST types to Paimon's shaded {@link RESTApi} mapper. */
+// https://github.com/apache/paimon/issues/6822
 final class PaimonRestJacksonBridge {
 
     private PaimonRestJacksonBridge() {}

@@ -877,6 +877,7 @@ public abstract class PaimonCatalogAdapterTest {
         var snapshotId = snapshot.getSnapshot().snapshot().id();
 
         // paimon requires to have at least one tag on branch for fast-forward
+        // https://github.com/apache/paimon/issues/7781
         catalog.getUnderlyingCatalog().createTag(new Identifier(database, table, branch), tag, snapshotId, null, true);
 
         catalog.forwardBranch(database, table, branch, forwardBranchRequest);

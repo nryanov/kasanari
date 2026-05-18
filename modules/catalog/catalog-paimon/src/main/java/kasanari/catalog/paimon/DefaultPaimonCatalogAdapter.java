@@ -585,7 +585,7 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new IllegalStateException(e);
+            throwUnchecked(e);
         }
     }
 
@@ -595,8 +595,14 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new IllegalStateException(e);
+            throwUnchecked(e);
+            throw new AssertionError("unreachable");
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void throwUnchecked(Throwable exception) throws T {
+        throw (T) exception;
     }
 
     @FunctionalInterface

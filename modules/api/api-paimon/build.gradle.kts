@@ -10,6 +10,7 @@ plugins {
 dependencies {
     implementation(project(":modules:platform:platform-jakarta"))
 
+    api(libs.paimon.core)
     api(libs.paimon.api)
 }
 
