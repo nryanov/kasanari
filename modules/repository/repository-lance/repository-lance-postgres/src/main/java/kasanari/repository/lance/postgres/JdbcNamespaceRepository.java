@@ -16,12 +16,12 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
     public void upsert(Handle tx, String namespacePath, Map<String, String> properties) {
         tx.createUpdate("""
                         INSERT INTO kasanari_lance_namespaces(namespace_path, properties)
-                        VALUES (:namespace_path, :properties)
+                        VALUES (:namespace_path, :properties::jsonb)
                         ON CONFLICT (namespace_path)
-                        DO UPDATE SET properties = EXCLUDED.properties
+                        DO UPDATE SET properties = EXCLUDED.properties::jsonb
                         """)
                 .bind("namespace_path", namespacePath)
-                .bind("properties", PropertiesSerde.encode(properties))
+                .bind("properties", JsonSerde.encodeMap(properties))
                 .execute();
     }
 
@@ -48,7 +48,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
                 .bind("namespace_path", namespacePath)
                 .mapTo(String.class)
                 .findOne()
-                .map(PropertiesSerde::decode)
+                .map(JsonSerde::decodeMap)
                 .orElse(new HashMap<>());
     }
 

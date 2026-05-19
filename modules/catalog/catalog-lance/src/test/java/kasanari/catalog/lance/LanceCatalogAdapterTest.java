@@ -5,48 +5,22 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.lance.namespace.model.AlterTableAddColumnsRequest;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
-import org.lance.namespace.model.AlterTransactionRequest;
-import org.lance.namespace.model.AnalyzeTableQueryPlanRequest;
-import org.lance.namespace.model.BatchCommitTablesRequest;
-import org.lance.namespace.model.BatchCreateTableVersionsRequest;
-import org.lance.namespace.model.BatchDeleteTableVersionsRequest;
-import org.lance.namespace.model.CountTableRowsRequest;
 import org.lance.namespace.model.CreateNamespaceRequest;
-import org.lance.namespace.model.CreateTableIndexRequest;
 import org.lance.namespace.model.CreateTableRequest;
-import org.lance.namespace.model.CreateTableTagRequest;
-import org.lance.namespace.model.CreateTableVersionRequest;
-import org.lance.namespace.model.DeleteFromTableRequest;
-import org.lance.namespace.model.DeleteTableTagRequest;
+import org.lance.namespace.model.DeclareTableRequest;
 import org.lance.namespace.model.DeregisterTableRequest;
 import org.lance.namespace.model.DescribeNamespaceRequest;
-import org.lance.namespace.model.DescribeTableIndexStatsRequest;
 import org.lance.namespace.model.DescribeTableRequest;
-import org.lance.namespace.model.DescribeTableVersionRequest;
-import org.lance.namespace.model.DescribeTransactionRequest;
 import org.lance.namespace.model.DropNamespaceRequest;
-import org.lance.namespace.model.DropTableIndexRequest;
 import org.lance.namespace.model.DropTableRequest;
-import org.lance.namespace.model.ExplainTableQueryPlanRequest;
-import org.lance.namespace.model.GetTableStatsRequest;
-import org.lance.namespace.model.GetTableTagVersionRequest;
-import org.lance.namespace.model.InsertIntoTableRequest;
 import org.lance.namespace.model.ListNamespacesRequest;
-import org.lance.namespace.model.ListTableIndicesRequest;
-import org.lance.namespace.model.ListTableTagsRequest;
-import org.lance.namespace.model.ListTableVersionsRequest;
 import org.lance.namespace.model.ListTablesRequest;
-import org.lance.namespace.model.MergeInsertIntoTableRequest;
 import org.lance.namespace.model.NamespaceExistsRequest;
-import org.lance.namespace.model.QueryTableRequest;
 import org.lance.namespace.model.RegisterTableRequest;
-import org.lance.namespace.model.RestoreTableRequest;
+import org.lance.namespace.model.RenameTableRequest;
 import org.lance.namespace.model.TableExistsRequest;
-import org.lance.namespace.model.UpdateTableRequest;
-import org.lance.namespace.model.UpdateTableTagRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -54,8 +28,8 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -103,14 +77,6 @@ public abstract class LanceCatalogAdapterTest {
         return prefix + "_" + UUID.randomUUID().toString().replace("-", "");
     }
 
-    protected byte[] requestData() {
-        return LanceArrowIpc.emptyBatch();
-    }
-
-    protected byte[] requestDataWithRows() {
-        return LanceArrowIpc.singleRowBatch();
-    }
-
     protected List<String> namespaceId() {
         return List.of(namespaceName);
     }
@@ -124,10 +90,26 @@ public abstract class LanceCatalogAdapterTest {
         adapter.createNamespace(request);
     }
 
+    protected void registerTableEntity() {
+        createNamespaceEntity();
+        var location = tableLocation();
+        adapter.registerTable(new RegisterTableRequest().id(tableId()).location(location).mode("create"));
+    }
+
     protected void createTableEntity() {
         createNamespaceEntity();
-        var request = new CreateTableRequest().id(tableId()).mode("create").properties(Map.of("stage", "created"));
-        adapter.createTable(request, requestData());
+        adapter.createTable(
+                new CreateTableRequest().id(tableId()).properties(Map.of("stage", "created")),
+                LanceArrowIpc.emptyBatch());
+    }
+
+    protected void createEmptyTableEntity() {
+        createNamespaceEntity();
+        adapter.createEmptyTable(new DeclareTableRequest().id(tableId()).location(tableLocation()));
+    }
+
+    protected String tableLocation() {
+        return "s3://warehouse/" + namespaceName + "/" + tableName;
     }
 
     protected boolean supportsCreateNamespace() {
@@ -174,128 +156,24 @@ public abstract class LanceCatalogAdapterTest {
         return true;
     }
 
-    protected boolean supportsAlterTableAddColumns() {
+    protected boolean supportsRenameTable() {
+        return false;
+    }
+
+    protected boolean supportsCreateTable() {
+        return false;
+    }
+
+    protected boolean supportsCreateEmptyTable() {
         return true;
     }
 
     protected boolean supportsAlterTableAlterColumns() {
-        return true;
+        return false;
     }
 
     protected boolean supportsAlterTableDropColumns() {
-        return true;
-    }
-
-    protected boolean supportsAnalyzeTableQueryPlan() {
-        return true;
-    }
-
-    protected boolean supportsCountTableRows() {
-        return true;
-    }
-
-    protected boolean supportsCreateTable() {
-        return true;
-    }
-
-    protected boolean supportsCreateTableIndex() {
-        return true;
-    }
-
-    protected boolean supportsCreateTableTag() {
-        return true;
-    }
-
-    protected boolean supportsDeleteFromTable() {
-        return true;
-    }
-
-    protected boolean supportsDeleteTableTag() {
-        return true;
-    }
-
-    protected boolean supportsDescribeTableIndexStats() {
-        return true;
-    }
-
-    protected boolean supportsDropTableIndex() {
-        return true;
-    }
-
-    protected boolean supportsExplainTableQueryPlan() {
-        return true;
-    }
-
-    protected boolean supportsGetTableStats() {
-        return true;
-    }
-
-    protected boolean supportsGetTableTagVersion() {
-        return true;
-    }
-
-    protected boolean supportsInsertIntoTable() {
-        return true;
-    }
-
-    protected boolean supportsListTableIndices() {
-        return true;
-    }
-
-    protected boolean supportsListTableTags() {
-        return true;
-    }
-
-    protected boolean supportsListTableVersions() {
-        return true;
-    }
-
-    protected boolean supportsCreateTableVersion() {
-        return true;
-    }
-
-    protected boolean supportsDescribeTableVersion() {
-        return true;
-    }
-
-    protected boolean supportsBatchDeleteTableVersions() {
-        return true;
-    }
-
-    protected boolean supportsBatchCreateTableVersions() {
-        return true;
-    }
-
-    protected boolean supportsBatchCommitTables() {
-        return true;
-    }
-
-    protected boolean supportsMergeInsertIntoTable() {
-        return true;
-    }
-
-    protected boolean supportsQueryTable() {
-        return true;
-    }
-
-    protected boolean supportsRestoreTable() {
-        return true;
-    }
-
-    protected boolean supportsUpdateTable() {
-        return true;
-    }
-
-    protected boolean supportsUpdateTableTag() {
-        return true;
-    }
-
-    protected boolean supportsDescribeTransaction() {
-        return true;
-    }
-
-    protected boolean supportsAlterTransaction() {
-        return true;
+        return false;
     }
 
     @Test
@@ -343,17 +221,9 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     @Test
-    void createTable() {
-        assumeTrue(supportsCreateTable() && supportsDescribeTable());
-        createTableEntity();
-        var response = adapter.describeTable(new DescribeTableRequest().id(tableId()));
-        assertEquals(tableName, response.getTable());
-    }
-
-    @Test
     void listTables() {
-        assumeTrue(supportsCreateTable() && supportsListTables());
-        createTableEntity();
+        assumeTrue(supportsRegisterTable() && supportsListTables());
+        registerTableEntity();
         var response = adapter.listTables(new ListTablesRequest().id(namespaceId()).limit(100));
         assertTrue(response.getTables().contains(tableName));
     }
@@ -362,25 +232,24 @@ public abstract class LanceCatalogAdapterTest {
     void registerTable() {
         assumeTrue(supportsCreateNamespace() && supportsRegisterTable() && supportsDescribeTable());
         createNamespaceEntity();
-        var expectedLocation = "s3://warehouse/" + namespaceName + "/" + tableName;
-        var request = new RegisterTableRequest().id(tableId()).location(expectedLocation).mode("create");
-        adapter.registerTable(request);
+        var expectedLocation = tableLocation();
+        adapter.registerTable(new RegisterTableRequest().id(tableId()).location(expectedLocation).mode("create"));
         var described = adapter.describeTable(new DescribeTableRequest().id(tableId()));
         assertEquals(expectedLocation, described.getLocation());
     }
 
     @Test
     void describeTable() {
-        assumeTrue(supportsCreateTable() && supportsDescribeTable());
-        createTableEntity();
+        assumeTrue(supportsRegisterTable() && supportsDescribeTable());
+        registerTableEntity();
         var response = adapter.describeTable(new DescribeTableRequest().id(tableId()));
         assertEquals(tableName, response.getTable());
     }
 
     @Test
     void tableExists() {
-        assumeTrue(supportsCreateTable() && supportsTableExists());
-        createTableEntity();
+        assumeTrue(supportsRegisterTable() && supportsTableExists());
+        registerTableEntity();
         var result = assertDoesNotThrow(() -> {
             adapter.tableExists(new TableExistsRequest().id(tableId()));
             return true;
@@ -390,8 +259,8 @@ public abstract class LanceCatalogAdapterTest {
 
     @Test
     void dropTable() {
-        assumeTrue(supportsCreateTable() && supportsDropTable() && supportsListTables());
-        createTableEntity();
+        assumeTrue(supportsRegisterTable() && supportsDropTable() && supportsListTables());
+        registerTableEntity();
         adapter.dropTable(new DropTableRequest().id(tableId()));
         var listed = adapter.listTables(new ListTablesRequest().id(namespaceId()).limit(100));
         assertFalse(listed.getTables().contains(tableName));
@@ -399,26 +268,34 @@ public abstract class LanceCatalogAdapterTest {
 
     @Test
     void deregisterTable() {
-        assumeTrue(supportsCreateTable() && supportsDeregisterTable() && supportsListTables());
-        createTableEntity();
+        assumeTrue(supportsRegisterTable() && supportsDeregisterTable() && supportsListTables());
+        registerTableEntity();
         adapter.deregisterTable(new DeregisterTableRequest().id(tableId()));
         var listed = adapter.listTables(new ListTablesRequest().id(namespaceId()).limit(100));
         assertFalse(listed.getTables().contains(tableName));
     }
 
     @Test
-    void alterTableAddColumns() {
-        assumeTrue(supportsCreateTable() && supportsAlterTableAddColumns() && supportsDescribeTable());
+    void createTable() {
+        assumeTrue(supportsCreateTable() && supportsDescribeTable());
         createTableEntity();
-        var alter = adapter.alterTableAddColumns(new AlterTableAddColumnsRequest().id(tableId()));
-        var described = adapter.describeTable(new DescribeTableRequest().id(tableId()));
-        assertEquals(alter.getVersion(), described.getVersion());
+        var response = adapter.describeTable(new DescribeTableRequest().id(tableId()));
+        assertEquals(tableName, response.getTable());
+    }
+
+    @Test
+    void createEmptyTable() {
+        assumeTrue(supportsCreateEmptyTable() && supportsDescribeTable());
+        createEmptyTableEntity();
+        var response = adapter.describeTable(new DescribeTableRequest().id(tableId()));
+        assertEquals(tableName, response.getTable());
+        assertTrue(response.getIsOnlyDeclared());
     }
 
     @Test
     void alterTableAlterColumns() {
-        assumeTrue(supportsCreateTable() && supportsAlterTableAlterColumns() && supportsDescribeTable());
-        createTableEntity();
+        assumeTrue(supportsRegisterTable() && supportsAlterTableAlterColumns() && supportsDescribeTable());
+        registerTableEntity();
         var alter = adapter.alterTableAlterColumns(new AlterTableAlterColumnsRequest().id(tableId()));
         var described = adapter.describeTable(new DescribeTableRequest().id(tableId()));
         assertEquals(alter.getVersion(), described.getVersion());
@@ -426,248 +303,20 @@ public abstract class LanceCatalogAdapterTest {
 
     @Test
     void alterTableDropColumns() {
-        assumeTrue(supportsCreateTable() && supportsAlterTableDropColumns() && supportsDescribeTable());
-        createTableEntity();
+        assumeTrue(supportsRegisterTable() && supportsAlterTableDropColumns() && supportsDescribeTable());
+        registerTableEntity();
         var alter = adapter.alterTableDropColumns(new AlterTableDropColumnsRequest().id(tableId()).columns(List.of("col_a")));
         var described = adapter.describeTable(new DescribeTableRequest().id(tableId()));
         assertEquals(alter.getVersion(), described.getVersion());
     }
 
     @Test
-    void analyzeTableQueryPlan() {
-        assumeTrue(supportsCreateTable() && supportsAnalyzeTableQueryPlan());
-        createTableEntity();
-        var request = new AnalyzeTableQueryPlanRequest().id(tableId()).filter("id > 0").prefilter(true).version(1L);
-        var response = adapter.analyzeTableQueryPlan(request);
-        assertEquals(true, !response.isBlank());
-    }
-
-    @Test
-    void countTableRows() {
-        assumeTrue(supportsCreateTable() && supportsCountTableRows());
-        createTableEntity();
-        var response = adapter.countTableRows(new CountTableRowsRequest().id(tableId()).version(1L));
-        assertEquals(0L, response);
-    }
-
-    @Test
-    void createTableIndex() {
-        assumeTrue(supportsCreateTable() && supportsCreateTableIndex() && supportsListTableIndices());
-        createTableEntity();
-        adapter.createTableIndex(new CreateTableIndexRequest().id(tableId()).withPosition(true));
-        var listed = adapter.listTableIndices(new ListTableIndicesRequest().id(tableId()).limit(100));
-        assertEquals(1, listed.getIndexes().size());
-    }
-
-    @Test
-    void createTableTag() {
-        assumeTrue(supportsCreateTable() && supportsCreateTableTag() && supportsGetTableTagVersion());
-        createTableEntity();
-        adapter.createTableTag(new CreateTableTagRequest().id(tableId()).tag(tagName).version(1L));
-        var version = adapter.getTableTagVersion(new GetTableTagVersionRequest().id(tableId()).tag(tagName));
-        assertEquals(1L, version.getVersion());
-    }
-
-    @Test
-    void deleteFromTable() {
-        assumeTrue(supportsCreateTable() && supportsDeleteFromTable() && supportsCountTableRows());
-        createTableEntity();
-        adapter.deleteFromTable(new DeleteFromTableRequest().id(tableId()));
-        var rows = adapter.countTableRows(new CountTableRowsRequest().id(tableId()));
-        assertEquals(0L, rows);
-    }
-
-    @Test
-    void deleteTableTag() {
-        assumeTrue(supportsCreateTable() && supportsCreateTableTag() && supportsDeleteTableTag() && supportsListTableTags());
-        createTableEntity();
-        adapter.createTableTag(new CreateTableTagRequest().id(tableId()).tag(tagName).version(1L));
-        adapter.deleteTableTag(new DeleteTableTagRequest().id(tableId()).tag(tagName));
-        var listed = adapter.listTableTags(new ListTableTagsRequest().id(tableId()).limit(100));
-        assertFalse(listed.getTags().containsKey(tagName));
-    }
-
-    @Test
-    void describeTableIndexStats() {
-        assumeTrue(supportsCreateTable() && supportsCreateTableIndex() && supportsDescribeTableIndexStats());
-        createTableEntity();
-        adapter.createTableIndex(new CreateTableIndexRequest().id(tableId()).withPosition(true));
-        var stats = adapter.describeTableIndexStats(new DescribeTableIndexStatsRequest().id(tableId()), indexName);
-        assertTrue(stats.getNumIndices() >= 1);
-    }
-
-    @Test
-    void dropTableIndex() {
-        assumeTrue(supportsCreateTable() && supportsCreateTableIndex() && supportsDropTableIndex() && supportsListTableIndices());
-        createTableEntity();
-        adapter.createTableIndex(new CreateTableIndexRequest().id(tableId()).withPosition(true));
-        adapter.dropTableIndex(new DropTableIndexRequest().id(tableId()), indexName);
-        var listed = adapter.listTableIndices(new ListTableIndicesRequest().id(tableId()).limit(100));
-        assertEquals(0, listed.getIndexes().size());
-    }
-
-    @Test
-    void explainTableQueryPlan() {
-        assumeTrue(supportsCreateTable() && supportsExplainTableQueryPlan());
-        createTableEntity();
-        var query = new QueryTableRequest().id(tableId()).filter("id > 0").prefilter(true).version(1L);
-        var response = adapter.explainTableQueryPlan(new ExplainTableQueryPlanRequest().id(tableId()).query(query));
-        assertEquals(true, !response.isBlank());
-    }
-
-    @Test
-    void getTableStats() {
-        assumeTrue(supportsCreateTable() && supportsGetTableStats() && supportsCountTableRows());
-        createTableEntity();
-        var stats = adapter.getTableStats(new GetTableStatsRequest().id(tableId()));
-        var rows = adapter.countTableRows(new CountTableRowsRequest().id(tableId()));
-        assertEquals(rows, stats.getNumRows());
-    }
-
-    @Test
-    void getTableTagVersion() {
-        assumeTrue(supportsCreateTable() && supportsCreateTableTag() && supportsGetTableTagVersion());
-        createTableEntity();
-        adapter.createTableTag(new CreateTableTagRequest().id(tableId()).tag(tagName).version(1L));
-        var version = adapter.getTableTagVersion(new GetTableTagVersionRequest().id(tableId()).tag(tagName));
-        assertEquals(1L, version.getVersion());
-    }
-
-    @Test
-    void insertIntoTable() {
-        assumeTrue(supportsCreateTable() && supportsInsertIntoTable() && supportsCountTableRows());
-        createTableEntity();
-        adapter.insertIntoTable(new InsertIntoTableRequest().id(tableId()).mode("append"), requestDataWithRows());
-        var rows = adapter.countTableRows(new CountTableRowsRequest().id(tableId()));
-        assertTrue(rows >= 0);
-    }
-
-    @Test
-    void listTableIndices() {
-        assumeTrue(supportsCreateTable() && supportsCreateTableIndex() && supportsListTableIndices());
-        createTableEntity();
-        adapter.createTableIndex(new CreateTableIndexRequest().id(tableId()).withPosition(true));
-        var listed = adapter.listTableIndices(new ListTableIndicesRequest().id(tableId()).limit(100));
-        assertEquals(1, listed.getIndexes().size());
-    }
-
-    @Test
-    void listTableTags() {
-        assumeTrue(supportsCreateTable() && supportsCreateTableTag() && supportsListTableTags());
-        createTableEntity();
-        adapter.createTableTag(new CreateTableTagRequest().id(tableId()).tag(tagName).version(1L));
-        var listed = adapter.listTableTags(new ListTableTagsRequest().id(tableId()).limit(100));
-        assertTrue(listed.getTags().containsKey(tagName));
-    }
-
-    @Test
-    void listTableVersions() {
-        assumeTrue(supportsCreateTableVersion() && supportsListTableVersions());
-        var create = adapter.createTableVersion(new CreateTableVersionRequest().id(tableId()).version(1L));
-        var listed = adapter.listTableVersions(new ListTableVersionsRequest().id(tableId()).limit(100));
-        assertEquals(create.getVersion().getVersion(), listed.getVersions().get(0).getVersion());
-    }
-
-    @Test
-    void createTableVersion() {
-        assumeTrue(supportsCreateTableVersion() && supportsDescribeTableVersion());
-        var created = adapter.createTableVersion(new CreateTableVersionRequest().id(tableId()).version(1L));
-        var described = adapter.describeTableVersion(new DescribeTableVersionRequest().id(tableId()).version(1L));
-        assertEquals(created.getVersion().getVersion(), described.getVersion().getVersion());
-    }
-
-    @Test
-    void describeTableVersion() {
-        assumeTrue(supportsCreateTableVersion() && supportsDescribeTableVersion());
-        adapter.createTableVersion(new CreateTableVersionRequest().id(tableId()).version(1L));
-        var described = adapter.describeTableVersion(new DescribeTableVersionRequest().id(tableId()).version(1L));
-        assertEquals(1L, described.getVersion().getVersion());
-    }
-
-    @Test
-    void batchDeleteTableVersions() {
-        assumeTrue(supportsCreateTableVersion() && supportsBatchDeleteTableVersions() && supportsListTableVersions());
-        adapter.createTableVersion(new CreateTableVersionRequest().id(tableId()).version(1L));
-        adapter.batchDeleteTableVersions(new BatchDeleteTableVersionsRequest().id(tableId()));
-        var listed = adapter.listTableVersions(new ListTableVersionsRequest().id(tableId()).limit(100));
-        assertEquals(0, listed.getVersions().size());
-    }
-
-    @Test
-    void batchCreateTableVersions() {
-        assumeTrue(supportsBatchCreateTableVersions() && supportsListTableVersions());
-        adapter.batchCreateTableVersions(new BatchCreateTableVersionsRequest().entries(List.of()));
-        var listed = adapter.listTableVersions(new ListTableVersionsRequest().id(tableId()).limit(100));
-        assertEquals(0, listed.getVersions().size());
-    }
-
-    @Test
-    void batchCommitTables() {
-        assumeTrue(supportsBatchCommitTables());
-        var response = adapter.batchCommitTables(new BatchCommitTablesRequest().operations(List.of()));
-        assertEquals(0, response.getResults().size());
-    }
-
-    @Test
-    void mergeInsertIntoTable() {
-        assumeTrue(supportsCreateTable() && supportsMergeInsertIntoTable() && supportsCountTableRows());
-        createTableEntity();
-        adapter.mergeInsertIntoTable(
-                new MergeInsertIntoTableRequest().id(tableId()).on("source.id = target.id"),
-                requestDataWithRows());
-        var rows = adapter.countTableRows(new CountTableRowsRequest().id(tableId()));
-        assertTrue(rows >= 0);
-    }
-
-    @Test
-    void queryTable() {
-        assumeTrue(supportsCreateTable() && supportsQueryTable());
-        createTableEntity();
-        var response = adapter.queryTable(new QueryTableRequest().id(tableId()).filter("id > 0"));
-        assertTrue(response.length >= 0);
-    }
-
-    @Test
-    void restoreTable() {
-        assumeTrue(supportsCreateTableVersion() && supportsRestoreTable() && supportsDescribeTableVersion());
-        adapter.createTableVersion(new CreateTableVersionRequest().id(tableId()).version(1L));
-        adapter.restoreTable(new RestoreTableRequest().id(tableId()).version(1L));
-        var described = adapter.describeTableVersion(new DescribeTableVersionRequest().id(tableId()).version(1L));
-        assertEquals(1L, described.getVersion().getVersion());
-    }
-
-    @Test
-    void updateTable() {
-        assumeTrue(supportsCreateTable() && supportsUpdateTable() && supportsDescribeTable());
-        createTableEntity();
-        adapter.updateTable(new UpdateTableRequest().id(tableId()).properties(Map.of("stage", "updated")));
-        var described = adapter.describeTable(new DescribeTableRequest().id(tableId()));
-        assertEquals("updated", described.getProperties().get("stage"));
-    }
-
-    @Test
-    void updateTableTag() {
-        assumeTrue(supportsCreateTable() && supportsCreateTableTag() && supportsUpdateTableTag() && supportsGetTableTagVersion());
-        createTableEntity();
-        adapter.createTableTag(new CreateTableTagRequest().id(tableId()).tag(tagName).version(1L));
-        adapter.updateTableTag(new UpdateTableTagRequest().id(tableId()).tag(tagName).version(2L));
-        var version = adapter.getTableTagVersion(new GetTableTagVersionRequest().id(tableId()).tag(tagName));
-        assertEquals(2L, version.getVersion());
-    }
-
-    @Test
-    void describeTransaction() {
-        assumeTrue(supportsDescribeTransaction() && supportsAlterTransaction());
-        adapter.alterTransaction(new AlterTransactionRequest().id(List.of(transactionName)).actions(List.of()));
-        var response = adapter.describeTransaction(new DescribeTransactionRequest().id(List.of(transactionName)));
-        assertEquals("committed", response.getStatus());
-    }
-
-    @Test
-    void alterTransaction() {
-        assumeTrue(supportsAlterTransaction() && supportsDescribeTransaction());
-        adapter.alterTransaction(new AlterTransactionRequest().id(List.of(transactionName)).actions(List.of()));
-        var described = adapter.describeTransaction(new DescribeTransactionRequest().id(List.of(transactionName)));
-        assertEquals("committed", described.getStatus());
+    void renameTable() {
+        assumeTrue(supportsRegisterTable() && supportsRenameTable() && supportsDescribeTable());
+        registerTableEntity();
+        var renamed = uniqueName("renamed");
+        adapter.renameTable(new RenameTableRequest().id(tableId()).newTableName(renamed));
+        var described = adapter.describeTable(new DescribeTableRequest().id(List.of(namespaceName, renamed)));
+        assertEquals(renamed, described.getTable());
     }
 }

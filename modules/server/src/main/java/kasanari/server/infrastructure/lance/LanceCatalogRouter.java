@@ -137,6 +137,7 @@ public class LanceCatalogRouter {
     }
 
     private LanceCatalogAdapter createAdapter(CatalogMetadata catalog) {
+        var fileIoConfig = catalog.spec().fileIoProperties();
         var properties = catalog.spec().catalogProperties();
         var implementation = properties.get(IMPLEMENTATION_PROPERTY);
         if (implementation == null || implementation.isBlank()) {
@@ -145,8 +146,8 @@ public class LanceCatalogRouter {
         }
 
         return switch (catalog.catalogMode()) {
-            case INTERNAL -> kasanariLanceCatalogFactory.create(implementation, properties);
-            case PROXY -> proxyLanceCatalogFactory.create(implementation, properties);
+            case INTERNAL -> kasanariLanceCatalogFactory.create(implementation, fileIoConfig, properties);
+            case PROXY -> proxyLanceCatalogFactory.create(implementation, fileIoConfig, properties);
         };
     }
 

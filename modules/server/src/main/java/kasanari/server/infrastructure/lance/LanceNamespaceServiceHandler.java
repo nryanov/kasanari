@@ -39,7 +39,14 @@ public class LanceNamespaceServiceHandler implements LanceRestNamespaceService {
     }
 
     @Override
-    public Response listTables(String id, String delimiter, String pageToken, Integer limit, SecurityContext securityContext) {
+    public Response listTables(
+            String id,
+            String delimiter,
+            String pageToken,
+            Integer limit,
+            Boolean includeDeclared,
+            SecurityContext securityContext
+    ) {
         return ApiFallbacks.notImplemented("LanceNamespaceService.listTables");
     }
 

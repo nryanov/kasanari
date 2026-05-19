@@ -15,20 +15,20 @@ public class JdbcTableRepository implements TableRepository<Handle> {
     public void upsert(Handle tx, String tableId, String namespacePath, String tableName, String location, Map<String, String> properties, boolean declaredOnly) {
         tx.createUpdate("""
                         INSERT INTO kasanari_lance_tables(table_id, namespace_path, table_name, location, properties, declared_only)
-                        VALUES (:table_id, :namespace_path, :table_name, :location, :properties, :declared_only)
+                        VALUES (:table_id, :namespace_path, :table_name, :location, :properties::jsonb, :declared_only)
                         ON CONFLICT (table_id)
                         DO UPDATE SET
                             namespace_path = EXCLUDED.namespace_path,
                             table_name = EXCLUDED.table_name,
                             location = EXCLUDED.location,
-                            properties = EXCLUDED.properties,
+                            properties = EXCLUDED.properties::jsonb,
                             declared_only = EXCLUDED.declared_only
                         """)
                 .bind("table_id", tableId)
                 .bind("namespace_path", namespacePath)
                 .bind("table_name", tableName)
                 .bind("location", location)
-                .bind("properties", PropertiesSerde.encode(properties))
+                .bind("properties", JsonSerde.encodeMap(properties))
                 .bind("declared_only", declaredOnly)
                 .execute();
     }
@@ -60,7 +60,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
                         rs.getString("namespace_path"),
                         rs.getString("table_name"),
                         rs.getString("location"),
-                        PropertiesSerde.decode(rs.getString("properties")),
+                        JsonSerde.decodeMap(rs.getString("properties")),
                         rs.getBoolean("declared_only")
                 ))
                 .findOne()

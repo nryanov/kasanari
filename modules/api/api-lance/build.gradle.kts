@@ -21,7 +21,7 @@ val generatedOpenApiSrcDir = layout.buildDirectory.dir("generated/src/main/java"
 
 // https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-resteasy.md
 // https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-gradle-plugin
-// https://github.com/lance-format/lance/blob/v2.0.0/docs/src/rest.yaml
+// https://github.com/lance-format/lance-namespace/blob/e4708315e087db7da1ef763d84085c66722400ff/docs/src/rest.yaml
 openApiGenerate {
     inputSpec.set(lanceSpecDir.file("kasanari-lance-catalog-service.yaml").asFile.absolutePath)
     generatorName.set("jaxrs-resteasy")
@@ -51,26 +51,34 @@ openApiGenerate {
     additionalProperties.put("dateLibrary", "java8")
 
     val lanceModels = listOf(
-        "AlterTableAddColumnsRequest",
-        "AlterTableAddColumnsResponse",
         "AlterTableAlterColumnsRequest",
         "AlterTableAlterColumnsResponse",
         "AlterTableDropColumnsRequest",
         "AlterTableDropColumnsResponse",
         "AlterTransactionRequest",
         "AlterTransactionResponse",
-        "AnalyzeTableQueryPlanRequest",
-        "AnalyzeTableQueryPlanResponse",
-        "CountTableRowsRequest",
+        "BatchCommitTablesRequest",
+        "BatchCommitTablesResponse",
+        "BatchCreateTableVersionsRequest",
+        "BatchCreateTableVersionsResponse",
+        "BatchDeleteTableVersionsRequest",
+        "BatchDeleteTableVersionsResponse",
         "CreateNamespaceRequest",
         "CreateNamespaceResponse",
         "CreateTableIndexRequest",
         "CreateTableIndexResponse",
+        "CreateTableRequest",
         "CreateTableResponse",
+        "CreateTableScalarIndexRequest",
+        "CreateTableScalarIndexResponse",
         "CreateTableTagRequest",
-        "DeleteFromTableRequest",
-        "DeleteFromTableResponse",
+        "CreateTableTagResponse",
+        "CreateTableVersionRequest",
+        "CreateTableVersionResponse",
+        "DeclareTableRequest",
+        "DeclareTableResponse",
         "DeleteTableTagRequest",
+        "DeleteTableTagResponse",
         "DeregisterTableRequest",
         "DeregisterTableResponse",
         "DescribeNamespaceRequest",
@@ -79,6 +87,8 @@ openApiGenerate {
         "DescribeTableIndexStatsResponse",
         "DescribeTableRequest",
         "DescribeTableResponse",
+        "DescribeTableVersionRequest",
+        "DescribeTableVersionResponse",
         "DescribeTransactionRequest",
         "DescribeTransactionResponse",
         "DropNamespaceRequest",
@@ -88,13 +98,10 @@ openApiGenerate {
         "DropTableRequest",
         "DropTableResponse",
         "ErrorResponse",
-        "ExplainTableQueryPlanRequest",
-        "ExplainTableQueryPlanResponse",
         "GetTableStatsRequest",
         "GetTableStatsResponse",
         "GetTableTagVersionRequest",
         "GetTableTagVersionResponse",
-        "InsertIntoTableResponse",
         "ListNamespacesResponse",
         "ListTableIndicesRequest",
         "ListTableIndicesResponse",
@@ -102,17 +109,18 @@ openApiGenerate {
         "ListTableVersionsRequest",
         "ListTableVersionsResponse",
         "ListTablesResponse",
-        "MergeInsertIntoTableResponse",
         "NamespaceExistsRequest",
-        "QueryTableRequest",
         "RegisterTableRequest",
         "RegisterTableResponse",
+        "RenameTableRequest",
+        "RenameTableResponse",
         "RestoreTableRequest",
         "RestoreTableResponse",
         "TableExistsRequest",
-        "UpdateTableRequest",
-        "UpdateTableResponse",
+        "UpdateTableSchemaMetadataRequest",
+        "UpdateTableSchemaMetadataResponse",
         "UpdateTableTagRequest",
+        "UpdateTableTagResponse",
     )
 
     val lanceMappings = lanceModels.associateWith { "org.lance.namespace.model.$it" }.toMutableMap()

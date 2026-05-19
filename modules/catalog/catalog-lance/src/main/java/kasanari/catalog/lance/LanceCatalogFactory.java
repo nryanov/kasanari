@@ -3,5 +3,9 @@ package kasanari.catalog.lance;
 import java.util.Map;
 
 public interface LanceCatalogFactory {
-    LanceCatalogAdapter create(String implementation, Map<String, String> properties);
+    LanceCatalogAdapter create(
+            String implementation,
+            Map<String, String> fileIoProperties,
+            Map<String, String> catalogProperties
+    );
 }

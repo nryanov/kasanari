@@ -2,105 +2,74 @@ package kasanari.catalog.lance;
 
 import kasanari.repository.core.TransactionManager;
 import kasanari.repository.jdbc.JdbcTransactionManager;
+import kasanari.repository.jdbc.KasanariDataSource;
 import kasanari.repository.lance.NamespaceRepository;
 import kasanari.repository.lance.TableRepository;
-import kasanari.repository.lance.TableVersionRepository;
-import kasanari.repository.lance.TransactionRepository;
-import kasanari.repository.lance.postgres.JdbcTableInitializer;
 import kasanari.repository.lance.postgres.JdbcNamespaceRepository;
+import kasanari.repository.lance.postgres.JdbcTableInitializer;
 import kasanari.repository.lance.postgres.JdbcTableRepository;
-import kasanari.repository.lance.postgres.JdbcTableVersionRepository;
-import kasanari.repository.lance.postgres.JdbcTransactionRepository;
-import kasanari.repository.jdbc.KasanariDataSource;
 import org.apache.arrow.memory.BufferAllocator;
 import org.jdbi.v3.core.Handle;
 import org.lance.namespace.LanceNamespace;
-import org.lance.namespace.model.AlterTableAddColumnsRequest;
-import org.lance.namespace.model.AlterTableAddColumnsResponse;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableAlterColumnsResponse;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
 import org.lance.namespace.model.AlterTableDropColumnsResponse;
-import org.lance.namespace.model.AlterTransactionRequest;
-import org.lance.namespace.model.AlterTransactionResponse;
-import org.lance.namespace.model.BatchCommitTablesRequest;
-import org.lance.namespace.model.BatchCommitTablesResponse;
-import org.lance.namespace.model.BatchCreateTableVersionsRequest;
-import org.lance.namespace.model.BatchCreateTableVersionsResponse;
-import org.lance.namespace.model.BatchDeleteTableVersionsRequest;
-import org.lance.namespace.model.BatchDeleteTableVersionsResponse;
-import org.lance.namespace.model.CommitTableResult;
 import org.lance.namespace.model.CreateNamespaceRequest;
 import org.lance.namespace.model.CreateNamespaceResponse;
 import org.lance.namespace.model.CreateTableRequest;
 import org.lance.namespace.model.CreateTableResponse;
-import org.lance.namespace.model.CreateTableVersionRequest;
-import org.lance.namespace.model.CreateTableVersionResponse;
+import org.lance.namespace.model.DeclareTableRequest;
+import org.lance.namespace.model.DeclareTableResponse;
 import org.lance.namespace.model.DeregisterTableRequest;
 import org.lance.namespace.model.DeregisterTableResponse;
 import org.lance.namespace.model.DescribeNamespaceRequest;
 import org.lance.namespace.model.DescribeNamespaceResponse;
 import org.lance.namespace.model.DescribeTableRequest;
 import org.lance.namespace.model.DescribeTableResponse;
-import org.lance.namespace.model.DescribeTableVersionRequest;
-import org.lance.namespace.model.DescribeTableVersionResponse;
-import org.lance.namespace.model.DescribeTransactionRequest;
-import org.lance.namespace.model.DescribeTransactionResponse;
 import org.lance.namespace.model.DropNamespaceRequest;
 import org.lance.namespace.model.DropNamespaceResponse;
 import org.lance.namespace.model.DropTableRequest;
 import org.lance.namespace.model.DropTableResponse;
 import org.lance.namespace.model.ListNamespacesRequest;
 import org.lance.namespace.model.ListNamespacesResponse;
-import org.lance.namespace.model.ListTableVersionsRequest;
-import org.lance.namespace.model.ListTableVersionsResponse;
 import org.lance.namespace.model.ListTablesRequest;
 import org.lance.namespace.model.ListTablesResponse;
 import org.lance.namespace.model.NamespaceExistsRequest;
 import org.lance.namespace.model.RegisterTableRequest;
 import org.lance.namespace.model.RegisterTableResponse;
+import org.lance.namespace.model.RenameTableRequest;
+import org.lance.namespace.model.RenameTableResponse;
+import org.lance.namespace.model.RestoreTableRequest;
+import org.lance.namespace.model.RestoreTableResponse;
 import org.lance.namespace.model.TableExistsRequest;
-import org.lance.namespace.model.TableVersion;
-import org.lance.namespace.model.VersionRange;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
     private KasanariDataSource dataSource;
     private BufferAllocator allocator;
     private NamespaceRepository<Handle> namespaceRepository;
     private TableRepository<Handle> tableRepository;
-    private TableVersionRepository<Handle> tableVersionRepository;
-    private TransactionRepository<Handle> transactionRepository;
     private TransactionManager<Handle> transactionManager;
 
     @Override
-    public void initialize(Map configProperties, BufferAllocator allocator) {
-        var properties = new HashMap<String, String>();
-        if (configProperties != null) {
-            for (var entry : ((Map<?, ?>) configProperties).entrySet()) {
-                properties.put(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
-            }
-        }
-
+    public void initialize(Map<String, String> properties, BufferAllocator allocator) {
         this.allocator = allocator;
         this.dataSource = new KasanariDataSource(properties);
-        new JdbcTableInitializer(dataSource).initialize();
-
         this.transactionManager = new JdbcTransactionManager(dataSource);
+        new JdbcTableInitializer(transactionManager).initialize();
+
         this.namespaceRepository = new JdbcNamespaceRepository();
         this.tableRepository = new JdbcTableRepository();
-        this.tableVersionRepository = new JdbcTableVersionRepository();
-        this.transactionRepository = new JdbcTransactionRepository();
     }
 
     @Override
     public String namespaceId() {
-        return "kasanari-jdbc";
+        return "kasanari-lance";
     }
 
     @Override
@@ -159,7 +128,15 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         var namespacePath = namespaceFrom(tableId);
         var tableName = tableNameFrom(tableId);
 
-        transactionManager.inTransaction(tx -> tableRepository.upsert(tx, tableId, namespacePath, tableName, request.getLocation(), mapOrEmpty(request.getProperties()), false));
+        transactionManager.inTransaction(tx -> tableRepository.upsert(
+                tx,
+                tableId,
+                namespacePath,
+                tableName,
+                request.getLocation(),
+                mapOrEmpty(request.getProperties()),
+                false
+        ));
         return new RegisterTableResponse()
                 .location(request.getLocation())
                 .properties(mapOrEmpty(request.getProperties()));
@@ -174,18 +151,12 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
                 throw new IllegalStateException("Table does not exist: " + tableId);
             }
 
-            var response = new DescribeTableResponse()
+            return new DescribeTableResponse()
                     .table(table.tableName())
                     .namespace(splitNamespace(table.namespacePath()))
                     .location(table.location())
                     .properties(table.properties() != null ? new HashMap<>(table.properties()) : new HashMap<>())
                     .isOnlyDeclared(table.declaredOnly());
-
-            var latest = tableVersionRepository.list(tx, tableId, true, 1, null);
-            if (!latest.isEmpty()) {
-                response.version(latest.getFirst().getVersion());
-            }
-            return response;
         });
     }
 
@@ -203,7 +174,6 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         var tableId = joinIds(request.getId());
         return transactionManager.inTransactionR(tx -> {
             var table = tableRepository.get(tx, tableId);
-            tableVersionRepository.deleteForTable(tx, tableId);
             tableRepository.delete(tx, tableId);
             return new DropTableResponse()
                     .id(request.getId())
@@ -217,7 +187,6 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         var tableId = joinIds(request.getId());
         return transactionManager.inTransactionR(tx -> {
             var table = tableRepository.get(tx, tableId);
-            tableVersionRepository.deleteForTable(tx, tableId);
             tableRepository.delete(tx, tableId);
             return new DeregisterTableResponse()
                     .id(request.getId())
@@ -227,212 +196,91 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
     }
 
     @Override
-    public ListTableVersionsResponse listTableVersions(ListTableVersionsRequest request) {
+    public CreateTableResponse createTable(CreateTableRequest request, byte[] requestData) {
+        var created = LanceNamespace.super.createTable(request, requestData);
         var tableId = joinIds(request.getId());
-        var versions = transactionManager.inTransactionR(tx -> tableVersionRepository.list(
+        var namespacePath = namespaceFrom(tableId);
+        var tableName = tableNameFrom(tableId);
+        var location = created.getLocation();
+
+        transactionManager.inTransaction(tx -> tableRepository.upsert(
                 tx,
                 tableId,
-                Boolean.TRUE.equals(request.getDescending()),
-                request.getLimit(),
-                request.getPageToken()
+                namespacePath,
+                tableName,
+                location,
+                mapOrEmpty(request.getProperties()),
+                false
         ));
-        return new ListTableVersionsResponse().versions(versions);
+        return created;
     }
 
     @Override
-    public CreateTableVersionResponse createTableVersion(CreateTableVersionRequest request) {
-        var tableId = joinIds(request.getId());
-        var row = new TableVersion()
-                .version(request.getVersion())
-                .manifestPath(request.getManifestPath())
-                .manifestSize(request.getManifestSize())
-                .eTag(request.geteTag())
-                .metadata(mapOrEmpty(request.getMetadata()))
-                .timestampMillis(System.currentTimeMillis());
-        transactionManager.inTransaction(tx -> tableVersionRepository.create(tx, tableId, row));
-        return new CreateTableVersionResponse().version(row);
+    public RestoreTableResponse restoreTable(RestoreTableRequest request) {
+        var location = requireTableLocation(request.getId());
+        return LanceDatasetSupport.restoreTable(allocator, location, request);
     }
 
     @Override
-    public DescribeTableVersionResponse describeTableVersion(DescribeTableVersionRequest request) {
-        var tableId = joinIds(request.getId());
-        var row = transactionManager.inTransactionR(tx -> tableVersionRepository.get(tx, tableId, request.getVersion()));
-        if (row == null) {
-            throw new IllegalStateException("Table version does not exist");
-        }
-        return new DescribeTableVersionResponse().version(row);
-    }
-
-    @Override
-    public BatchDeleteTableVersionsResponse batchDeleteTableVersions(BatchDeleteTableVersionsRequest request) {
-        var tableId = joinIds(request.getId());
-        var ranges = new ArrayList<VersionRange>();
-        for (var value : request.getRanges()) {
-            ranges.add(value);
-        }
-        var deleted = transactionManager.inTransactionR(tx -> tableVersionRepository.deleteRanges(tx, tableId, ranges));
-        return new BatchDeleteTableVersionsResponse().deletedCount(deleted);
-    }
-
-    @Override
-    public BatchCreateTableVersionsResponse batchCreateTableVersions(BatchCreateTableVersionsRequest request) {
+    public RenameTableResponse renameTable(RenameTableRequest request) {
+        var sourceId = joinIds(request.getId());
+        var newId = new ArrayList<>(request.getNewNamespaceId() != null && !request.getNewNamespaceId().isEmpty()
+                ? request.getNewNamespaceId()
+                : request.getId());
+        newId.set(newId.size() - 1, request.getNewTableName());
+        var destinationId = joinIds(newId);
         return transactionManager.inTransactionR(tx -> {
-            var created = new ArrayList<TableVersion>();
-            for (var value : request.getEntries()) {
-                var tableId = joinIds(value.getId());
-                var row = new TableVersion()
-                        .version(value.getVersion())
-                        .manifestPath(value.getManifestPath())
-                        .manifestSize(value.getManifestSize())
-                        .eTag(value.geteTag())
-                        .metadata(mapOrEmpty(value.getMetadata()))
-                        .timestampMillis(System.currentTimeMillis());
-                tableVersionRepository.create(tx, tableId, row);
-                created.add(row);
+            var table = tableRepository.get(tx, sourceId);
+            if (table == null) {
+                throw new IllegalStateException("Table does not exist: " + sourceId);
             }
-            return new BatchCreateTableVersionsResponse().versions(created);
+
+            tableRepository.delete(tx, sourceId);
+            tableRepository.upsert(
+                    tx,
+                    destinationId,
+                    namespaceFrom(destinationId),
+                    tableNameFrom(destinationId),
+                    table.location(),
+                    table.properties(),
+                    table.declaredOnly()
+            );
+
+            return new RenameTableResponse();
         });
     }
 
     @Override
-    public CreateTableResponse createTable(CreateTableRequest request, byte[] requestData) {
-        return LanceNamespace.super.createTable(request, requestData);
-    }
+    public DeclareTableResponse declareTable(DeclareTableRequest request) {
+        var tableId = joinIds(request.getId());
+        var namespacePath = namespaceFrom(tableId);
+        var tableName = tableNameFrom(tableId);
 
-    @Override
-    public AlterTableAddColumnsResponse alterTableAddColumns(AlterTableAddColumnsRequest request) {
-        return LanceNamespace.super.alterTableAddColumns(request);
+        transactionManager.inTransaction(tx -> tableRepository.upsert(
+                tx,
+                tableId,
+                namespacePath,
+                tableName,
+                request.getLocation(),
+                mapOrEmpty(request.getProperties()),
+                true
+        ));
+        return new DeclareTableResponse()
+                .location(request.getLocation())
+                .properties(mapOrEmpty(request.getProperties()))
+                .managedVersioning(true);
     }
 
     @Override
     public AlterTableAlterColumnsResponse alterTableAlterColumns(AlterTableAlterColumnsRequest request) {
-        return LanceNamespace.super.alterTableAlterColumns(request);
+        var location = requireTableLocation(request.getId());
+        return LanceDatasetSupport.alterTableAlterColumns(allocator, location, request);
     }
 
     @Override
     public AlterTableDropColumnsResponse alterTableDropColumns(AlterTableDropColumnsRequest request) {
-        return LanceNamespace.super.alterTableDropColumns(request);
-    }
-
-    @Override
-    public BatchCommitTablesResponse batchCommitTables(BatchCommitTablesRequest request) {
-        return transactionManager.inTransactionR(tx -> {
-            var transactionId = UUID.randomUUID().toString();
-            var results = new ArrayList<CommitTableResult>();
-            for (var value : request.getOperations()) {
-                var result = new CommitTableResult();
-
-                if (value.getDeclareTable() != null) {
-                    var declare = value.getDeclareTable();
-                    var tableId = joinIds(declare.getId());
-                    var namespace = namespaceFrom(tableId);
-                    var name = tableNameFrom(tableId);
-                    tableRepository.upsert(tx, tableId, namespace, name, declare.getLocation(), mapOrEmpty(declare.getProperties()), true);
-                    result.setDeclareTable(new org.lance.namespace.model.DeclareTableResponse()
-                            .location(declare.getLocation())
-                            .properties(mapOrEmpty(declare.getProperties()))
-                            .managedVersioning(true)
-                            .transactionId(transactionId));
-                }
-
-                if (value.getCreateTableVersion() != null) {
-                    var ctv = value.getCreateTableVersion();
-                    var tableIdCtv = joinIds(ctv.getId());
-                    var row = new TableVersion()
-                            .version(ctv.getVersion())
-                            .manifestPath(ctv.getManifestPath())
-                            .manifestSize(ctv.getManifestSize())
-                            .eTag(ctv.geteTag())
-                            .metadata(mapOrEmpty(ctv.getMetadata()))
-                            .timestampMillis(System.currentTimeMillis());
-                    tableVersionRepository.create(tx, tableIdCtv, row);
-                    var created = new CreateTableVersionResponse().version(row).transactionId(transactionId);
-                    result.setCreateTableVersion(created);
-                }
-
-                if (value.getDeleteTableVersions() != null) {
-                    var delReq = value.getDeleteTableVersions();
-                    var tableIdDel = joinIds(delReq.getId());
-                    var ranges = new ArrayList<>(delReq.getRanges());
-                    var deletedCount = tableVersionRepository.deleteRanges(tx, tableIdDel, ranges);
-                    var deleted = new BatchDeleteTableVersionsResponse()
-                            .deletedCount(deletedCount)
-                            .transactionId(transactionId);
-                    result.setDeleteTableVersions(deleted);
-                }
-
-                if (value.getDeregisterTable() != null) {
-                    var deregReq = value.getDeregisterTable();
-                    var tableIdDr = joinIds(deregReq.getId());
-                    var table = tableRepository.get(tx, tableIdDr);
-                    tableVersionRepository.deleteForTable(tx, tableIdDr);
-                    tableRepository.delete(tx, tableIdDr);
-                    var deregister = new DeregisterTableResponse()
-                            .id(deregReq.getId())
-                            .location(table == null ? null : table.location())
-                            .properties(table == null || table.properties() == null ? new HashMap<>() : new HashMap<>(table.properties()))
-                            .transactionId(transactionId);
-                    result.setDeregisterTable(deregister);
-                }
-
-                results.add(result);
-            }
-
-            transactionRepository.upsert(tx, transactionId, JdbcTransactionRepository.STATUS_SUCCEEDED, Map.of("operation_count", String.valueOf(results.size())));
-            return new BatchCommitTablesResponse().transactionId(transactionId).results(results);
-        });
-    }
-
-    @Override
-    public DescribeTransactionResponse describeTransaction(DescribeTransactionRequest request) {
-        var transactionId = joinIds(request.getId());
-        var row = transactionManager.inTransactionR(tx -> transactionRepository.get(tx, transactionId));
-        if (row == null) {
-            return new DescribeTransactionResponse().status(JdbcTransactionRepository.STATUS_QUEUED).properties(new HashMap<>());
-        }
-        return new DescribeTransactionResponse().status(row.status()).properties(
-                row.properties() != null ? new HashMap<>(row.properties()) : new HashMap<>());
-    }
-
-    @Override
-    public AlterTransactionResponse alterTransaction(AlterTransactionRequest request) {
-        var transactionId = joinIds(request.getId());
-        return transactionManager.inTransactionR(tx -> {
-            var current = transactionRepository.get(tx, transactionId);
-
-            var status = current == null ? JdbcTransactionRepository.STATUS_QUEUED : current.status();
-            var properties = current == null || current.properties() == null
-                    ? new HashMap<String, String>()
-                    : new HashMap<>(current.properties());
-
-            for (var value : request.getActions()) {
-                if (value.getSetStatusAction() != null && value.getSetStatusAction().getStatus() != null) {
-                    status = value.getSetStatusAction().getStatus();
-                }
-                if (value.getSetPropertyAction() != null && value.getSetPropertyAction().getKey() != null) {
-                    var key = value.getSetPropertyAction().getKey();
-                    var mode = valueOrDefault(value.getSetPropertyAction().getMode(), "Overwrite");
-                    if ("Fail".equalsIgnoreCase(mode) && properties.containsKey(key)) {
-                        throw new IllegalStateException("Transaction property already exists: " + key);
-                    }
-                    if ("Skip".equalsIgnoreCase(mode) && properties.containsKey(key)) {
-                        continue;
-                    }
-                    properties.put(key, value.getSetPropertyAction().getValue());
-                }
-                if (value.getUnsetPropertyAction() != null && value.getUnsetPropertyAction().getKey() != null) {
-                    var key = value.getUnsetPropertyAction().getKey();
-                    var mode = valueOrDefault(value.getUnsetPropertyAction().getMode(), "Skip");
-                    if ("Fail".equalsIgnoreCase(mode) && !properties.containsKey(key)) {
-                        throw new IllegalStateException("Transaction property does not exist: " + key);
-                    }
-                    properties.remove(key);
-                }
-            }
-
-            transactionRepository.upsert(tx, transactionId, status, properties);
-            return new AlterTransactionResponse().status(status).properties(properties);
-        });
+        var location = requireTableLocation(request.getId());
+        return LanceDatasetSupport.alterTableDropColumns(allocator, location, request);
     }
 
     @Override
@@ -445,8 +293,16 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         }
     }
 
-    private String valueOrDefault(String value, String fallback) {
-        return value == null ? fallback : value;
+    private String requireTableLocation(List<String> tableId) {
+        var joined = joinIds(tableId);
+        var location = transactionManager.inTransactionR(tx -> {
+            var table = tableRepository.get(tx, joined);
+            return table == null ? null : table.location();
+        });
+        if (location == null || location.isBlank()) {
+            throw new IllegalStateException("Table does not exist or has no location: " + joined);
+        }
+        return location;
     }
 
     private Map<String, String> mapOrEmpty(Map<String, String> input) {
