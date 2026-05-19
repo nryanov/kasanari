@@ -33,10 +33,18 @@ include(
     "modules:platform:platform-iceberg",
     "modules:platform:platform-jackson",
     "modules:platform:platform-lance",
+    "modules:platform:platform-quarkus",
     // management
     "modules:management",
     "modules:management:management-catalog",
     "modules:management:management-security",
+    // auth
+    "modules:auth",
+    "modules:auth:auth-spi",
+    "modules:auth:auth-runtime",
+    "modules:auth:auth-none",
+    "modules:auth:auth-ldap",
+    "modules:auth:auth-oauth",
     // repository
     "modules:repository",
     "modules:repository:repository-core",
@@ -87,6 +95,7 @@ findProject(":modules:platform:platform-jakarta")?.name = "platform-jakarta"
 findProject(":modules:platform:platform-iceberg")?.name = "platform-iceberg"
 findProject(":modules:platform:platform-jackson")?.name = "platform-jackson"
 findProject(":modules:platform:platform-lance")?.name = "platform-lance"
+findProject(":modules:platform:platform-quarkus")?.name = "platform-quarkus"
 
 findProject(":modules:repository")?.name = "repository"
 findProject(":modules:repository:repository-core")?.name = "repository-core"
@@ -106,3 +115,10 @@ findProject(":modules:repository:repository-management:repository-management-sec
 findProject(":modules:management")?.name = "management"
 findProject(":modules:management:management-catalog")?.name = "management-catalog"
 findProject(":modules:management:management-security")?.name = "management-security"
+
+findProject(":modules:auth")?.name = "auth"
+findProject(":modules:auth:auth-spi")?.name = "auth-spi"
+findProject(":modules:auth:auth-runtime")?.name = "auth-runtime"
+findProject(":modules:auth:auth-none")?.name = "auth-none"
+findProject(":modules:auth:auth-ldap")?.name = "auth-ldap"
+findProject(":modules:auth:auth-oauth")?.name = "auth-oauth"
