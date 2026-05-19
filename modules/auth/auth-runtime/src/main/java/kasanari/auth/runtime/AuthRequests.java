@@ -6,7 +6,7 @@ import kasanari.auth.spi.AuthRequest;
 import java.util.HashMap;
 import java.util.Map;
 
-final class AuthRequests {
+public final class AuthRequests {
     private AuthRequests() {
     }
 

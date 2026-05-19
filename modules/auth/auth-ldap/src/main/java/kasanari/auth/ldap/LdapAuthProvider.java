@@ -9,6 +9,9 @@ import kasanari.auth.spi.AuthProviderMetadata;
 import kasanari.auth.spi.AuthRequest;
 import kasanari.auth.spi.CredentialScheme;
 import org.wildfly.security.auth.principal.NamePrincipal;
+import org.wildfly.security.auth.realm.ldap.DirContextFactory;
+import org.wildfly.security.auth.realm.ldap.LdapSecurityRealmBuilder;
+import org.wildfly.security.auth.realm.ldap.SimpleDirContextFactoryBuilder;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 
@@ -24,7 +27,7 @@ public final class LdapAuthProvider implements AuthProvider {
 
     @Override
     public void initialize(AuthProviderContext context) {
-        securityRealm = LdapSecurityRealms.create(
+        securityRealm = create(
                 context.getRequired("url"),
                 context.getRequired("bind-principal"),
                 context.getRequired("bind-password"),
@@ -58,6 +61,7 @@ public final class LdapAuthProvider implements AuthProvider {
                     return Optional.empty();
                 }
             } finally {
+                // cleanup password
                 java.util.Arrays.fill(password, '\0');
             }
 
@@ -65,5 +69,29 @@ public final class LdapAuthProvider implements AuthProvider {
         } catch (Exception ex) {
             return Optional.empty();
         }
+    }
+
+    private SecurityRealm create(
+            String url,
+            String bindPrincipal,
+            String bindPassword,
+            String searchBaseDn,
+            String rdnIdentifier) {
+        DirContextFactory dirContextFactory = SimpleDirContextFactoryBuilder.builder()
+                .setProviderUrl(url)
+                .setSecurityAuthentication("simple")
+                .setSecurityPrincipal(bindPrincipal)
+                .setSecurityCredential(bindPassword)
+                .build();
+
+        return LdapSecurityRealmBuilder.builder()
+                .setDirContextSupplier(() -> dirContextFactory.obtainDirContext(DirContextFactory.ReferralMode.IGNORE))
+                .identityMapping()
+                .searchRecursive()
+                .setRdnIdentifier(rdnIdentifier)
+                .setSearchDn(searchBaseDn)
+                .build()
+                .addDirectEvidenceVerification(false)
+                .build();
     }
 }

@@ -7,7 +7,7 @@ import kasanari.auth.spi.AuthPrincipal;
 
 import java.security.Principal;
 
-final class SecurityIdentities {
+public final class SecurityIdentities {
     private SecurityIdentities() {
     }
 

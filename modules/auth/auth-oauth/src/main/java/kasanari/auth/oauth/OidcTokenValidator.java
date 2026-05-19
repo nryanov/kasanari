@@ -34,7 +34,7 @@ final class OidcTokenValidator implements Closeable {
         var webClient = WebClient.create(mutinyVertx);
 
         try {
-            var discoveryUrl = trimTrailingSlash(issuerUrl) + "/.well-known/openid-configuration";
+            var discoveryUrl = trimTrailingSlash(issuerUrl);
             var metadata = OidcCommonUtils.discoverMetadata(
                             webClient,
                             Map.of(),

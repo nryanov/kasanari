@@ -37,11 +37,6 @@ public class KasanariHttpSecurityPolicy implements HttpSecurityPolicy {
         });
     }
 
-    @Override
-    public String name() {
-        return "kasanari-auth";
-    }
-
     private boolean isPublicPath(String path) {
         for (var publicPath : registry.metadata().publicPaths()) {
             if (matchesPublicPath(path, publicPath)) {

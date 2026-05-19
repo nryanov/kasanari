@@ -7,7 +7,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-final class ConfigAuthProviderContext implements AuthProviderContext {
+public final class ConfigAuthProviderContext implements AuthProviderContext {
     private final Map<String, String> properties;
 
     ConfigAuthProviderContext(String providerType, Map<String, String> configProperties) {
@@ -30,11 +30,6 @@ final class ConfigAuthProviderContext implements AuthProviderContext {
     public String getRequired(String key) {
         return getOptional(key).orElseThrow(() ->
                 new IllegalStateException("Missing required auth property: " + key));
-    }
-
-    @Override
-    public Map<String, String> getProperties() {
-        return Map.copyOf(properties);
     }
 
     private static String normalize(String key) {

@@ -12,14 +12,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-@ApplicationScoped
 @Startup
+@ApplicationScoped
 public class AuthProviderRegistry {
     private final AuthProvider activeProvider;
     private final AuthProviderMetadata metadata;
 
     @Inject
-    AuthProviderRegistry(AuthConfiguration authConfiguration) {
+    public AuthProviderRegistry(AuthConfiguration authConfiguration) {
         var selectedType = authConfiguration.type().trim().toLowerCase(Locale.ROOT);
         var providers = loadProviders();
         this.activeProvider = providers.get(selectedType);
