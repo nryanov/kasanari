@@ -1,4 +1,4 @@
-package kasanari.auth.oauth;
+package kasanari.auth.oidc;
 
 import io.quarkus.oidc.common.runtime.OidcCommonUtils;
 import io.vertx.core.Vertx;

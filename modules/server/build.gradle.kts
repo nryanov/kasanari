@@ -16,7 +16,7 @@ dependencies {
     implementation(project(":modules:auth:auth-runtime"))
     implementation(project(":modules:auth:auth-none"))
     implementation(project(":modules:auth:auth-ldap"))
-    implementation(project(":modules:auth:auth-oauth"))
+    implementation(project(":modules:auth:auth-oidc"))
 
     // iceberg
     implementation(project(":modules:api:api-iceberg"))

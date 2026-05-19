@@ -33,7 +33,6 @@ include(
     "modules:platform:platform-iceberg",
     "modules:platform:platform-jackson",
     "modules:platform:platform-lance",
-    "modules:platform:platform-quarkus",
     // management
     "modules:management",
     "modules:management:management-catalog",
@@ -44,7 +43,7 @@ include(
     "modules:auth:auth-runtime",
     "modules:auth:auth-none",
     "modules:auth:auth-ldap",
-    "modules:auth:auth-oauth",
+    "modules:auth:auth-oidc",
     // repository
     "modules:repository",
     "modules:repository:repository-core",
@@ -95,7 +94,6 @@ findProject(":modules:platform:platform-jakarta")?.name = "platform-jakarta"
 findProject(":modules:platform:platform-iceberg")?.name = "platform-iceberg"
 findProject(":modules:platform:platform-jackson")?.name = "platform-jackson"
 findProject(":modules:platform:platform-lance")?.name = "platform-lance"
-findProject(":modules:platform:platform-quarkus")?.name = "platform-quarkus"
 
 findProject(":modules:repository")?.name = "repository"
 findProject(":modules:repository:repository-core")?.name = "repository-core"
@@ -121,4 +119,4 @@ findProject(":modules:auth:auth-spi")?.name = "auth-spi"
 findProject(":modules:auth:auth-runtime")?.name = "auth-runtime"
 findProject(":modules:auth:auth-none")?.name = "auth-none"
 findProject(":modules:auth:auth-ldap")?.name = "auth-ldap"
-findProject(":modules:auth:auth-oauth")?.name = "auth-oauth"
+findProject(":modules:auth:auth-oidc")?.name = "auth-oidc"

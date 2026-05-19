@@ -1,11 +1,11 @@
-# Auth example: OAuth / OIDC (Bearer)
+# Auth example: OIDC (Bearer)
 
 Bearer token authentication via Keycloak. Realm `kasanari`, client `kasanari-api`, demo user `demo` / `demo`.
 
 ## Start backing services
 
 ```shell
-cd examples/auth-oauth
+cd examples/auth-oidc
 docker compose up -d
 ```
 
@@ -14,10 +14,10 @@ Wait until Keycloak is ready (check `http://localhost:8080/realms/kasanari/.well
 ## Run Kasanari
 
 ```shell
-export KASANARI_AUTH_TYPE=oauth
-export KASANARI_AUTH_OAUTH_ISSUER_URL=http://localhost:8080/realms/kasanari
-export KASANARI_AUTH_OAUTH_CLIENT_ID=kasanari-api
-export KASANARI_AUTH_OAUTH_CLIENT_SECRET=kasanari-api-secret
+export KASANARI_AUTH_TYPE=oidc
+export KASANARI_AUTH_OIDC_ISSUER_URL=http://localhost:8080/realms/kasanari
+export KASANARI_AUTH_OIDC_CLIENT_ID=kasanari-api
+export KASANARI_AUTH_OIDC_CLIENT_SECRET=kasanari-api-secret
 
 ./gradlew :modules:server:quarkusDev
 ```
@@ -63,7 +63,3 @@ curl -s -o /dev/null -w "%{http_code}\n" \
 ```
 
 Health and Swagger UI stay public: `/q/health`, `/docs`.
-
-## Switch auth mode
-
-Change `KASANARI_AUTH_TYPE` or `kasanari.auth.type` to `none` or `ldap`, restart the application. No rebuild is required.

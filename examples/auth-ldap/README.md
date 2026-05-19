@@ -41,7 +41,3 @@ curl -s -o /dev/null -w "%{http_code}\n" -u alice:alice http://localhost:9090/ma
 ```
 
 Health and Swagger UI stay public: `/q/health`, `/docs`.
-
-## Switch auth mode
-
-Change `KASANARI_AUTH_TYPE` or `kasanari.auth.type` to `none` or `oauth`, restart the application. No rebuild is required.

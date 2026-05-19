@@ -1,4 +1,4 @@
-package kasanari.auth.oauth;
+package kasanari.auth.oidc;
 
 import io.smallrye.mutiny.Uni;
 import kasanari.auth.spi.AuthCredentials;
@@ -11,12 +11,12 @@ import kasanari.auth.spi.CredentialScheme;
 
 import java.util.Optional;
 
-public final class OAuthAuthProvider implements AuthProvider {
+public final class OidcAuthProvider implements AuthProvider {
     private OidcTokenValidator tokenValidator;
 
     @Override
     public String type() {
-        return "oauth";
+        return "oidc";
     }
 
     @Override

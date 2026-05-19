@@ -4,5 +4,5 @@ plugins {
 }
 
 dependencies {
-    compileOnly("io.smallrye.reactive:mutiny:2.9.4")
+    compileOnly(libs.smallrye.mutiny)
 }
