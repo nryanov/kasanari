@@ -1,0 +1,11 @@
+# Copy relevant settings into application.properties or set as environment variables.
+
+kasanari.auth.type=oauth
+
+quarkus.oidc.auth-server-url=http://localhost:8080/realms/kasanari
+quarkus.oidc.client-id=kasanari-api
+quarkus.oidc.credentials.secret=kasanari-api-secret
+
+management.metadata.jdbc-properties."kasanari.jdbc.user"=postgres
+management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
+management.metadata.jdbc-properties."uri"=jdbc:postgresql://localhost:5432/postgres

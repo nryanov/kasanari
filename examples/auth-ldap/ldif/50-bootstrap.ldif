@@ -1,0 +1,23 @@
+dn: ou=users,dc=kasanari,dc=local
+objectClass: organizationalUnit
+ou: users
+
+dn: uid=alice,ou=users,dc=kasanari,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: alice
+sn: User
+uid: alice
+userPassword: alice
+
+dn: uid=bob,ou=users,dc=kasanari,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: bob
+sn: User
+uid: bob
+userPassword: bob

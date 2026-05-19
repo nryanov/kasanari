@@ -1,0 +1,13 @@
+# Copy relevant settings into application.properties or set as environment variables.
+
+kasanari.auth.type=ldap
+
+quarkus.security.ldap.dir-context.url=ldap://localhost:389
+quarkus.security.ldap.dir-context.principal=cn=admin,dc=kasanari,dc=local
+quarkus.security.ldap.dir-context.password=admin
+quarkus.security.ldap.identity-mapping.search-base-dn=ou=users,dc=kasanari,dc=local
+quarkus.security.ldap.identity-mapping.rdn-identifier=uid
+
+management.metadata.jdbc-properties."kasanari.jdbc.user"=postgres
+management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
+management.metadata.jdbc-properties."uri"=jdbc:postgresql://localhost:5432/postgres

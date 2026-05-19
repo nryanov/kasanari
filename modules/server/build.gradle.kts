@@ -10,6 +10,9 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-container-image-jib")
+    implementation("io.quarkus:quarkus-security")
+    implementation("io.quarkus:quarkus-elytron-security-ldap")
+    implementation("io.quarkus:quarkus-oidc")
 
     // iceberg
     implementation(project(":modules:api:api-iceberg"))

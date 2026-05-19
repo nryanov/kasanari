@@ -96,6 +96,7 @@ public class KasanariIcebergCatalog extends BaseMetastoreViewCatalog implements 
         this.hadoopConfig = conf;
     }
 
+    // todo: warehouse == catalogName. Correctly resolve defaultWarehouseLocation
     @Override
     protected String defaultWarehouseLocation(TableIdentifier tableIdentifier) {
         var namespace = tableIdentifier.namespace();
