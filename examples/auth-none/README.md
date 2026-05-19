@@ -29,4 +29,4 @@ Expect `200` without credentials.
 
 ## Switch auth mode
 
-Change `KASANARI_AUTH_TYPE` or `kasanari.auth.type` to `ldap` or `oauth`, restart the application. No rebuild is required.
+Change `KASANARI_AUTH_TYPE` or `kasanari.auth.type` to `none`, `ldap`, `oauth`, or a custom SPI type. Restart the application. No rebuild is required unless you add a new provider jar.

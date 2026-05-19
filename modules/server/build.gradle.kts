@@ -11,8 +11,12 @@ dependencies {
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-container-image-jib")
     implementation("io.quarkus:quarkus-security")
-    implementation("io.quarkus:quarkus-elytron-security-ldap")
-    implementation("io.quarkus:quarkus-oidc")
+
+    // auth
+    implementation(project(":modules:auth:auth-runtime"))
+    implementation(project(":modules:auth:auth-none"))
+    implementation(project(":modules:auth:auth-ldap"))
+    implementation(project(":modules:auth:auth-oauth"))
 
     // iceberg
     implementation(project(":modules:api:api-iceberg"))

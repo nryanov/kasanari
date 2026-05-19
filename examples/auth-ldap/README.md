@@ -17,11 +17,11 @@ Set auth mode and LDAP settings (see `application.properties.sample`), then star
 
 ```shell
 export KASANARI_AUTH_TYPE=ldap
-export QUARKUS_SECURITY_LDAP_DIR_CONTEXT_URL=ldap://localhost:389
-export QUARKUS_SECURITY_LDAP_DIR_CONTEXT_PRINCIPAL=cn=admin,dc=kasanari,dc=local
-export QUARKUS_SECURITY_LDAP_DIR_CONTEXT_PASSWORD=admin
-export QUARKUS_SECURITY_LDAP_IDENTITY_MAPPING_SEARCH_BASE_DN=ou=users,dc=kasanari,dc=local
-export QUARKUS_SECURITY_LDAP_IDENTITY_MAPPING_RDN_IDENTIFIER=uid
+export KASANARI_AUTH_LDAP_URL=ldap://localhost:389
+export KASANARI_AUTH_LDAP_BIND_PRINCIPAL=cn=admin,dc=kasanari,dc=local
+export KASANARI_AUTH_LDAP_BIND_PASSWORD=admin
+export KASANARI_AUTH_LDAP_SEARCH_BASE_DN=ou=users,dc=kasanari,dc=local
+export KASANARI_AUTH_LDAP_RDN_IDENTIFIER=uid
 
 ./gradlew :modules:server:quarkusDev
 ```

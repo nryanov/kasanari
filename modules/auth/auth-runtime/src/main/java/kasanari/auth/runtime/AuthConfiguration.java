@@ -1,4 +1,4 @@
-package kasanari.server.configuration;
+package kasanari.auth.runtime;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;

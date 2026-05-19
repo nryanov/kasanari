@@ -15,9 +15,9 @@ Wait until Keycloak is ready (check `http://localhost:8080/realms/kasanari/.well
 
 ```shell
 export KASANARI_AUTH_TYPE=oauth
-export QUARKUS_OIDC_AUTH_SERVER_URL=http://localhost:8080/realms/kasanari
-export QUARKUS_OIDC_CLIENT_ID=kasanari-api
-export QUARKUS_OIDC_CREDENTIALS_SECRET=kasanari-api-secret
+export KASANARI_AUTH_OAUTH_ISSUER_URL=http://localhost:8080/realms/kasanari
+export KASANARI_AUTH_OAUTH_CLIENT_ID=kasanari-api
+export KASANARI_AUTH_OAUTH_CLIENT_SECRET=kasanari-api-secret
 
 ./gradlew :modules:server:quarkusDev
 ```

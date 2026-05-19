@@ -2,9 +2,9 @@
 
 kasanari.auth.type=oauth
 
-quarkus.oidc.auth-server-url=http://localhost:8080/realms/kasanari
-quarkus.oidc.client-id=kasanari-api
-quarkus.oidc.credentials.secret=kasanari-api-secret
+kasanari.auth.oauth.issuer-url=http://localhost:8080/realms/kasanari
+kasanari.auth.oauth.client-id=kasanari-api
+kasanari.auth.oauth.client-secret=kasanari-api-secret
 
 management.metadata.jdbc-properties."kasanari.jdbc.user"=postgres
 management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
