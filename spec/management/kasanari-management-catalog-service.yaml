@@ -320,12 +320,10 @@ components:
           $ref: "#/components/schemas/CatalogType"
         role:
           type: string
-          description: RoleBindingDto.RoleEnum (Jackson default wire format is enum constant name)
-          enum:
-            - CATALOG_ADMIN
-            - CATALOG_READER
-            - SECURITY_ADMIN
-            - SECURITY_READER
+          description: >-
+            Role name assigned to the subject for the catalog type. Valid values depend on
+            the active authorization provider (Casbin defaults include IcebergCatalogAdmin,
+            IcebergCatalogEditor, IcebergCatalogViewer, and analogous Paimon/Lance roles).
     GetRolesResponse:
       type: object
       required:

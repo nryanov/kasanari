@@ -3,13 +3,15 @@ package kasanari.server.infrastructure.management;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import kasanari.authorization.runtime.AuthorizationService;
+import kasanari.authorization.spi.Permission;
+import kasanari.authorization.spi.RoleBinding;
 import kasanari.catalog.management.api.ManagementRestSecurityService;
 import kasanari.catalog.management.dto.CatalogTypeDto;
 import kasanari.catalog.management.dto.DeleteRolesRequestDto;
 import kasanari.catalog.management.dto.GetRolesResponseDto;
 import kasanari.catalog.management.dto.UpdateRolesRequestDto;
-import kasanari.management.security.ManagementSecurityService;
-import kasanari.repository.management.security.model.StoredRoleBinding;
+import kasanari.repository.management.common.model.CatalogType;
 import kasanari.server.infrastructure.http.ApiFallbacks;
 
 import java.util.List;
@@ -18,10 +20,10 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class ManagementSecurityServiceHandler implements ManagementRestSecurityService {
-    private final ManagementSecurityService securityService;
+    private final AuthorizationService authorizationService;
 
-    public ManagementSecurityServiceHandler(ManagementSecurityService securityService) {
-        this.securityService = securityService;
+    public ManagementSecurityServiceHandler(AuthorizationService authorizationService) {
+        this.authorizationService = authorizationService;
     }
 
     @Override
@@ -30,29 +32,29 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
             return ApiFallbacks.error(Response.Status.BAD_REQUEST, "Role bindings are required");
         }
 
-        var subject = securityService.subject(securityContext);
-        final List<StoredRoleBinding> bindings;
+        final List<RoleBinding> bindings;
         try {
-            bindings = RoleBindingMapper.toDomain(deleteRolesRequest.getBindings());
+            bindings = RoleBindingMapper.toSpi(deleteRolesRequest.getBindings());
         } catch (IllegalArgumentException e) {
             return ApiFallbacks.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
         for (var type : distinctTypes(bindings)) {
-            if (!securityService.canSecurityWrite(subject, type, "delete")) {
-                return ApiFallbacks.error(Response.Status.FORBIDDEN, "Missing permission to delete role bindings");
+            var denied = authorizationService.denyUnless(securityContext, type, Permission.RoleRemove);
+            if (denied.isPresent()) {
+                return denied.get();
             }
         }
 
-        securityService.deleteRoles(bindings);
-        securityService.reloadGroupingPolicies();
+        var roleBindings = authorizationService.roleBindingsOrThrow();
+        roleBindings.delete(bindings);
+        roleBindings.reloadPolicies();
 
         return Response.status(Response.Status.NO_CONTENT).build();
     }
 
     @Override
     public Response getRoles(String subject, CatalogTypeDto catalogType, SecurityContext securityContext) {
-        var caller = securityService.subject(securityContext);
-        var visibleDomains = getReadableDomains(caller);
+        var visibleDomains = getReadableDomains(securityContext);
 
         if (visibleDomains.isEmpty()) {
             return ApiFallbacks.error(Response.Status.FORBIDDEN, "Missing permission to read role bindings");
@@ -62,7 +64,8 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
             return ApiFallbacks.error(Response.Status.FORBIDDEN, "Missing permission to read role bindings");
         }
 
-        var bindings = securityService.listRoles(subject, catalogType == null ? null : RoleBindingMapper.toDomain(catalogType));
+        var roleBindings = authorizationService.roleBindingsOrThrow();
+        var bindings = roleBindings.list(subject, catalogType == null ? null : RoleBindingMapper.toDomain(catalogType));
 
         var filtered = bindings.stream()
                 .filter(binding -> visibleDomains.contains(binding.catalogType()))
@@ -81,38 +84,39 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
             return ApiFallbacks.error(Response.Status.BAD_REQUEST, "Role bindings are required");
         }
 
-        var subject = securityService.subject(securityContext);
-        final List<StoredRoleBinding> bindings;
+        final List<RoleBinding> bindings;
         try {
-            bindings = RoleBindingMapper.toDomain(updateRolesRequest.getBindings());
+            bindings = RoleBindingMapper.toSpi(updateRolesRequest.getBindings());
         } catch (IllegalArgumentException e) {
             return ApiFallbacks.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
         for (var type : distinctTypes(bindings)) {
-            if (!securityService.canSecurityWrite(subject, type, "update")) {
-                return ApiFallbacks.error(Response.Status.FORBIDDEN, "Missing permission to update role bindings");
+            var denied = authorizationService.denyUnless(securityContext, type, Permission.RoleAdd);
+            if (denied.isPresent()) {
+                return denied.get();
             }
         }
 
-        securityService.updateRoles(bindings);
-        securityService.reloadGroupingPolicies();
+        var roleBindings = authorizationService.roleBindingsOrThrow();
+        roleBindings.upsert(bindings);
+        roleBindings.reloadPolicies();
 
         var response = new GetRolesResponseDto();
         response.setBindings(bindings.stream().map(RoleBindingMapper::toApi).toList());
         return Response.status(Response.Status.OK).entity(response).build();
     }
 
-    private Set<kasanari.repository.management.common.model.CatalogType> getReadableDomains(String subject) {
-        var result = new java.util.HashSet<kasanari.repository.management.common.model.CatalogType>();
-        for (var type : kasanari.repository.management.common.model.CatalogType.values()) {
-            if (securityService.canSecurityRead(subject, type)) {
+    private Set<CatalogType> getReadableDomains(SecurityContext securityContext) {
+        var result = new java.util.HashSet<CatalogType>();
+        for (var type : CatalogType.values()) {
+            if (authorizationService.isAuthorized(securityContext, type, Permission.RoleSelect)) {
                 result.add(type);
             }
         }
         return result;
     }
 
-    private Set<kasanari.repository.management.common.model.CatalogType> distinctTypes(List<StoredRoleBinding> bindings) {
-        return bindings.stream().map(StoredRoleBinding::catalogType).collect(Collectors.toSet());
+    private Set<CatalogType> distinctTypes(List<RoleBinding> bindings) {
+        return bindings.stream().map(RoleBinding::catalogType).collect(Collectors.toSet());
     }
 }

@@ -30,10 +30,12 @@ dependencies {
     // management
     implementation(project(":modules:api:api-management"))
     implementation(project(":modules:management:management-catalog"))
-    implementation(project(":modules:management:management-security"))
     implementation(project(":modules:repository:repository-jdbc"))
 
-    implementation(libs.casbin.jcasbin)
+    // authorization
+    implementation(project(":modules:authorization:authorization-runtime"))
+    implementation(project(":modules:authorization:authorization-allow-all"))
+    implementation(project(":modules:authorization:authorization-casbin"))
     implementation(libs.jdbc.postgresql)
 
     testImplementation("io.quarkus:quarkus-junit5")

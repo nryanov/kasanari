@@ -2,7 +2,6 @@ package kasanari.repository.management.security.postgres;
 
 import kasanari.repository.management.security.RoleBindingRepository;
 import kasanari.repository.management.common.model.CatalogType;
-import kasanari.repository.management.security.model.Role;
 import kasanari.repository.management.security.model.StoredRoleBinding;
 import org.jdbi.v3.core.Handle;
 
@@ -20,7 +19,7 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
         return query.map((rs, ctx) -> new StoredRoleBinding(
                 rs.getString("subject"),
                 CatalogType.fromValue(rs.getString("catalog_type")),
-                Role.fromValue(rs.getString("role_name"))
+                rs.getString("role_name")
         )).list();
     }
 
@@ -34,7 +33,7 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
             var upsert = tx.createUpdate(JdbcManagementSecurityQueries.UPSERT_ROLE_BINDING);
             upsert.bind(0, binding.subject());
             upsert.bind(1, binding.catalogType().toString());
-            upsert.bind(2, binding.role().toString());
+            upsert.bind(2, binding.role());
             upsert.execute();
         }
     }
@@ -49,7 +48,7 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
             var delete = tx.createUpdate(JdbcManagementSecurityQueries.DELETE_ROLE_BINDING);
             delete.bind(0, binding.subject());
             delete.bind(1, binding.catalogType().toString());
-            delete.bind(2, binding.role().toString());
+            delete.bind(2, binding.role());
             delete.execute();
         }
     }

@@ -36,7 +36,6 @@ include(
     // management
     "modules:management",
     "modules:management:management-catalog",
-    "modules:management:management-security",
     // auth
     "modules:auth",
     "modules:auth:auth-spi",
@@ -44,6 +43,12 @@ include(
     "modules:auth:auth-none",
     "modules:auth:auth-ldap",
     "modules:auth:auth-oidc",
+    // authorization
+    "modules:authorization",
+    "modules:authorization:authorization-spi",
+    "modules:authorization:authorization-runtime",
+    "modules:authorization:authorization-allow-all",
+    "modules:authorization:authorization-casbin",
     // repository
     "modules:repository",
     "modules:repository:repository-core",
@@ -112,11 +117,15 @@ findProject(":modules:repository:repository-management:repository-management-sec
 
 findProject(":modules:management")?.name = "management"
 findProject(":modules:management:management-catalog")?.name = "management-catalog"
-findProject(":modules:management:management-security")?.name = "management-security"
-
 findProject(":modules:auth")?.name = "auth"
 findProject(":modules:auth:auth-spi")?.name = "auth-spi"
 findProject(":modules:auth:auth-runtime")?.name = "auth-runtime"
 findProject(":modules:auth:auth-none")?.name = "auth-none"
 findProject(":modules:auth:auth-ldap")?.name = "auth-ldap"
 findProject(":modules:auth:auth-oidc")?.name = "auth-oidc"
+
+findProject(":modules:authorization")?.name = "authorization"
+findProject(":modules:authorization:authorization-spi")?.name = "authorization-spi"
+findProject(":modules:authorization:authorization-runtime")?.name = "authorization-runtime"
+findProject(":modules:authorization:authorization-allow-all")?.name = "authorization-allow-all"
+findProject(":modules:authorization:authorization-casbin")?.name = "authorization-casbin"
