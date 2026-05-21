@@ -12,6 +12,11 @@ dependencies {
     implementation("io.quarkus:quarkus-container-image-jib")
     implementation("io.quarkus:quarkus-security")
 
+    // instrumentation
+    implementation(project(":modules:instrumentation:instrumentation-listener-runtime"))
+    implementation(project(":modules:instrumentation:instrumentation-listener-audit"))
+    implementation(project(":modules:instrumentation:instrumentation-listener-logging"))
+
     // auth
     implementation(project(":modules:authentication:authentication-runtime"))
     implementation(project(":modules:authentication:authentication-none"))

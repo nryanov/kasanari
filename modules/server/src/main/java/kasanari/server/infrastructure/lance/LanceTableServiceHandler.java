@@ -3,12 +3,11 @@ package kasanari.server.infrastructure.lance;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import kasanari.authorization.runtime.AuthorizationService;
-import kasanari.authorization.spi.Permission;
 import kasanari.catalog.lance.api.LanceRestTableService;
-import kasanari.core.model.CatalogType;
+import kasanari.authorization.spi.Permission;
+import kasanari.instrumentation.spi.lance.LanceCatalogOperation;
 import kasanari.server.infrastructure.http.ApiFallbacks;
-import kasanari.server.infrastructure.security.CatalogHandlerAuthorization;
+import kasanari.server.infrastructure.instrumentation.LanceCatalogRequestExecutor;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
 import org.lance.namespace.model.DeclareTableRequest;
@@ -20,16 +19,14 @@ import org.lance.namespace.model.RestoreTableRequest;
 import org.lance.namespace.model.TableExistsRequest;
 
 import java.io.File;
-import java.util.Optional;
+import java.util.Map;
 
 @ApplicationScoped
 public class LanceTableServiceHandler implements LanceRestTableService {
-    private static final CatalogType DOMAIN = CatalogType.LANCE;
+    private final LanceCatalogRequestExecutor executor;
 
-    private final AuthorizationService authorizationService;
-
-    public LanceTableServiceHandler(AuthorizationService authorizationService) {
-        this.authorizationService = authorizationService;
+    public LanceTableServiceHandler(LanceCatalogRequestExecutor executor) {
+        this.executor = executor;
     }
 
     @Override
@@ -39,11 +36,8 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
-        var denied = deny(securityContext, Permission.LanceTableAlter);
-        if (denied.isPresent()) {
-            return denied.get();
-        }
-        return ApiFallbacks.notImplemented("LanceTableService.alterTableAlterColumns");
+        return executor.execute(securityContext, id, LanceCatalogOperation.ALTER_TABLE_ALTER_COLUMNS, Permission.LanceTableAlter, Map.of(), () ->
+                ApiFallbacks.notImplemented("LanceTableService.alterTableAlterColumns"));
     }
 
     @Override
@@ -53,11 +47,8 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
-        var denied = deny(securityContext, Permission.LanceTableAlter);
-        if (denied.isPresent()) {
-            return denied.get();
-        }
-        return ApiFallbacks.notImplemented("LanceTableService.alterTableDropColumns");
+        return executor.execute(securityContext, id, LanceCatalogOperation.ALTER_TABLE_DROP_COLUMNS, Permission.LanceTableAlter, Map.of(), () ->
+                ApiFallbacks.notImplemented("LanceTableService.alterTableDropColumns"));
     }
 
     @Override
@@ -70,11 +61,8 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String storageOptions,
             SecurityContext securityContext
     ) {
-        var denied = deny(securityContext, Permission.LanceTableCreate);
-        if (denied.isPresent()) {
-            return denied.get();
-        }
-        return ApiFallbacks.notImplemented("LanceTableService.createTable");
+        return executor.execute(securityContext, id, LanceCatalogOperation.CREATE_TABLE, Permission.LanceTableCreate, Map.of(), () ->
+                ApiFallbacks.notImplemented("LanceTableService.createTable"));
     }
 
     @Override
@@ -84,11 +72,8 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
-        var denied = deny(securityContext, Permission.LanceTableAlter);
-        if (denied.isPresent()) {
-            return denied.get();
-        }
-        return ApiFallbacks.notImplemented("LanceTableService.declareTable");
+        return executor.execute(securityContext, id, LanceCatalogOperation.DECLARE_TABLE, Permission.LanceTableAlter, Map.of(), () ->
+                ApiFallbacks.notImplemented("LanceTableService.declareTable"));
     }
 
     @Override
@@ -98,11 +83,8 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
-        var denied = deny(securityContext, Permission.LanceTableAlter);
-        if (denied.isPresent()) {
-            return denied.get();
-        }
-        return ApiFallbacks.notImplemented("LanceTableService.deregisterTable");
+        return executor.execute(securityContext, id, LanceCatalogOperation.DEREGISTER_TABLE, Permission.LanceTableAlter, Map.of(), () ->
+                ApiFallbacks.notImplemented("LanceTableService.deregisterTable"));
     }
 
     @Override
@@ -115,20 +97,14 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             Boolean checkDeclared,
             SecurityContext securityContext
     ) {
-        var denied = deny(securityContext, Permission.LanceTableGet);
-        if (denied.isPresent()) {
-            return denied.get();
-        }
-        return ApiFallbacks.notImplemented("LanceTableService.describeTable");
+        return executor.execute(securityContext, id, LanceCatalogOperation.DESCRIBE_TABLE, Permission.LanceTableGet, Map.of(), () ->
+                ApiFallbacks.notImplemented("LanceTableService.describeTable"));
     }
 
     @Override
     public Response dropTable(String id, String delimiter, SecurityContext securityContext) {
-        var denied = deny(securityContext, Permission.LanceTableDrop);
-        if (denied.isPresent()) {
-            return denied.get();
-        }
-        return ApiFallbacks.notImplemented("LanceTableService.dropTable");
+        return executor.execute(securityContext, id, LanceCatalogOperation.DROP_TABLE, Permission.LanceTableDrop, Map.of(), () ->
+                ApiFallbacks.notImplemented("LanceTableService.dropTable"));
     }
 
     @Override
@@ -138,11 +114,8 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
-        var denied = deny(securityContext, Permission.LanceTableAlter);
-        if (denied.isPresent()) {
-            return denied.get();
-        }
-        return ApiFallbacks.notImplemented("LanceTableService.registerTable");
+        return executor.execute(securityContext, id, LanceCatalogOperation.REGISTER_TABLE, Permission.LanceTableAlter, Map.of(), () ->
+                ApiFallbacks.notImplemented("LanceTableService.registerTable"));
     }
 
     @Override
@@ -152,11 +125,8 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
-        var denied = deny(securityContext, Permission.LanceTableAlter);
-        if (denied.isPresent()) {
-            return denied.get();
-        }
-        return ApiFallbacks.notImplemented("LanceTableService.renameTable");
+        return executor.execute(securityContext, id, LanceCatalogOperation.RENAME_TABLE, Permission.LanceTableAlter, Map.of(), () ->
+                ApiFallbacks.notImplemented("LanceTableService.renameTable"));
     }
 
     @Override
@@ -166,11 +136,8 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
-        var denied = deny(securityContext, Permission.LanceTableAlter);
-        if (denied.isPresent()) {
-            return denied.get();
-        }
-        return ApiFallbacks.notImplemented("LanceTableService.restoreTable");
+        return executor.execute(securityContext, id, LanceCatalogOperation.RESTORE_TABLE, Permission.LanceTableAlter, Map.of(), () ->
+                ApiFallbacks.notImplemented("LanceTableService.restoreTable"));
     }
 
     @Override
@@ -180,14 +147,7 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
-        var denied = deny(securityContext, Permission.LanceTableExists);
-        if (denied.isPresent()) {
-            return denied.get();
-        }
-        return ApiFallbacks.notImplemented("LanceTableService.tableExists");
-    }
-
-    private Optional<Response> deny(SecurityContext securityContext, Permission permission) {
-        return CatalogHandlerAuthorization.denyUnless(authorizationService, securityContext, DOMAIN, permission);
+        return executor.execute(securityContext, id, LanceCatalogOperation.TABLE_EXISTS, Permission.LanceTableExists, Map.of(), () ->
+                ApiFallbacks.notImplemented("LanceTableService.tableExists"));
     }
 }

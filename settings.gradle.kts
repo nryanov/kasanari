@@ -44,6 +44,12 @@ include(
     "modules:authentication:authentication-none",
     "modules:authentication:authentication-ldap",
     "modules:authentication:authentication-oidc",
+    // instrumentation
+    "modules:instrumentation",
+    "modules:instrumentation:instrumentation-listener-spi",
+    "modules:instrumentation:instrumentation-listener-runtime",
+    "modules:instrumentation:instrumentation-listener-audit",
+    "modules:instrumentation:instrumentation-listener-logging",
     // authorization
     "modules:authorization",
     "modules:authorization:authorization-spi",
@@ -117,6 +123,13 @@ findProject(":modules:repository:repository-management:repository-management-sec
 
 findProject(":modules:management")?.name = "management"
 findProject(":modules:management:management-catalog")?.name = "management-catalog"
+
+findProject(":modules:instrumentation")?.name = "instrumentation"
+findProject(":modules:instrumentation:instrumentation-listener-spi")?.name = "instrumentation-listener-spi"
+findProject(":modules:instrumentation:instrumentation-listener-runtime")?.name = "instrumentation-listener-runtime"
+findProject(":modules:instrumentation:instrumentation-listener-audit")?.name = "instrumentation-listener-audit"
+findProject(":modules:instrumentation:instrumentation-listener-logging")?.name = "instrumentation-listener-logging"
+
 findProject(":modules:authentication")?.name = "authentication"
 findProject(":modules:authentication:authentication-spi")?.name = "authentication-spi"
 findProject(":modules:authentication:authentication-runtime")?.name = "authentication-runtime"

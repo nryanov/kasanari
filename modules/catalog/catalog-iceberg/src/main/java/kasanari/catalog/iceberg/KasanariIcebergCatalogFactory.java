@@ -16,6 +16,6 @@ public class KasanariIcebergCatalogFactory implements IcebergCatalogFactory {
         catalog.setConf(hadoopConfiguration);
         catalog.initialize(name, catalogProperties);
 
-        return new LoggedIcebergCatalogAdapter(new KasanariIcebergCatalogAdapter(catalog));
+        return new KasanariIcebergCatalogAdapter(catalog);
     }
 }

@@ -1,0 +1,27 @@
+package kasanari.instrumentation.spi.iceberg;
+
+public enum IcebergCatalogOperation {
+    COMMIT_TRANSACTION,
+    CREATE_NAMESPACE,
+    CREATE_TABLE,
+    CREATE_VIEW,
+    DROP_NAMESPACE,
+    DROP_TABLE,
+    DROP_VIEW,
+    LIST_NAMESPACES,
+    LIST_TABLES,
+    LIST_VIEWS,
+    LOAD_NAMESPACE,
+    LOAD_TABLE,
+    LOAD_VIEW,
+    NAMESPACE_EXISTS,
+    REGISTER_TABLE,
+    RENAME_TABLE,
+    RENAME_VIEW,
+    REPLACE_VIEW,
+    REPORT_METRICS,
+    TABLE_EXISTS,
+    UPDATE_NAMESPACE,
+    UPDATE_TABLE,
+    VIEW_EXISTS
+}
