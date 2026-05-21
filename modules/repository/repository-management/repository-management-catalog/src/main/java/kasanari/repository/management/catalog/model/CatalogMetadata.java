@@ -1,6 +1,6 @@
 package kasanari.repository.management.catalog.model;
 
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 
 public record CatalogMetadata(
         String catalogName,

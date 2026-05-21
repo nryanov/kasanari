@@ -13,10 +13,10 @@ dependencies {
     implementation("io.quarkus:quarkus-security")
 
     // auth
-    implementation(project(":modules:auth:auth-runtime"))
-    implementation(project(":modules:auth:auth-none"))
-    implementation(project(":modules:auth:auth-ldap"))
-    implementation(project(":modules:auth:auth-oidc"))
+    implementation(project(":modules:authentication:authentication-runtime"))
+    implementation(project(":modules:authentication:authentication-none"))
+    implementation(project(":modules:authentication:authentication-ldap"))
+    implementation(project(":modules:authentication:authentication-oidc"))
 
     // iceberg
     implementation(project(":modules:api:api-iceberg"))
@@ -30,10 +30,12 @@ dependencies {
     // management
     implementation(project(":modules:api:api-management"))
     implementation(project(":modules:management:management-catalog"))
-    implementation(project(":modules:management:management-security"))
     implementation(project(":modules:repository:repository-jdbc"))
 
-    implementation(libs.casbin.jcasbin)
+    // authorization
+    implementation(project(":modules:authorization:authorization-runtime"))
+    implementation(project(":modules:authorization:authorization-allow-all"))
+    implementation(project(":modules:authorization:authorization-casbin"))
     implementation(libs.jdbc.postgresql)
 
     testImplementation("io.quarkus:quarkus-junit5")

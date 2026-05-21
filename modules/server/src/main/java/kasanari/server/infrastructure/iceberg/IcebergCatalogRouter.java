@@ -9,7 +9,7 @@ import kasanari.catalog.iceberg.KasanariIcebergCatalogFactory;
 import kasanari.catalog.iceberg.ProxyIcebergCatalogFactory;
 import kasanari.management.catalog.ManagementCatalogService;
 import kasanari.repository.management.catalog.model.CatalogMetadata;
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 

@@ -3,7 +3,7 @@ package kasanari.repository.management.catalog;
 
 import kasanari.repository.management.catalog.model.CatalogMetadata;
 import kasanari.repository.management.catalog.model.CatalogSpec;
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 
 import java.util.List;
 import java.util.Optional;

@@ -5,7 +5,7 @@ import kasanari.catalog.management.dto.CatalogSpecDto;
 import kasanari.catalog.management.dto.CatalogTypeDto;
 import kasanari.repository.management.catalog.model.CatalogMode;
 import kasanari.repository.management.catalog.model.CatalogSpec;
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 
 public final class CatalogSpecMapper {
     private CatalogSpecMapper() {

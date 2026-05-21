@@ -3,8 +3,12 @@ package kasanari.server.infrastructure.lance;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import kasanari.authorization.runtime.AuthorizationService;
+import kasanari.authorization.spi.Permission;
 import kasanari.catalog.lance.api.LanceRestTableService;
+import kasanari.core.model.CatalogType;
 import kasanari.server.infrastructure.http.ApiFallbacks;
+import kasanari.server.infrastructure.security.CatalogHandlerAuthorization;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
 import org.lance.namespace.model.DeclareTableRequest;
@@ -16,13 +20,16 @@ import org.lance.namespace.model.RestoreTableRequest;
 import org.lance.namespace.model.TableExistsRequest;
 
 import java.io.File;
+import java.util.Optional;
 
 @ApplicationScoped
 public class LanceTableServiceHandler implements LanceRestTableService {
-    private final LanceCatalogRouter lanceCatalogRouter;
+    private static final CatalogType DOMAIN = CatalogType.LANCE;
 
-    public LanceTableServiceHandler(LanceCatalogRouter lanceCatalogRouter) {
-        this.lanceCatalogRouter = lanceCatalogRouter;
+    private final AuthorizationService authorizationService;
+
+    public LanceTableServiceHandler(AuthorizationService authorizationService) {
+        this.authorizationService = authorizationService;
     }
 
     @Override
@@ -32,6 +39,10 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
+        var denied = deny(securityContext, Permission.LanceTableAlter);
+        if (denied.isPresent()) {
+            return denied.get();
+        }
         return ApiFallbacks.notImplemented("LanceTableService.alterTableAlterColumns");
     }
 
@@ -42,6 +53,10 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
+        var denied = deny(securityContext, Permission.LanceTableAlter);
+        if (denied.isPresent()) {
+            return denied.get();
+        }
         return ApiFallbacks.notImplemented("LanceTableService.alterTableDropColumns");
     }
 
@@ -55,6 +70,10 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String storageOptions,
             SecurityContext securityContext
     ) {
+        var denied = deny(securityContext, Permission.LanceTableCreate);
+        if (denied.isPresent()) {
+            return denied.get();
+        }
         return ApiFallbacks.notImplemented("LanceTableService.createTable");
     }
 
@@ -65,6 +84,10 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
+        var denied = deny(securityContext, Permission.LanceTableAlter);
+        if (denied.isPresent()) {
+            return denied.get();
+        }
         return ApiFallbacks.notImplemented("LanceTableService.declareTable");
     }
 
@@ -75,6 +98,10 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
+        var denied = deny(securityContext, Permission.LanceTableAlter);
+        if (denied.isPresent()) {
+            return denied.get();
+        }
         return ApiFallbacks.notImplemented("LanceTableService.deregisterTable");
     }
 
@@ -88,11 +115,19 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             Boolean checkDeclared,
             SecurityContext securityContext
     ) {
+        var denied = deny(securityContext, Permission.LanceTableGet);
+        if (denied.isPresent()) {
+            return denied.get();
+        }
         return ApiFallbacks.notImplemented("LanceTableService.describeTable");
     }
 
     @Override
     public Response dropTable(String id, String delimiter, SecurityContext securityContext) {
+        var denied = deny(securityContext, Permission.LanceTableDrop);
+        if (denied.isPresent()) {
+            return denied.get();
+        }
         return ApiFallbacks.notImplemented("LanceTableService.dropTable");
     }
 
@@ -103,6 +138,10 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
+        var denied = deny(securityContext, Permission.LanceTableAlter);
+        if (denied.isPresent()) {
+            return denied.get();
+        }
         return ApiFallbacks.notImplemented("LanceTableService.registerTable");
     }
 
@@ -113,6 +152,10 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
+        var denied = deny(securityContext, Permission.LanceTableAlter);
+        if (denied.isPresent()) {
+            return denied.get();
+        }
         return ApiFallbacks.notImplemented("LanceTableService.renameTable");
     }
 
@@ -123,6 +166,10 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
+        var denied = deny(securityContext, Permission.LanceTableAlter);
+        if (denied.isPresent()) {
+            return denied.get();
+        }
         return ApiFallbacks.notImplemented("LanceTableService.restoreTable");
     }
 
@@ -133,6 +180,14 @@ public class LanceTableServiceHandler implements LanceRestTableService {
             String delimiter,
             SecurityContext securityContext
     ) {
+        var denied = deny(securityContext, Permission.LanceTableExists);
+        if (denied.isPresent()) {
+            return denied.get();
+        }
         return ApiFallbacks.notImplemented("LanceTableService.tableExists");
+    }
+
+    private Optional<Response> deny(SecurityContext securityContext, Permission permission) {
+        return CatalogHandlerAuthorization.denyUnless(authorizationService, securityContext, DOMAIN, permission);
     }
 }

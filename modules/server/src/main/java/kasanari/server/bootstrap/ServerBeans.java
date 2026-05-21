@@ -7,7 +7,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import kasanari.management.catalog.ManagementCatalogService;
-import kasanari.management.security.ManagementSecurityService;
 import kasanari.repository.jdbc.KasanariDataSource;
 import kasanari.server.configuration.ManagementMetadataConfiguration;
 
@@ -35,10 +34,4 @@ public class ServerBeans {
         return new ManagementCatalogService(dataSource, objectMapper);
     }
 
-    @Singleton
-    @Produces
-    public ManagementSecurityService managementSecurityService(
-            @Named("management-datasource") KasanariDataSource dataSource) {
-        return new ManagementSecurityService(dataSource);
-    }
 }

@@ -14,6 +14,7 @@ rootProject.name = "kasanari"
 
 include(
     "modules:server",
+    "modules:core",
     // api
     "modules:api",
     "modules:api:api-management",
@@ -36,14 +37,19 @@ include(
     // management
     "modules:management",
     "modules:management:management-catalog",
-    "modules:management:management-security",
-    // auth
-    "modules:auth",
-    "modules:auth:auth-spi",
-    "modules:auth:auth-runtime",
-    "modules:auth:auth-none",
-    "modules:auth:auth-ldap",
-    "modules:auth:auth-oidc",
+    // authentication
+    "modules:authentication",
+    "modules:authentication:authentication-spi",
+    "modules:authentication:authentication-runtime",
+    "modules:authentication:authentication-none",
+    "modules:authentication:authentication-ldap",
+    "modules:authentication:authentication-oidc",
+    // authorization
+    "modules:authorization",
+    "modules:authorization:authorization-spi",
+    "modules:authorization:authorization-runtime",
+    "modules:authorization:authorization-allow-all",
+    "modules:authorization:authorization-casbin",
     // repository
     "modules:repository",
     "modules:repository:repository-core",
@@ -54,7 +60,6 @@ include(
     "modules:repository:repository-paimon:repository-paimon-postgres",
     "modules:repository:repository-lance",
     "modules:repository:repository-lance:repository-lance-postgres",
-    "modules:repository:repository-management:repository-management-common",
     "modules:repository:repository-management:repository-management-catalog",
     "modules:repository:repository-management:repository-management-catalog:repository-management-catalog-postgres",
     "modules:repository:repository-management:repository-management-security",
@@ -82,6 +87,7 @@ findProject(":modules:fixtures:fixtures-postgres")?.name = "fixtures-postgres"
 findProject(":modules:fixtures:fixtures-hive")?.name = "fixtures-hive"
 
 findProject(":modules:server")?.name = "server"
+findProject(":modules:core")?.name = "core"
 findProject(":modules:catalog")?.name = "catalog"
 findProject(":modules:catalog:catalog-iceberg")?.name = "catalog-iceberg"
 findProject(":modules:catalog:catalog-paimon")?.name = "catalog-paimon"
@@ -104,7 +110,6 @@ findProject(":modules:repository:repository-paimon")?.name = "repository-paimon"
 findProject(":modules:repository:repository-paimon:repository-paimon-postgres")?.name = "repository-paimon-postgres"
 findProject(":modules:repository:repository-lance")?.name = "repository-lance"
 findProject(":modules:repository:repository-lance:repository-lance-postgres")?.name = "repository-lance-postgres"
-findProject(":modules:repository:repository-management:repository-management-common")?.name = "repository-management-common"
 findProject(":modules:repository:repository-management:repository-management-catalog")?.name = "repository-management-catalog"
 findProject(":modules:repository:repository-management:repository-management-catalog:repository-management-catalog-postgres")?.name = "repository-management-catalog-postgres"
 findProject(":modules:repository:repository-management:repository-management-security")?.name = "repository-management-security"
@@ -112,11 +117,15 @@ findProject(":modules:repository:repository-management:repository-management-sec
 
 findProject(":modules:management")?.name = "management"
 findProject(":modules:management:management-catalog")?.name = "management-catalog"
-findProject(":modules:management:management-security")?.name = "management-security"
+findProject(":modules:authentication")?.name = "authentication"
+findProject(":modules:authentication:authentication-spi")?.name = "authentication-spi"
+findProject(":modules:authentication:authentication-runtime")?.name = "authentication-runtime"
+findProject(":modules:authentication:authentication-none")?.name = "authentication-none"
+findProject(":modules:authentication:authentication-ldap")?.name = "authentication-ldap"
+findProject(":modules:authentication:authentication-oidc")?.name = "authentication-oidc"
 
-findProject(":modules:auth")?.name = "auth"
-findProject(":modules:auth:auth-spi")?.name = "auth-spi"
-findProject(":modules:auth:auth-runtime")?.name = "auth-runtime"
-findProject(":modules:auth:auth-none")?.name = "auth-none"
-findProject(":modules:auth:auth-ldap")?.name = "auth-ldap"
-findProject(":modules:auth:auth-oidc")?.name = "auth-oidc"
+findProject(":modules:authorization")?.name = "authorization"
+findProject(":modules:authorization:authorization-spi")?.name = "authorization-spi"
+findProject(":modules:authorization:authorization-runtime")?.name = "authorization-runtime"
+findProject(":modules:authorization:authorization-allow-all")?.name = "authorization-allow-all"
+findProject(":modules:authorization:authorization-casbin")?.name = "authorization-casbin"
