@@ -67,7 +67,7 @@ Health and Swagger UI stay public: `/q/health`, `/docs`.
 
 ## Implement your own provider
 
-1. Implement `kasanari.auth.spi.AuthProvider` from `auth-spi`.
+1. Implement `kasanari.auth.spi.AuthProvider` from `authentication-spi`.
 2. Register the class in `META-INF/services/kasanari.auth.spi.AuthProvider`.
 3. Return a unique `type()` string and read config from `AuthProviderContext` (`kasanari.auth.<type>.*`).
 4. Package as a jar and add to the server classpath.

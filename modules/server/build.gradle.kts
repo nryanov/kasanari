@@ -13,10 +13,10 @@ dependencies {
     implementation("io.quarkus:quarkus-security")
 
     // auth
-    implementation(project(":modules:auth:auth-runtime"))
-    implementation(project(":modules:auth:auth-none"))
-    implementation(project(":modules:auth:auth-ldap"))
-    implementation(project(":modules:auth:auth-oidc"))
+    implementation(project(":modules:authentication:authentication-runtime"))
+    implementation(project(":modules:authentication:authentication-none"))
+    implementation(project(":modules:authentication:authentication-ldap"))
+    implementation(project(":modules:authentication:authentication-oidc"))
 
     // iceberg
     implementation(project(":modules:api:api-iceberg"))

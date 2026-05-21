@@ -5,5 +5,5 @@ plugins {
 
 dependencies {
     implementation(libs.smallrye.mutiny)
-    implementation(project(":modules:auth:auth-spi"))
+    implementation(project(":modules:authentication:authentication-spi"))
 }

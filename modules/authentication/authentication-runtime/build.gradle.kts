@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    api(project(":modules:auth:auth-spi"))
+    api(project(":modules:authentication:authentication-spi"))
 
     implementation(enforcedPlatform(libs.quarkus.bom))
     implementation("io.quarkus:quarkus-security")

@@ -7,7 +7,7 @@ dependencies {
     implementation(enforcedPlatform(libs.quarkus.bom))
 
     implementation(libs.smallrye.mutiny)
-    implementation(project(":modules:auth:auth-spi"))
+    implementation(project(":modules:authentication:authentication-spi"))
     implementation("org.wildfly.security:wildfly-elytron-realm-ldap")
     implementation("org.wildfly.security:wildfly-elytron-credential")
 }
