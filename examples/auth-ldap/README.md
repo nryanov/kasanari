@@ -16,15 +16,18 @@ Wait until OpenLDAP is ready (a few seconds after container start).
 Set auth mode and LDAP settings (see `application.properties.sample`), then start the server:
 
 ```shell
-export KASANARI_AUTH_TYPE=ldap
-export KASANARI_AUTH_LDAP_URL=ldap://localhost:389
-export KASANARI_AUTH_LDAP_BIND_PRINCIPAL=cn=admin,dc=kasanari,dc=local
-export KASANARI_AUTH_LDAP_BIND_PASSWORD=admin
-export KASANARI_AUTH_LDAP_SEARCH_BASE_DN=ou=users,dc=kasanari,dc=local
-export KASANARI_AUTH_LDAP_RDN_IDENTIFIER=uid
+export KASANARI_AUTHENTICATION_TYPE=ldap
+export QUARKUS_NAMING_ENABLE_JNDI=true
+export KASANARI_AUTHENTICATION_LDAP_URL=ldap://localhost:389
+export KASANARI_AUTHENTICATION_LDAP_BIND_PRINCIPAL=cn=admin,dc=kasanari,dc=local
+export KASANARI_AUTHENTICATION_LDAP_BIND_PASSWORD=admin
+export KASANARI_AUTHENTICATION_LDAP_SEARCH_BASE_DN=ou=users,dc=kasanari,dc=local
+export KASANARI_AUTHENTICATION_LDAP_RDN_IDENTIFIER=uid
 
-./gradlew :modules:server:quarkusDev
+./gradlew :modules:server:quarkusDev -Dquarkus.profile=dev
 ```
+
+`quarkus.naming.enable-jndi=true` is required because WildFly Elytron LDAP uses JNDI, which Quarkus disables by default. It is a **build-time** setting, so restart the server after changing it.
 
 ## Verify
 
