@@ -6,16 +6,23 @@ import jakarta.ws.rs.core.SecurityContext;
 import kasanari.authorization.runtime.AuthorizationService;
 import kasanari.authorization.spi.Permission;
 import kasanari.catalog.paimon.api.PaimonRestFunctionService;
+import kasanari.repository.management.common.model.CatalogType;
+import kasanari.server.infrastructure.security.CatalogHandlerAuthorization;
+
+import java.util.Optional;
 import org.apache.paimon.rest.requests.AlterFunctionRequest;
 import org.apache.paimon.rest.requests.CreateFunctionRequest;
 
 @ApplicationScoped
-public class PaimonFunctionServiceHandler extends PaimonAuthorizedHandler implements PaimonRestFunctionService {
+public class PaimonFunctionServiceHandler implements PaimonRestFunctionService {
+    private static final CatalogType DOMAIN = CatalogType.PAIMON;
+
     private final PaimonCatalogRouter paimonCatalogRouter;
+    private final AuthorizationService authorizationService;
 
     public PaimonFunctionServiceHandler(PaimonCatalogRouter paimonCatalogRouter, AuthorizationService authorizationService) {
-        super(authorizationService);
         this.paimonCatalogRouter = paimonCatalogRouter;
+        this.authorizationService = authorizationService;
     }
 
     @Override
@@ -87,5 +94,9 @@ public class PaimonFunctionServiceHandler extends PaimonAuthorizedHandler implem
         var list =
                 paimonCatalogRouter.getOrThrow(catalogName).listFunctionsGlobally(databaseNamePattern, functionNamePattern, maxResults, pageToken);
         return Response.ok(list).build();
+    }
+
+    private Optional<Response> deny(SecurityContext securityContext, Permission permission) {
+        return CatalogHandlerAuthorization.denyUnless(authorizationService, securityContext, DOMAIN, permission);
     }
 }

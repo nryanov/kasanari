@@ -6,15 +6,22 @@ import jakarta.ws.rs.core.SecurityContext;
 import kasanari.authorization.runtime.AuthorizationService;
 import kasanari.authorization.spi.Permission;
 import kasanari.catalog.paimon.api.PaimonRestTagService;
+import kasanari.repository.management.common.model.CatalogType;
+import kasanari.server.infrastructure.security.CatalogHandlerAuthorization;
+
+import java.util.Optional;
 import org.apache.paimon.rest.requests.CreateTagRequest;
 
 @ApplicationScoped
-public class PaimonTagServiceHandler extends PaimonAuthorizedHandler implements PaimonRestTagService {
+public class PaimonTagServiceHandler implements PaimonRestTagService {
+    private static final CatalogType DOMAIN = CatalogType.PAIMON;
+
     private final PaimonCatalogRouter paimonCatalogRouter;
+    private final AuthorizationService authorizationService;
 
     public PaimonTagServiceHandler(PaimonCatalogRouter paimonCatalogRouter, AuthorizationService authorizationService) {
-        super(authorizationService);
         this.paimonCatalogRouter = paimonCatalogRouter;
+        this.authorizationService = authorizationService;
     }
 
     @Override
@@ -55,5 +62,9 @@ public class PaimonTagServiceHandler extends PaimonAuthorizedHandler implements 
         }
         var list = paimonCatalogRouter.getOrThrow(catalogName).listTags(database, table, maxResults, pageToken, tagNamePrefix);
         return Response.ok(list).build();
+    }
+
+    private Optional<Response> deny(SecurityContext securityContext, Permission permission) {
+        return CatalogHandlerAuthorization.denyUnless(authorizationService, securityContext, DOMAIN, permission);
     }
 }

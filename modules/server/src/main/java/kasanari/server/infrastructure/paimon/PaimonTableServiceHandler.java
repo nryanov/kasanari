@@ -6,6 +6,10 @@ import jakarta.ws.rs.core.SecurityContext;
 import kasanari.authorization.runtime.AuthorizationService;
 import kasanari.authorization.spi.Permission;
 import kasanari.catalog.paimon.api.PaimonRestTableService;
+import kasanari.repository.management.common.model.CatalogType;
+import kasanari.server.infrastructure.security.CatalogHandlerAuthorization;
+
+import java.util.Optional;
 import org.apache.paimon.rest.requests.AlterTableRequest;
 import org.apache.paimon.rest.requests.AuthTableQueryRequest;
 import org.apache.paimon.rest.requests.CommitTableRequest;
@@ -17,12 +21,15 @@ import org.apache.paimon.rest.requests.RollbackSchemaRequest;
 import org.apache.paimon.rest.requests.RollbackTableRequest;
 
 @ApplicationScoped
-public class PaimonTableServiceHandler extends PaimonAuthorizedHandler implements PaimonRestTableService {
+public class PaimonTableServiceHandler implements PaimonRestTableService {
+    private static final CatalogType DOMAIN = CatalogType.PAIMON;
+
     private final PaimonCatalogRouter paimonCatalogRouter;
+    private final AuthorizationService authorizationService;
 
     public PaimonTableServiceHandler(PaimonCatalogRouter paimonCatalogRouter, AuthorizationService authorizationService) {
-        super(authorizationService);
         this.paimonCatalogRouter = paimonCatalogRouter;
+        this.authorizationService = authorizationService;
     }
 
     @Override
@@ -223,5 +230,9 @@ public class PaimonTableServiceHandler extends PaimonAuthorizedHandler implement
         }
         paimonCatalogRouter.getOrThrow(catalogName).rollbackTable(database, table, request);
         return Response.ok().build();
+    }
+
+    private Optional<Response> deny(SecurityContext securityContext, Permission permission) {
+        return CatalogHandlerAuthorization.denyUnless(authorizationService, securityContext, DOMAIN, permission);
     }
 }

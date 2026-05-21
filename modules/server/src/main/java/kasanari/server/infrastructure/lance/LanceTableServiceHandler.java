@@ -6,7 +6,9 @@ import jakarta.ws.rs.core.SecurityContext;
 import kasanari.authorization.runtime.AuthorizationService;
 import kasanari.authorization.spi.Permission;
 import kasanari.catalog.lance.api.LanceRestTableService;
+import kasanari.repository.management.common.model.CatalogType;
 import kasanari.server.infrastructure.http.ApiFallbacks;
+import kasanari.server.infrastructure.security.CatalogHandlerAuthorization;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
 import org.lance.namespace.model.DeclareTableRequest;
@@ -18,11 +20,16 @@ import org.lance.namespace.model.RestoreTableRequest;
 import org.lance.namespace.model.TableExistsRequest;
 
 import java.io.File;
+import java.util.Optional;
 
 @ApplicationScoped
-public class LanceTableServiceHandler extends LanceAuthorizedHandler implements LanceRestTableService {
+public class LanceTableServiceHandler implements LanceRestTableService {
+    private static final CatalogType DOMAIN = CatalogType.LANCE;
+
+    private final AuthorizationService authorizationService;
+
     public LanceTableServiceHandler(AuthorizationService authorizationService) {
-        super(authorizationService);
+        this.authorizationService = authorizationService;
     }
 
     @Override
@@ -178,5 +185,9 @@ public class LanceTableServiceHandler extends LanceAuthorizedHandler implements 
             return denied.get();
         }
         return ApiFallbacks.notImplemented("LanceTableService.tableExists");
+    }
+
+    private Optional<Response> deny(SecurityContext securityContext, Permission permission) {
+        return CatalogHandlerAuthorization.denyUnless(authorizationService, securityContext, DOMAIN, permission);
     }
 }

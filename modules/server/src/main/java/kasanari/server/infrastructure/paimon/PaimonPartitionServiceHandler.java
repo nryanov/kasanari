@@ -6,16 +6,23 @@ import jakarta.ws.rs.core.SecurityContext;
 import kasanari.authorization.runtime.AuthorizationService;
 import kasanari.authorization.spi.Permission;
 import kasanari.catalog.paimon.api.PaimonRestPartitionService;
+import kasanari.repository.management.common.model.CatalogType;
+import kasanari.server.infrastructure.security.CatalogHandlerAuthorization;
+
+import java.util.Optional;
 import org.apache.paimon.rest.requests.ListPartitionsByNamesRequest;
 import org.apache.paimon.rest.requests.MarkDonePartitionsRequest;
 
 @ApplicationScoped
-public class PaimonPartitionServiceHandler extends PaimonAuthorizedHandler implements PaimonRestPartitionService {
+public class PaimonPartitionServiceHandler implements PaimonRestPartitionService {
+    private static final CatalogType DOMAIN = CatalogType.PAIMON;
+
     private final PaimonCatalogRouter paimonCatalogRouter;
+    private final AuthorizationService authorizationService;
 
     public PaimonPartitionServiceHandler(PaimonCatalogRouter paimonCatalogRouter, AuthorizationService authorizationService) {
-        super(authorizationService);
         this.paimonCatalogRouter = paimonCatalogRouter;
+        this.authorizationService = authorizationService;
     }
 
     @Override
@@ -46,5 +53,9 @@ public class PaimonPartitionServiceHandler extends PaimonAuthorizedHandler imple
         }
         paimonCatalogRouter.getOrThrow(catalogName).markDonePartitions(database, table, request);
         return Response.ok().build();
+    }
+
+    private Optional<Response> deny(SecurityContext securityContext, Permission permission) {
+        return CatalogHandlerAuthorization.denyUnless(authorizationService, securityContext, DOMAIN, permission);
     }
 }

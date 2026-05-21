@@ -6,16 +6,24 @@ import jakarta.ws.rs.core.SecurityContext;
 import kasanari.authorization.runtime.AuthorizationService;
 import kasanari.authorization.spi.Permission;
 import kasanari.catalog.lance.api.LanceRestNamespaceService;
+import kasanari.repository.management.common.model.CatalogType;
 import kasanari.server.infrastructure.http.ApiFallbacks;
+import kasanari.server.infrastructure.security.CatalogHandlerAuthorization;
+
+import java.util.Optional;
 import org.lance.namespace.model.CreateNamespaceRequest;
 import org.lance.namespace.model.DescribeNamespaceRequest;
 import org.lance.namespace.model.DropNamespaceRequest;
 import org.lance.namespace.model.NamespaceExistsRequest;
 
 @ApplicationScoped
-public class LanceNamespaceServiceHandler extends LanceAuthorizedHandler implements LanceRestNamespaceService {
+public class LanceNamespaceServiceHandler implements LanceRestNamespaceService {
+    private static final CatalogType DOMAIN = CatalogType.LANCE;
+
+    private final AuthorizationService authorizationService;
+
     public LanceNamespaceServiceHandler(AuthorizationService authorizationService) {
-        super(authorizationService);
+        this.authorizationService = authorizationService;
     }
 
     @Override
@@ -77,5 +85,9 @@ public class LanceNamespaceServiceHandler extends LanceAuthorizedHandler impleme
             return denied.get();
         }
         return ApiFallbacks.notImplemented("LanceNamespaceService.namespaceExists");
+    }
+
+    private Optional<Response> deny(SecurityContext securityContext, Permission permission) {
+        return CatalogHandlerAuthorization.denyUnless(authorizationService, securityContext, DOMAIN, permission);
     }
 }
