@@ -7,7 +7,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import kasanari.authorization.spi.AuthorizationRequest;
 import kasanari.authorization.spi.Permission;
 import kasanari.authorization.spi.RoleBindingAdministration;
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 
 import java.util.Optional;
 

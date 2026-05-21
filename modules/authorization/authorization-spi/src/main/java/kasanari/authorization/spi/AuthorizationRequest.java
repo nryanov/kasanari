@@ -1,6 +1,6 @@
 package kasanari.authorization.spi;
 
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 
 public record AuthorizationRequest(
         String subject,

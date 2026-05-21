@@ -1,7 +1,7 @@
 package kasanari.authorization.casbin;
 
 import kasanari.authorization.spi.Permission;
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 import org.casbin.jcasbin.main.Enforcer;
 
 import java.util.List;

@@ -11,7 +11,7 @@ import kasanari.catalog.management.dto.CatalogTypeDto;
 import kasanari.catalog.management.dto.DeleteRolesRequestDto;
 import kasanari.catalog.management.dto.GetRolesResponseDto;
 import kasanari.catalog.management.dto.UpdateRolesRequestDto;
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 import kasanari.server.infrastructure.http.ApiFallbacks;
 
 import java.util.List;

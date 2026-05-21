@@ -1,6 +1,6 @@
 package kasanari.repository.management.security;
 
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 import kasanari.repository.management.security.model.StoredRoleBinding;
 
 import java.util.List;

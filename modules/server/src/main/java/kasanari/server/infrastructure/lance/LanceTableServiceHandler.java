@@ -6,7 +6,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import kasanari.authorization.runtime.AuthorizationService;
 import kasanari.authorization.spi.Permission;
 import kasanari.catalog.lance.api.LanceRestTableService;
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 import kasanari.server.infrastructure.http.ApiFallbacks;
 import kasanari.server.infrastructure.security.CatalogHandlerAuthorization;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;

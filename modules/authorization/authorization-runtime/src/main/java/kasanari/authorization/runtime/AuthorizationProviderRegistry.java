@@ -27,9 +27,6 @@ public class AuthorizationProviderRegistry {
         }
 
         var configProperties = readConfigProperties();
-        if ("casbin".equals(selectedType)) {
-            mergeManagementJdbcProperties(configProperties);
-        }
         activeProvider.initialize(new ConfigAuthorizationProviderContext(selectedType, configProperties));
     }
 
@@ -60,20 +57,5 @@ public class AuthorizationProviderRegistry {
             }
         }
         return properties;
-    }
-
-    private static void mergeManagementJdbcProperties(Map<String, String> properties) {
-        var casbinPrefix = "kasanari.authorization.casbin.";
-        for (var propertyName : ConfigProvider.getConfig().getPropertyNames()) {
-            if (!propertyName.startsWith("management.metadata.jdbc-properties.")) {
-                continue;
-            }
-            var suffix = propertyName.substring("management.metadata.jdbc-properties.".length());
-            var casbinKey = casbinPrefix + suffix;
-            if (!properties.containsKey(casbinKey)) {
-                ConfigProvider.getConfig().getOptionalValue(propertyName, String.class)
-                        .ifPresent(value -> properties.put(casbinKey, value));
-            }
-        }
     }
 }

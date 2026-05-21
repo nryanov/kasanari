@@ -1,7 +1,7 @@
 package kasanari.repository.management.security.postgres;
 
 import kasanari.repository.management.security.RoleBindingRepository;
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 import kasanari.repository.management.security.model.StoredRoleBinding;
 import org.jdbi.v3.core.Handle;
 

@@ -29,15 +29,3 @@ Roles are assigned per subject and catalog type (`ICEBERG`, `PAIMON`, `LANCE`) v
 | `LanceCatalogAdmin` / `Editor` / `Viewer`  | Same pattern with `Lance*` permissions                                |
 
 Permission names are defined in `authorization-spi` (`Permission` enum), e.g. `IcebergTableList`, `PaimonDatabaseCreate`, `RoleSelect`.
-
-## Migration from legacy roles
-
-If upgrading from the previous coarse roles, update stored bindings:
-
-```sql
-UPDATE kasanari_role_bindings SET role_name = 'IcebergCatalogAdmin' WHERE role_name = 'catalog_admin';
-UPDATE kasanari_role_bindings SET role_name = 'IcebergCatalogViewer' WHERE role_name = 'catalog_reader';
--- Repeat per catalog type and role as needed
-```
-
-Legacy names `security_admin` / `security_reader` map to catalog admin/viewer roles that include `Role*` permissions.

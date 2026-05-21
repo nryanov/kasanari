@@ -3,7 +3,7 @@ package kasanari.authorization.casbin;
 import kasanari.authorization.spi.RoleBinding;
 import kasanari.authorization.spi.RoleBindingAdministration;
 import kasanari.repository.core.TransactionManager;
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 import kasanari.repository.management.security.RoleBindingRepository;
 import kasanari.repository.management.security.model.StoredRoleBinding;
 import org.casbin.jcasbin.main.Enforcer;

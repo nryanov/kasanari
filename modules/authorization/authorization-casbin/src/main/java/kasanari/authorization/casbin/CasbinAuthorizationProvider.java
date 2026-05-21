@@ -95,18 +95,20 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
     }
 
     private static Map<String, String> resolveJdbcProperties(AuthorizationProviderContext context) {
-        var uri = context.getOptional("uri");
-        var user = context.getOptional("kasanari.jdbc.user");
-        var password = context.getOptional("kasanari.jdbc.password");
+        var uri = context.getOptional("jdbc.uri");
+        var user = context.getOptional("jdbc.user");
+        var password = context.getOptional("jdbc.password");
+
         if (uri.isEmpty() || user.isEmpty() || password.isEmpty()) {
             throw new IllegalStateException(
-                    "Casbin authorization requires JDBC properties: uri, kasanari.jdbc.user, kasanari.jdbc.password "
-                            + "(via kasanari.authorization.casbin.* or management.metadata.jdbc-properties.*)");
+                    "Casbin authorization requires JDBC properties: jdbc,uri, jdbc.user, jdbc.password via kasanari.authorization.casbin.*");
         }
+
         var properties = new HashMap<String, String>();
         properties.put("uri", uri.get());
         properties.put("kasanari.jdbc.user", user.get());
         properties.put("kasanari.jdbc.password", password.get());
+
         return properties;
     }
 }

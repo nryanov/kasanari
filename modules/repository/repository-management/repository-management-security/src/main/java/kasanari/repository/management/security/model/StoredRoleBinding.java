@@ -1,6 +1,6 @@
 package kasanari.repository.management.security.model;
 
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 
 public record StoredRoleBinding(
         String subject,

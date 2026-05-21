@@ -14,6 +14,7 @@ rootProject.name = "kasanari"
 
 include(
     "modules:server",
+    "modules:core",
     // api
     "modules:api",
     "modules:api:api-management",
@@ -59,7 +60,6 @@ include(
     "modules:repository:repository-paimon:repository-paimon-postgres",
     "modules:repository:repository-lance",
     "modules:repository:repository-lance:repository-lance-postgres",
-    "modules:repository:repository-management:repository-management-common",
     "modules:repository:repository-management:repository-management-catalog",
     "modules:repository:repository-management:repository-management-catalog:repository-management-catalog-postgres",
     "modules:repository:repository-management:repository-management-security",
@@ -87,6 +87,7 @@ findProject(":modules:fixtures:fixtures-postgres")?.name = "fixtures-postgres"
 findProject(":modules:fixtures:fixtures-hive")?.name = "fixtures-hive"
 
 findProject(":modules:server")?.name = "server"
+findProject(":modules:core")?.name = "core"
 findProject(":modules:catalog")?.name = "catalog"
 findProject(":modules:catalog:catalog-iceberg")?.name = "catalog-iceberg"
 findProject(":modules:catalog:catalog-paimon")?.name = "catalog-paimon"
@@ -109,7 +110,6 @@ findProject(":modules:repository:repository-paimon")?.name = "repository-paimon"
 findProject(":modules:repository:repository-paimon:repository-paimon-postgres")?.name = "repository-paimon-postgres"
 findProject(":modules:repository:repository-lance")?.name = "repository-lance"
 findProject(":modules:repository:repository-lance:repository-lance-postgres")?.name = "repository-lance-postgres"
-findProject(":modules:repository:repository-management:repository-management-common")?.name = "repository-management-common"
 findProject(":modules:repository:repository-management:repository-management-catalog")?.name = "repository-management-catalog"
 findProject(":modules:repository:repository-management:repository-management-catalog:repository-management-catalog-postgres")?.name = "repository-management-catalog-postgres"
 findProject(":modules:repository:repository-management:repository-management-security")?.name = "repository-management-security"

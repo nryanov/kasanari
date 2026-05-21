@@ -9,7 +9,7 @@ import kasanari.repository.management.catalog.model.CatalogMetadata;
 import kasanari.repository.management.catalog.model.CatalogSpec;
 import kasanari.repository.management.catalog.postgres.JdbcCatalogMetadataRepository;
 import kasanari.repository.management.catalog.postgres.JdbcManagementCatalogQueries;
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 import org.jdbi.v3.core.Handle;
 
 import java.util.List;

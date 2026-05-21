@@ -1,12 +1,12 @@
-package kasanari.auth.custom;
+package kasanari.authentication.custom;
 
 import io.smallrye.mutiny.Uni;
-import kasanari.auth.spi.AuthPrincipal;
-import kasanari.auth.spi.AuthProvider;
-import kasanari.auth.spi.AuthProviderContext;
-import kasanari.auth.spi.AuthProviderMetadata;
-import kasanari.auth.spi.AuthRequest;
-import kasanari.auth.spi.CredentialScheme;
+import kasanari.authentication.spi.AuthPrincipal;
+import kasanari.authentication.spi.AuthProvider;
+import kasanari.authentication.spi.AuthProviderContext;
+import kasanari.authentication.spi.AuthProviderMetadata;
+import kasanari.authentication.spi.AuthRequest;
+import kasanari.authentication.spi.CredentialScheme;
 
 import java.util.Optional;
 

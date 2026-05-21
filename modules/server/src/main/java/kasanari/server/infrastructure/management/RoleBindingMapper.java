@@ -58,15 +58,15 @@ public final class RoleBindingMapper {
         return roleBinding;
     }
 
-    public static kasanari.repository.management.common.model.CatalogType toDomain(CatalogTypeDto type) {
+    public static kasanari.core.model.CatalogType toDomain(CatalogTypeDto type) {
         return switch (type) {
-            case ICEBERG -> kasanari.repository.management.common.model.CatalogType.ICEBERG;
-            case PAIMON -> kasanari.repository.management.common.model.CatalogType.PAIMON;
-            case LANCE -> kasanari.repository.management.common.model.CatalogType.LANCE;
+            case ICEBERG -> kasanari.core.model.CatalogType.ICEBERG;
+            case PAIMON -> kasanari.core.model.CatalogType.PAIMON;
+            case LANCE -> kasanari.core.model.CatalogType.LANCE;
         };
     }
 
-    public static CatalogTypeDto toApi(kasanari.repository.management.common.model.CatalogType type) {
+    public static CatalogTypeDto toApi(kasanari.core.model.CatalogType type) {
         return switch (type) {
             case ICEBERG -> CatalogTypeDto.ICEBERG;
             case PAIMON -> CatalogTypeDto.PAIMON;

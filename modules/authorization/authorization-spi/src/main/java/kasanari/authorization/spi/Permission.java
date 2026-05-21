@@ -109,7 +109,7 @@ public enum Permission {
         return valueOf(name);
     }
 
-    public static Permission catalogCreate(kasanari.repository.management.common.model.CatalogType type) {
+    public static Permission catalogCreate(kasanari.core.model.CatalogType type) {
         return switch (type) {
             case ICEBERG -> IcebergCatalogCreate;
             case PAIMON -> PaimonCatalogCreate;
@@ -117,7 +117,7 @@ public enum Permission {
         };
     }
 
-    public static Permission catalogGet(kasanari.repository.management.common.model.CatalogType type) {
+    public static Permission catalogGet(kasanari.core.model.CatalogType type) {
         return switch (type) {
             case ICEBERG -> IcebergCatalogGet;
             case PAIMON -> PaimonCatalogGet;
@@ -125,7 +125,7 @@ public enum Permission {
         };
     }
 
-    public static Permission catalogUpdate(kasanari.repository.management.common.model.CatalogType type) {
+    public static Permission catalogUpdate(kasanari.core.model.CatalogType type) {
         return switch (type) {
             case ICEBERG -> IcebergCatalogUpdate;
             case PAIMON -> PaimonCatalogUpdate;
@@ -133,7 +133,7 @@ public enum Permission {
         };
     }
 
-    public static Permission catalogDelete(kasanari.repository.management.common.model.CatalogType type) {
+    public static Permission catalogDelete(kasanari.core.model.CatalogType type) {
         return switch (type) {
             case ICEBERG -> IcebergCatalogDelete;
             case PAIMON -> PaimonCatalogDelete;

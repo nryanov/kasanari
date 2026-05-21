@@ -6,7 +6,7 @@ import kasanari.fixtures.postgres.PostgresHelper;
 import kasanari.repository.management.catalog.model.CatalogMetadata;
 import kasanari.repository.management.catalog.model.CatalogMode;
 import kasanari.repository.management.catalog.model.CatalogSpec;
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;

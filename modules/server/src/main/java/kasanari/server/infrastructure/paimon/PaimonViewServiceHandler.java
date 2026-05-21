@@ -6,7 +6,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import kasanari.authorization.runtime.AuthorizationService;
 import kasanari.authorization.spi.Permission;
 import kasanari.catalog.paimon.api.PaimonRestViewService;
-import kasanari.repository.management.common.model.CatalogType;
+import kasanari.core.model.CatalogType;
 import kasanari.server.infrastructure.security.CatalogHandlerAuthorization;
 
 import java.util.Optional;
