@@ -12,7 +12,7 @@ public class PostgresHelper {
     public void truncateTable(String table) {
         try {
             var pg = postgres.getPostgres();
-            pg.execInContainer("psql", "-U", pg.getUsername(), "-d", pg.getDatabaseName(), "-c", String.format("TRUNCATE %s", table));
+            pg.execInContainer("psql", "-U", pg.getUsername(), "-d", pg.getDatabaseName(), "-c", String.format("TRUNCATE %s CASCADE", table));
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }

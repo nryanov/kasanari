@@ -7,4 +7,9 @@ dependencies {
     implementation(project(":modules:repository:repository-jdbc"))
     implementation(project(":modules:platform:platform-jackson"))
     api(project(":modules:repository:repository-paimon"))
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(testFixtures(project(":modules:fixtures:fixtures-common")))
+    testImplementation(testFixtures(project(":modules:fixtures:fixtures-postgres")))
 }
