@@ -1,35 +1,34 @@
 package kasanari.repository.management.catalog.postgres;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import kasanari.core.model.CatalogType;
 import kasanari.fixtures.postgres.PostgresFixtureContainer;
 import kasanari.fixtures.postgres.PostgresHelper;
+import kasanari.repository.core.TransactionManager;
 import kasanari.repository.management.catalog.model.CatalogMetadata;
 import kasanari.repository.management.catalog.model.CatalogMode;
-import kasanari.repository.management.catalog.model.CatalogSpec;
-import kasanari.core.model.CatalogType;
-import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.Handle;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class JdbcCatalogMetadataRepositoryTest {
+public class JdbcCatalogMetadataRepositoryTest {
 
     private static final PostgresFixtureContainer POSTGRES = new PostgresFixtureContainer();
     private static PostgresHelper postgresHelper;
-    private static Jdbi jdbi;
+    private static TransactionManager<Handle> txManager;
     private static JdbcCatalogMetadataRepository repository;
 
     @BeforeAll
-    static void setup() throws Exception {
+    static void setup() {
         POSTGRES.start();
         postgresHelper = new PostgresHelper(POSTGRES);
         repository = new JdbcCatalogMetadataRepository(new ObjectMapper());
@@ -37,33 +36,29 @@ class JdbcCatalogMetadataRepositoryTest {
 
     @AfterAll
     static void cleanup() {
+        JdbcManagementCatalogPostgresTestHelper.close();
         POSTGRES.stop();
-    }
-
-    @AfterEach
-    void afterEach() {
-        postgresHelper.truncateTable("kasanari_catalogs");
     }
 
     @BeforeEach
     void beforeEach() {
-        if (jdbi == null) {
-            jdbi = Jdbi.create(POSTGRES.jdbcUrl(), POSTGRES.username(), POSTGRES.password());
-            jdbi.useHandle(h -> h.createUpdate(JdbcManagementCatalogQueries.CREATE_CATALOG_REGISTRY_DDL).execute());
-        }
+        txManager = JdbcManagementCatalogPostgresTestHelper.transactionManager(POSTGRES);
+        JdbcManagementCatalogPostgresTestHelper.initializeSchema(txManager);
+    }
+
+    @AfterEach
+    void afterEach() {
+        JdbcManagementCatalogPostgresTestHelper.truncateAll(postgresHelper);
     }
 
     @Test
     void createThenGetByNameReturnsRow() {
-        var spec = catalogSpec();
+        var spec = JdbcManagementCatalogPostgresTestHelper.catalogSpec();
         var inserted = new CatalogMetadata("warehouse", CatalogType.ICEBERG, CatalogMode.INTERNAL, spec, 1L);
+        txManager.inTransaction(tx -> repository.create(tx, inserted));
 
-        jdbi.inTransaction(tx -> {
-            repository.create(tx, inserted);
-            return null;
-        });
-
-        var result = jdbi.inTransaction(tx -> repository.getByName(tx, CatalogType.ICEBERG, "warehouse"));
+        var result = txManager.inTransactionR(tx ->
+                repository.getByName(tx, CatalogType.ICEBERG, "warehouse"));
 
         var expected = new CatalogMetadata("warehouse", CatalogType.ICEBERG, CatalogMode.INTERNAL, spec, 1L);
         assertEquals(expected, result.orElseThrow());
@@ -71,120 +66,143 @@ class JdbcCatalogMetadataRepositoryTest {
 
     @Test
     void createDuplicateTypeAndNameReturnsFalse() {
-        var metadata = new CatalogMetadata("dup", CatalogType.ICEBERG, CatalogMode.INTERNAL, catalogSpec(), 1L);
+        var metadata = new CatalogMetadata("dup", CatalogType.ICEBERG, CatalogMode.INTERNAL,
+                JdbcManagementCatalogPostgresTestHelper.catalogSpec(), 1L);
+        txManager.inTransaction(tx -> repository.create(tx, metadata));
 
-        var firstThenSecond = jdbi.inTransaction(tx -> List.of(
-                repository.create(tx, metadata),
-                repository.create(tx, metadata)));
+        var result = txManager.inTransactionR(tx -> repository.create(tx, metadata));
 
-        assertEquals(List.of(true, false), firstThenSecond);
+        var expected = false;
+        assertEquals(expected, result);
     }
 
     @Test
     void sameNameDifferentTypesCoexist() {
-        var coexistence = jdbi.inTransaction(tx -> {
-            repository.create(tx, new CatalogMetadata(
-                    "shared", CatalogType.ICEBERG, CatalogMode.INTERNAL, catalogSpec(), 1L));
-            repository.create(tx, new CatalogMetadata(
-                    "shared", CatalogType.PAIMON, CatalogMode.INTERNAL, catalogSpec(), 1L));
-            return new BothTypesPresent(
-                    repository.getByName(tx, CatalogType.ICEBERG, "shared").isPresent(),
-                    repository.getByName(tx, CatalogType.PAIMON, "shared").isPresent());
+        var spec = JdbcManagementCatalogPostgresTestHelper.catalogSpec();
+        txManager.inTransaction(tx -> {
+            repository.create(tx, new CatalogMetadata("shared", CatalogType.ICEBERG, CatalogMode.INTERNAL, spec, 1L));
+            repository.create(tx, new CatalogMetadata("shared", CatalogType.PAIMON, CatalogMode.INTERNAL, spec, 1L));
         });
 
-        assertEquals(new BothTypesPresent(true, true), coexistence);
+        var icebergResult = txManager.inTransactionR(tx ->
+                repository.getByName(tx, CatalogType.ICEBERG, "shared").isPresent());
+        var paimonResult = txManager.inTransactionR(tx ->
+                repository.getByName(tx, CatalogType.PAIMON, "shared").isPresent());
+
+        var expected = true;
+        assertEquals(expected, icebergResult);
+        assertEquals(expected, paimonResult);
     }
 
     @Test
     void getByNameMissingReturnsEmpty() {
-        var result = jdbi.inTransaction(tx -> repository.getByName(tx, CatalogType.LANCE, "nope"));
+        var result = txManager.inTransactionR(tx -> repository.getByName(tx, CatalogType.LANCE, "nope"));
 
-        assertEquals(Optional.empty(), result);
+        var expected = Optional.empty();
+        assertEquals(expected, result);
     }
 
     @Test
     void updateBumpsVersionAndPersistsSpec() {
-        var insertedSpec = catalogSpec();
-        jdbi.inTransaction(tx -> {
-            repository.create(tx, new CatalogMetadata("c", CatalogType.ICEBERG, CatalogMode.INTERNAL, insertedSpec, 1L));
-            return null;
-        });
+        var insertedSpec = JdbcManagementCatalogPostgresTestHelper.catalogSpec();
+        var metadata = new CatalogMetadata("c", CatalogType.ICEBERG, CatalogMode.INTERNAL, insertedSpec, 1L);
+        txManager.inTransaction(tx -> repository.create(tx, metadata));
 
-        var newSpec = catalogSpec();
+        var newSpec = JdbcManagementCatalogPostgresTestHelper.catalogSpec();
 
-        var updated = jdbi.inTransaction(tx -> repository.update(tx, CatalogType.ICEBERG, "c", newSpec, 1L));
+        var result = txManager.inTransactionR(tx ->
+                repository.update(tx, CatalogType.ICEBERG, "c", newSpec, 1L));
 
-        var expectedAfterUpdate = new CatalogMetadata("c", CatalogType.ICEBERG, CatalogMode.INTERNAL, newSpec, 2L);
-        assertEquals(expectedAfterUpdate, updated.orElseThrow());
+        var expected = new CatalogMetadata("c", CatalogType.ICEBERG, CatalogMode.INTERNAL, newSpec, 2L);
+        assertEquals(expected, result.orElseThrow());
 
-        var loaded = jdbi.inTransaction(tx -> repository.getByName(tx, CatalogType.ICEBERG, "c"));
-        assertEquals(expectedAfterUpdate, loaded.orElseThrow());
+        var loaded = txManager.inTransactionR(tx -> repository.getByName(tx, CatalogType.ICEBERG, "c"));
+        assertEquals(expected, loaded.orElseThrow());
     }
 
     @Test
     void updateWithStaleExpectedVersionThrows() {
-        jdbi.inTransaction(tx -> {
-            repository.create(tx, new CatalogMetadata("v", CatalogType.ICEBERG, CatalogMode.INTERNAL, catalogSpec(), 1L));
-            return null;
-        });
+        var metadata = new CatalogMetadata("v", CatalogType.ICEBERG, CatalogMode.INTERNAL,
+                JdbcManagementCatalogPostgresTestHelper.catalogSpec(), 1L);
+        txManager.inTransaction(tx -> repository.create(tx, metadata));
 
-        assertThrows(IllegalStateException.class, () -> jdbi.inTransaction(tx ->
-                repository.update(tx, CatalogType.ICEBERG, "v", catalogSpec(), 99L)));
+        assertThrows(IllegalStateException.class, () -> txManager.inTransactionR(tx ->
+                repository.update(tx, CatalogType.ICEBERG, "v",
+                        JdbcManagementCatalogPostgresTestHelper.catalogSpec(), 99L)));
+    }
+
+    @Test
+    void updateMissingCatalogReturnsEmpty() {
+        var result = txManager.inTransactionR(tx ->
+                repository.update(tx, CatalogType.ICEBERG, "missing",
+                        JdbcManagementCatalogPostgresTestHelper.catalogSpec(), 1L));
+
+        var expected = Optional.empty();
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void updateWithNullExpectedVersionSucceeds() {
+        var spec = JdbcManagementCatalogPostgresTestHelper.catalogSpec();
+        var metadata = new CatalogMetadata("c", CatalogType.ICEBERG, CatalogMode.INTERNAL, spec, 1L);
+        txManager.inTransaction(tx -> repository.create(tx, metadata));
+
+        var newSpec = JdbcManagementCatalogPostgresTestHelper.catalogSpec();
+
+        var result = txManager.inTransactionR(tx ->
+                repository.update(tx, CatalogType.ICEBERG, "c", newSpec, null));
+
+        var expected = new CatalogMetadata("c", CatalogType.ICEBERG, CatalogMode.INTERNAL, newSpec, 2L);
+        assertEquals(expected, result.orElseThrow());
     }
 
     @Test
     void deleteRemovesRow() {
-        jdbi.inTransaction(tx -> {
-            repository.create(tx, new CatalogMetadata("d", CatalogType.ICEBERG, CatalogMode.INTERNAL, catalogSpec(), 1L));
-            return null;
-        });
+        var metadata = new CatalogMetadata("d", CatalogType.ICEBERG, CatalogMode.INTERNAL,
+                JdbcManagementCatalogPostgresTestHelper.catalogSpec(), 1L);
+        txManager.inTransaction(tx -> repository.create(tx, metadata));
 
-        var deleted = jdbi.inTransaction(tx -> repository.delete(tx, CatalogType.ICEBERG, "d"));
+        var result = txManager.inTransactionR(tx -> repository.delete(tx, CatalogType.ICEBERG, "d"));
 
-        assertEquals(true, deleted);
+        var expected = true;
+        assertEquals(expected, result);
 
-        var afterDelete = jdbi.inTransaction(tx -> repository.getByName(tx, CatalogType.ICEBERG, "d"));
-
+        var afterDelete = txManager.inTransactionR(tx -> repository.getByName(tx, CatalogType.ICEBERG, "d"));
         assertEquals(Optional.empty(), afterDelete);
     }
 
     @Test
     void deleteMissingReturnsFalse() {
-        var deleted = jdbi.inTransaction(tx -> repository.delete(tx, CatalogType.ICEBERG, "missing"));
+        var result = txManager.inTransactionR(tx -> repository.delete(tx, CatalogType.ICEBERG, "missing"));
 
-        assertEquals(false, deleted);
+        var expected = false;
+        assertEquals(expected, result);
     }
 
     @Test
     void listByTypeReturnsOnlyMatchingCatalogs() {
-        var spec = catalogSpec();
-        jdbi.inTransaction(tx -> {
+        var spec = JdbcManagementCatalogPostgresTestHelper.catalogSpec();
+        txManager.inTransaction(tx -> {
             repository.create(tx, new CatalogMetadata("alpha", CatalogType.ICEBERG, CatalogMode.INTERNAL, spec, 1L));
             repository.create(tx, new CatalogMetadata("beta", CatalogType.ICEBERG, CatalogMode.INTERNAL, spec, 1L));
             repository.create(tx, new CatalogMetadata("gamma", CatalogType.PAIMON, CatalogMode.INTERNAL, spec, 1L));
             repository.create(tx, new CatalogMetadata("delta", CatalogType.LANCE, CatalogMode.INTERNAL, spec, 1L));
-            return null;
         });
 
-        var icebergCatalogs = jdbi.inTransaction(tx -> repository.list(tx, CatalogType.ICEBERG));
+        var result = txManager.inTransactionR(tx -> repository.list(tx, CatalogType.ICEBERG));
 
-        assertEquals(List.of(
+        var expected = List.of(
                 new CatalogMetadata("alpha", CatalogType.ICEBERG, CatalogMode.INTERNAL, spec, 1L),
                 new CatalogMetadata("beta", CatalogType.ICEBERG, CatalogMode.INTERNAL, spec, 1L)
-        ), icebergCatalogs);
+        );
+        assertEquals(expected, result);
     }
 
     @Test
     void listByTypeEmptyWhenNone() {
-        var result = jdbi.inTransaction(tx -> repository.list(tx, CatalogType.LANCE));
+        var result = txManager.inTransactionR(tx -> repository.list(tx, CatalogType.LANCE));
 
-        assertEquals(List.of(), result);
-    }
-
-    private static CatalogSpec catalogSpec() {
-        return new CatalogSpec(new HashMap<>(), new HashMap<>());
-    }
-
-    private record BothTypesPresent(boolean icebergPresent, boolean paimonPresent) {
+        var expected = List.of();
+        assertEquals(expected, result);
     }
 }
