@@ -22,7 +22,7 @@ import static kasanari.repository.iceberg.postgres.JdbcIcebergPostgresTestHelper
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class JdbcViewRepositoryTest {
+public class JdbcViewRepositoryTest {
 
     private static final PostgresFixtureContainer POSTGRES = new PostgresFixtureContainer();
     private static PostgresHelper postgresHelper;

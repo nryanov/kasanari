@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import static kasanari.repository.iceberg.postgres.JdbcIcebergPostgresTestHelper.DEFAULT_CATALOG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class JdbcCatalogRepositoryTest {
+public class JdbcCatalogRepositoryTest {
 
     private static final PostgresFixtureContainer POSTGRES = new PostgresFixtureContainer();
     private static PostgresHelper postgresHelper;

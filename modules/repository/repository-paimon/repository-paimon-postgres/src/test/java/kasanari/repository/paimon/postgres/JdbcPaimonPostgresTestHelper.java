@@ -1,0 +1,169 @@
+package kasanari.repository.paimon.postgres;
+
+import kasanari.fixtures.postgres.PostgresFixtureContainer;
+import kasanari.fixtures.postgres.PostgresHelper;
+import kasanari.repository.core.TransactionManager;
+import kasanari.repository.jdbc.JdbcTransactionManager;
+import kasanari.repository.jdbc.KasanariDataSource;
+import kasanari.repository.jdbc.KasanariDataSourceConfiguration;
+import kasanari.repository.paimon.model.BranchRecord;
+import kasanari.repository.paimon.model.DatabaseRecord;
+import kasanari.repository.paimon.model.FunctionRecord;
+import kasanari.repository.paimon.model.TableRecord;
+import kasanari.repository.paimon.model.TagRecord;
+import kasanari.repository.paimon.model.ViewRecord;
+import org.apache.paimon.catalog.Identifier;
+import org.apache.paimon.partition.PartitionStatistics;
+import org.jdbi.v3.core.Handle;
+
+import java.util.Map;
+import java.util.Optional;
+
+public final class JdbcPaimonPostgresTestHelper {
+
+    public static final String DEFAULT_CATALOG_KEY = "test-catalog";
+    public static final String DEFAULT_DATABASE = "test_db";
+    public static final String DEFAULT_TABLE = "test_table";
+    public static final String DEFAULT_BRANCH = "main";
+
+    private static KasanariDataSource dataSource;
+    private static TransactionManager<Handle> transactionManager;
+
+    private JdbcPaimonPostgresTestHelper() {
+    }
+
+    public static TransactionManager<Handle> transactionManager(PostgresFixtureContainer postgres) {
+        if (transactionManager == null) {
+            dataSource = new KasanariDataSource(Map.of(
+                    KasanariDataSourceConfiguration.URI, postgres.jdbcUrl(),
+                    KasanariDataSourceConfiguration.USER, postgres.username(),
+                    KasanariDataSourceConfiguration.PASSWORD, postgres.password()
+            ));
+            transactionManager = new JdbcTransactionManager(dataSource);
+        }
+        return transactionManager;
+    }
+
+    public static void initializeSchema(TransactionManager<Handle> txManager) {
+        txManager.inTransaction(tx -> {
+            tx.createUpdate(JdbcQueries.CREATE_DATABASES_DDL).execute();
+            tx.createUpdate(JdbcQueries.CREATE_TABLES_DDL).execute();
+            tx.createUpdate(JdbcQueries.CREATE_VIEWS_DDL).execute();
+            tx.createUpdate(JdbcQueries.CREATE_FUNCTIONS_DDL).execute();
+            tx.createUpdate(JdbcQueries.CREATE_BRANCHES_DDL).execute();
+            tx.createUpdate(JdbcQueries.CREATE_TAGS_DDL).execute();
+            tx.createUpdate(JdbcQueries.CREATE_PARTITION_STATS_DELTAS_DDL).execute();
+            tx.createUpdate(JdbcQueries.CREATE_PARTITION_STATES_DDL).execute();
+        });
+    }
+
+    public static void truncateAll(PostgresHelper postgresHelper) {
+        postgresHelper.truncateTable("kasanari_paimon_partition_stats_deltas");
+        postgresHelper.truncateTable("kasanari_paimon_partition_states");
+        postgresHelper.truncateTable("kasanari_paimon_branches");
+        postgresHelper.truncateTable("kasanari_paimon_tags");
+        postgresHelper.truncateTable("kasanari_paimon_tables");
+        postgresHelper.truncateTable("kasanari_paimon_views");
+        postgresHelper.truncateTable("kasanari_paimon_functions");
+        postgresHelper.truncateTable("kasanari_paimon_databases");
+    }
+
+    public static void createDatabase(
+            TransactionManager<Handle> txManager,
+            String catalogKey,
+            DatabaseRecord record) {
+        var repository = new JdbcDatabaseRepository(catalogKey);
+        txManager.inTransaction(tx -> repository.create(tx, record));
+    }
+
+    public static void createDatabase(TransactionManager<Handle> txManager, String catalogKey) {
+        createDatabase(txManager, catalogKey, databaseRecord(DEFAULT_DATABASE));
+    }
+
+    public static void createTable(
+            TransactionManager<Handle> txManager,
+            String catalogKey,
+            TableRecord record) {
+        var repository = new JdbcTableRepository(catalogKey);
+        txManager.inTransaction(tx -> repository.create(tx, record));
+    }
+
+    public static void createDatabaseAndTable(
+            TransactionManager<Handle> txManager,
+            String catalogKey,
+            String database,
+            String table) {
+        createDatabase(txManager, catalogKey, databaseRecord(database));
+        createTable(txManager, catalogKey, tableRecord(database, table));
+    }
+
+    public static void createDatabaseAndTable(TransactionManager<Handle> txManager, String catalogKey) {
+        createDatabaseAndTable(txManager, catalogKey, DEFAULT_DATABASE, DEFAULT_TABLE);
+    }
+
+    public static DatabaseRecord databaseRecord(String name) {
+        return new DatabaseRecord(name, Map.of("owner", "test"), Optional.of("db comment"));
+    }
+
+    public static TableRecord tableRecord(String database, String table) {
+        return new TableRecord(database, table, Map.of("format", "parquet"), Optional.of("uuid-" + table));
+    }
+
+    public static ViewRecord viewRecord(String database, String name) {
+        return new ViewRecord(
+                database,
+                name,
+                "SELECT 1",
+                Map.of("default", "spark"),
+                Map.of("owner", "test"),
+                Optional.of("view comment"));
+    }
+
+    public static FunctionRecord functionRecord(String database, String name) {
+        return new FunctionRecord(
+                database,
+                name,
+                true,
+                sqlDefinition("SELECT 1"),
+                Optional.of("function comment"),
+                Map.of("owner", "test"));
+    }
+
+    public static TagRecord tagRecord(String database, String table, String tagName) {
+        return new TagRecord(database, table, tagName, 1L, Optional.of(100L), Optional.of("7d"));
+    }
+
+    public static BranchRecord branchRecord(String database, String table, String branchName) {
+        return new BranchRecord(database, table, branchName, Optional.of("tag-v1"));
+    }
+
+    public static Identifier tableIdentifier(String database, String table) {
+        return Identifier.create(database, table);
+    }
+
+    public static Map<String, String> partitionSpec(String key, String value) {
+        return Map.of(key, value);
+    }
+
+    public static PartitionStatistics partitionStatistics(
+            Map<String, String> spec,
+            long recordCount,
+            long fileSize,
+            long fileCount,
+            long lastFileCreationTime,
+            int totalBuckets) {
+        return new PartitionStatistics(spec, recordCount, fileSize, fileCount, lastFileCreationTime, totalBuckets);
+    }
+
+    public static Map<String, FunctionRecord.FunctionDefinition> sqlDefinition(String sql) {
+        return Map.of("main", new FunctionRecord.FunctionDefinition.Sql(sql));
+    }
+
+    public static void close() {
+        if (dataSource != null) {
+            dataSource.close();
+            dataSource = null;
+            transactionManager = null;
+        }
+    }
+}
