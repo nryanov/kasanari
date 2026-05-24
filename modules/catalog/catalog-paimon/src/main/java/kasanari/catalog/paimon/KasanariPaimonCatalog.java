@@ -69,6 +69,8 @@ import org.apache.paimon.view.View;
 import org.apache.paimon.view.ViewChange;
 import org.apache.paimon.view.ViewImpl;
 import org.jdbi.v3.core.Handle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -87,6 +89,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class KasanariPaimonCatalog extends AbstractCatalog {
+    private final static Logger logger = LoggerFactory.getLogger(KasanariPaimonCatalog.class);
+
     private final KasanariDataSource dataSource;
     private final TransactionManager<Handle> transactionManager;
     // TODO: check that current branch is main in each operation?
@@ -224,10 +228,10 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
                     }
                 }
             } catch (IOException e) {
-                // TODO: log
+                logger.error("Unexpected error happened while deleting table data files", e);
             }
         } else {
-            // TODO: log skip
+            logger.info("Table {} wasn't dropped because doesn't exist", identifier);
         }
     }
 
@@ -436,10 +440,9 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
                     fileIO.deleteDirectoryQuietly(viewPath);
                 }
             } catch (IOException e) {
-                // TODO: log
+                logger.error("Unexpected error happened while deleting view data files", e);
             }
         } else {
-            // TODO: log
             throw new ViewNotExistException(identifier);
         }
     }

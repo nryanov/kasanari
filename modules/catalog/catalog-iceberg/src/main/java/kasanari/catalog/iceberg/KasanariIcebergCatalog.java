@@ -34,6 +34,8 @@ import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.view.BaseMetastoreViewCatalog;
 import org.apache.iceberg.view.ViewOperations;
 import org.jdbi.v3.core.Handle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -41,6 +43,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class KasanariIcebergCatalog extends BaseMetastoreViewCatalog implements SupportsNamespaces, Configurable<Object> {
+    private final static Logger logger = LoggerFactory.getLogger(KasanariIcebergCatalog.class);
+
     private String catalogName;
     private String warehouse;
     private KasanariDataSource dataSource;
@@ -218,7 +222,7 @@ public class KasanariIcebergCatalog extends BaseMetastoreViewCatalog implements 
             try {
                 maybeCurrentTableMetadata = tableOperations.current();
             } catch (NotFoundException e) {
-                // todo: log warning
+                logger.warn("Attempt to drop not existing table {}", identifier);
             }
         }
 

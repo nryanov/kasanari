@@ -556,12 +556,6 @@ public abstract class PaimonCatalogAdapterTest {
     }
 
     @Test
-    void getTableTokenUnsupported() {
-        assumeTrue(!supportsGetTableToken());
-        // TODO
-    }
-
-    @Test
     void authTableQuery() {
         assumeTrue(supportsDatabases() && supportsTables() && supportsTableMutations() && supportAuthTable());
 

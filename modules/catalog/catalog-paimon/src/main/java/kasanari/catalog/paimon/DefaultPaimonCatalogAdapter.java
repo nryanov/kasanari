@@ -1,5 +1,7 @@
 package kasanari.catalog.paimon;
 
+import kasanari.core.ThrowableRunnable;
+import kasanari.core.ThrowableSupplier;
 import org.apache.paimon.Snapshot;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
@@ -579,40 +581,20 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
         return list == null ? Collections.emptyList() : list;
     }
 
-    private void run(CatalogRunnable runnable) {
+    private void run(ThrowableRunnable runnable) {
         try {
             runnable.run();
-        } catch (RuntimeException e) {
-            throw e;
         } catch (Exception e) {
-            throwUnchecked(e);
+            throw new RuntimeException(e);
         }
     }
 
-    private <T> T call(CatalogSupplier<T> supplier) {
+    private <T> T call(ThrowableSupplier<T> supplier) {
         try {
             return supplier.get();
-        } catch (RuntimeException e) {
-            throw e;
         } catch (Exception e) {
-            throwUnchecked(e);
-            throw new AssertionError("unreachable");
+            throw new RuntimeException(e);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends Throwable> void throwUnchecked(Throwable exception) throws T {
-        throw (T) exception;
-    }
-
-    @FunctionalInterface
-    private interface CatalogRunnable {
-        void run() throws Exception;
-    }
-
-    @FunctionalInterface
-    private interface CatalogSupplier<T> {
-        T get() throws Exception;
     }
 
     @Override
