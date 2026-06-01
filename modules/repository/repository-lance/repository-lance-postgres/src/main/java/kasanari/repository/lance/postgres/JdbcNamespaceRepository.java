@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
     public JdbcNamespaceRepository() {
@@ -14,12 +15,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
 
     @Override
     public void upsert(Handle tx, String namespacePath, Map<String, String> properties) {
-        tx.createUpdate("""
-                        INSERT INTO kasanari_lance_namespaces(namespace_path, properties)
-                        VALUES (:namespace_path, :properties::jsonb)
-                        ON CONFLICT (namespace_path)
-                        DO UPDATE SET properties = EXCLUDED.properties::jsonb
-                        """)
+        tx.createUpdate(JdbcQueries.UPSERT_NAMESPACE)
                 .bind("namespace_path", namespacePath)
                 .bind("properties", JsonSerde.encodeMap(properties))
                 .execute();
@@ -27,11 +23,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
 
     @Override
     public boolean exists(Handle tx, String namespacePath) {
-        return tx.createQuery("""
-                        SELECT 1 FROM kasanari_lance_namespaces
-                        WHERE namespace_path = :namespace_path
-                        LIMIT 1
-                        """)
+        return tx.createQuery(JdbcQueries.NAMESPACE_EXISTS)
                 .bind("namespace_path", namespacePath)
                 .mapTo(Integer.class)
                 .findOne()
@@ -39,26 +31,18 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
     }
 
     @Override
-    public Map<String, String> properties(Handle tx, String namespacePath) {
-        return tx.createQuery("""
-                        SELECT properties FROM kasanari_lance_namespaces
-                        WHERE namespace_path = :namespace_path
-                        LIMIT 1
-                        """)
+    public Optional<Map<String, String>> properties(Handle tx, String namespacePath) {
+        return tx.createQuery(JdbcQueries.NAMESPACE_PROPERTIES)
                 .bind("namespace_path", namespacePath)
                 .mapTo(String.class)
                 .findOne()
-                .map(JsonSerde::decodeMap)
-                .orElse(new HashMap<>());
+                .map(JsonSerde::decodeMap);
     }
 
     @Override
     public List<String> list(Handle tx, String parentPath) {
         var prefix = (parentPath == null || parentPath.isBlank()) ? "" : parentPath + ".";
-        var rows = tx.createQuery("""
-                        SELECT namespace_path FROM kasanari_lance_namespaces
-                        ORDER BY namespace_path
-                        """)
+        var rows = tx.createQuery(JdbcQueries.LIST_NAMESPACES)
                 .mapTo(String.class)
                 .list();
 
@@ -83,10 +67,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
 
     @Override
     public void delete(Handle tx, String namespacePath) {
-        tx.createUpdate("""
-                        DELETE FROM kasanari_lance_namespaces
-                        WHERE namespace_path = :namespace_path
-                        """)
+        tx.createUpdate(JdbcQueries.DELETE_NAMESPACE)
                 .bind("namespace_path", namespacePath)
                 .execute();
     }

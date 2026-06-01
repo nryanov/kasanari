@@ -5,12 +5,19 @@ import kasanari.repository.jdbc.JdbcTransactionManager;
 import kasanari.repository.jdbc.KasanariDataSource;
 import kasanari.repository.lance.NamespaceRepository;
 import kasanari.repository.lance.TableRepository;
+import kasanari.repository.lance.model.TableMetadata;
 import kasanari.repository.lance.postgres.JdbcNamespaceRepository;
 import kasanari.repository.lance.postgres.JdbcTableInitializer;
 import kasanari.repository.lance.postgres.JdbcTableRepository;
 import org.apache.arrow.memory.BufferAllocator;
 import org.jdbi.v3.core.Handle;
+import org.lance.Dataset;
 import org.lance.namespace.LanceNamespace;
+import org.lance.namespace.errors.NamespaceAlreadyExistsException;
+import org.lance.namespace.errors.NamespaceNotEmptyException;
+import org.lance.namespace.errors.NamespaceNotFoundException;
+import org.lance.namespace.errors.TableAlreadyExistsException;
+import org.lance.namespace.errors.TableNotFoundException;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableAlterColumnsResponse;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
@@ -43,11 +50,15 @@ import org.lance.namespace.model.RenameTableResponse;
 import org.lance.namespace.model.RestoreTableRequest;
 import org.lance.namespace.model.RestoreTableResponse;
 import org.lance.namespace.model.TableExistsRequest;
+import org.lance.schema.ColumnAlteration;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import static kasanari.core.Functions.mapOrEmpty;
+import static kasanari.core.Functions.valueOrDefault;
 
 public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
     private KasanariDataSource dataSource;
@@ -74,37 +85,106 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public CreateNamespaceResponse createNamespace(CreateNamespaceRequest request) {
-        var namespacePath = joinIds(request.getId());
+        var namespacePath = fullObjectName(request.getId());
+        var exists = transactionManager.inTransactionR(tx -> namespaceRepository.exists(tx, namespacePath));
+        var mode = valueOrDefault(request.getMode(), "create").toLowerCase();
+
+        if (exists) {
+            switch (mode) {
+                case "existok", "exist_ok": return new CreateNamespaceResponse().properties(mapOrEmpty(request.getProperties()));
+                case "create": throw new NamespaceAlreadyExistsException(String.format("Namespace %s already exists", namespacePath));
+                case "overwrite": {
+                    // the existing namespace is dropped and a new empty namespace with this name is created.
+                    transactionManager.inTransaction(tx -> {
+                        var tables = tableRepository.listByNamespace(tx, namespacePath);
+
+                        for (var tableId : tables) {
+                            var maybeTable = tableRepository.get(tx, tableId);
+                            if (maybeTable.isPresent()) {
+                                tableRepository.delete(tx, tableId);
+                            }
+                        }
+
+                        namespaceRepository.delete(tx, namespacePath);
+                    });
+                }
+            }
+        }
+
         transactionManager.inTransaction(tx -> namespaceRepository.upsert(tx, namespacePath, mapOrEmpty(request.getProperties())));
         return new CreateNamespaceResponse().properties(mapOrEmpty(request.getProperties()));
     }
 
     @Override
     public DescribeNamespaceResponse describeNamespace(DescribeNamespaceRequest request) {
-        var namespacePath = joinIds(request.getId());
-        var properties = transactionManager.inTransactionR(tx -> namespaceRepository.properties(tx, namespacePath));
-        return new DescribeNamespaceResponse().properties(properties);
+        var namespacePath = fullObjectName(request.getId());
+        var maybeProperties = transactionManager.inTransactionR(tx -> namespaceRepository.properties(tx, namespacePath));
+
+        if (maybeProperties.isPresent()) {
+            return new DescribeNamespaceResponse().properties(maybeProperties.get());
+        }
+
+        throw new NamespaceNotFoundException(String.format("Namespace %s does not exist", namespacePath));
     }
 
     @Override
     public DropNamespaceResponse dropNamespace(DropNamespaceRequest request) {
-        var namespacePath = joinIds(request.getId());
-        transactionManager.inTransaction(tx -> namespaceRepository.delete(tx, namespacePath));
-        return new DropNamespaceResponse();
-    }
+        var namespacePath = fullObjectName(request.getId());
+        var mode = valueOrDefault(request.getMode(), "fail").toLowerCase();
+        var behavior = valueOrDefault(request.getBehavior(), "restrict").toLowerCase();
 
-    @Override
-    public void namespaceExists(NamespaceExistsRequest request) {
-        var namespacePath = joinIds(request.getId());
-        var exists = transactionManager.inTransactionR(tx -> namespaceRepository.exists(tx, namespacePath));
-        if (!exists) {
-            throw new IllegalStateException("Namespace does not exist: " + namespacePath);
+        var maybeNamespace = transactionManager.inTransactionR(tx -> namespaceRepository.properties(tx, namespacePath));
+
+        if (maybeNamespace.isEmpty()) {
+            switch (mode) {
+                case "fail": throw new NamespaceNotFoundException(String.format("Namespace %s does not exist", namespacePath));
+                case "skip": return new DropNamespaceResponse();
+            }
+        }
+
+        switch (behavior) {
+            case "restrict": {
+                transactionManager.inTransaction(tx -> {
+                    var tables = tableRepository.listByNamespace(tx, namespacePath);
+                    if (!tables.isEmpty()) {
+                        throw new NamespaceNotEmptyException(String.format("Not empty namespace: %s", namespacePath));
+                    }
+
+                    namespaceRepository.delete(tx, namespacePath);
+                });
+            }
+            case "cascade": {
+                transactionManager.inTransaction(tx -> {
+                    var tables = tableRepository.listByNamespace(tx, namespacePath);
+
+                    for (var tableId : tables) {
+                        var maybeTable = tableRepository.get(tx, tableId);
+                        if (maybeTable.isPresent()) {
+                            tableRepository.delete(tx, tableId);
+                        }
+                    }
+
+                    namespaceRepository.delete(tx, namespacePath);
+                });
+            }
+            default: throw new IllegalArgumentException("Unknown behaviour");
         }
     }
 
     @Override
+    public void namespaceExists(NamespaceExistsRequest request) {
+        var namespacePath = fullObjectName(request.getId());
+        var exists = transactionManager.inTransactionR(tx -> namespaceRepository.exists(tx, namespacePath));
+
+        if (!exists) {
+            throw new NamespaceNotFoundException(String.format("Namespace %s does not exist", namespacePath));
+        }
+    }
+
+    // todo: pagination
+    @Override
     public ListNamespacesResponse listNamespaces(ListNamespacesRequest request) {
-        var parent = joinIds(request.getId());
+        var parent = fullObjectName(request.getId());
         var children = transactionManager.inTransactionR(tx -> namespaceRepository.list(tx, parent));
         var response = new ListNamespacesResponse();
         response.setNamespaces(new java.util.LinkedHashSet<>(children));
@@ -112,9 +192,10 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         return response;
     }
 
+    // todo: pagination
     @Override
     public ListTablesResponse listTables(ListTablesRequest request) {
-        var namespacePath = joinIds(request.getId());
+        var namespacePath = fullObjectName(request.getId());
         var tables = transactionManager.inTransactionR(tx -> tableRepository.listByNamespace(tx, namespacePath));
         var response = new ListTablesResponse();
         response.setTables(new java.util.LinkedHashSet<>(tables));
@@ -124,19 +205,30 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public RegisterTableResponse registerTable(RegisterTableRequest request) {
-        var tableId = joinIds(request.getId());
+        var tableId = fullObjectName(request.getId());
         var namespacePath = namespaceFrom(tableId);
         var tableName = tableNameFrom(tableId);
+        var mode = valueOrDefault(request.getMode(), "create").toLowerCase();
 
-        transactionManager.inTransaction(tx -> tableRepository.upsert(
-                tx,
-                tableId,
-                namespacePath,
-                tableName,
-                request.getLocation(),
-                mapOrEmpty(request.getProperties()),
-                false
-        ));
+        transactionManager.inTransaction(tx -> {
+            var maybeTable = tableRepository.get(tx, tableId);
+
+            if (maybeTable.isPresent()) {
+                if (mode.equals("create")) {
+                    throw new TableAlreadyExistsException(String.format("Table %s already exusts", tableId));
+                }
+            }
+
+            tableRepository.upsert(
+                    tx,
+                    tableId,
+                    namespacePath,
+                    tableName,
+                    request.getLocation(),
+                    mapOrEmpty(request.getProperties())
+            );
+        });
+
         return new RegisterTableResponse()
                 .location(request.getLocation())
                 .properties(mapOrEmpty(request.getProperties()));
@@ -144,25 +236,26 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public DescribeTableResponse describeTable(DescribeTableRequest request) {
-        var tableId = joinIds(request.getId());
-        return transactionManager.inTransactionR(tx -> {
-            var table = tableRepository.get(tx, tableId);
-            if (table == null) {
-                throw new IllegalStateException("Table does not exist: " + tableId);
-            }
+        var tableId = fullObjectName(request.getId());
+        var maybeTable = transactionManager.inTransactionR(tx -> tableRepository.get(tx, tableId));
+
+        if (maybeTable.isPresent()) {
+            var table = maybeTable.get();
+            var namespace = Arrays.stream(table.namespacePath().split("[.]")).toList();
 
             return new DescribeTableResponse()
                     .table(table.tableName())
-                    .namespace(splitNamespace(table.namespacePath()))
+                    .namespace(namespace)
                     .location(table.location())
-                    .properties(table.properties() != null ? new HashMap<>(table.properties()) : new HashMap<>())
-                    .isOnlyDeclared(table.declaredOnly());
-        });
+                    .properties(table.properties());
+        }
+
+        throw new TableNotFoundException(String.format("Table %s not found", tableId));
     }
 
     @Override
     public void tableExists(TableExistsRequest request) {
-        var tableId = joinIds(request.getId());
+        var tableId = fullObjectName(request.getId());
         var exists = transactionManager.inTransactionR(tx -> tableRepository.exists(tx, tableId));
         if (!exists) {
             throw new IllegalStateException("Table does not exist: " + tableId);
@@ -171,116 +264,192 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
     @Override
     public DropTableResponse dropTable(DropTableRequest request) {
-        var tableId = joinIds(request.getId());
-        return transactionManager.inTransactionR(tx -> {
-            var table = tableRepository.get(tx, tableId);
-            tableRepository.delete(tx, tableId);
-            return new DropTableResponse()
-                    .id(request.getId())
-                    .location(table == null ? null : table.location())
-                    .properties(table == null || table.properties() == null ? new HashMap<>() : new HashMap<>(table.properties()));
-        });
+        var tableId = fullObjectName(request.getId());
+        var metadata = deleteTableMetadata(tableId);
+        // delete table data
+        purgeTableData(metadata.location(), metadata.properties());
+
+        return new DropTableResponse()
+                .id(request.getId())
+                .location(metadata.location())
+                .properties(metadata.properties());
     }
 
     @Override
     public DeregisterTableResponse deregisterTable(DeregisterTableRequest request) {
-        var tableId = joinIds(request.getId());
-        return transactionManager.inTransactionR(tx -> {
-            var table = tableRepository.get(tx, tableId);
-            tableRepository.delete(tx, tableId);
-            return new DeregisterTableResponse()
-                    .id(request.getId())
-                    .location(table == null ? null : table.location())
-                    .properties(table == null || table.properties() == null ? new HashMap<>() : new HashMap<>(table.properties()));
-        });
+        var tableId = fullObjectName(request.getId());
+        // delete only metadata
+        var metadata = deleteTableMetadata(tableId);
+
+        return new DeregisterTableResponse()
+                .id(request.getId())
+                .location(metadata.location())
+                .properties(metadata.properties());
     }
 
+    // todo: use mode (Create, Overwrite, ExistOk) from request
     @Override
     public CreateTableResponse createTable(CreateTableRequest request, byte[] requestData) {
-        var created = LanceNamespace.super.createTable(request, requestData);
-        var tableId = joinIds(request.getId());
+        var mode = valueOrDefault(request.getMode(), "create").toLowerCase();
+        var tableId = fullObjectName(request.getId());
         var namespacePath = namespaceFrom(tableId);
         var tableName = tableNameFrom(tableId);
-        var location = created.getLocation();
+        var storageOptions = request.getStorageOptions();
+        var tableProperties = request.getProperties();
 
-        transactionManager.inTransaction(tx -> tableRepository.upsert(
-                tx,
-                tableId,
-                namespacePath,
-                tableName,
-                location,
-                mapOrEmpty(request.getProperties()),
-                false
-        ));
-        return created;
+        // todo: resolve table location
+        return null;
     }
 
     @Override
     public RestoreTableResponse restoreTable(RestoreTableRequest request) {
-        var location = requireTableLocation(request.getId());
-        return LanceDatasetSupport.restoreTable(allocator, location, request);
+        var tableId = fullObjectName(request.getId());
+        var location = transactionManager.inTransactionR(tx -> {
+            var maybeTable = tableRepository.get(tx, tableId);
+            if (maybeTable.isEmpty()) {
+                throw new TableNotFoundException(String.format("Table metadata %s not found", tableId));
+            }
+
+            return maybeTable.get().location();
+        });
+
+        try (var dataset = open(allocator, location)) {
+            dataset.checkoutVersion(request.getVersion());
+            dataset.restore();
+            return new RestoreTableResponse();
+        }
     }
 
     @Override
     public RenameTableResponse renameTable(RenameTableRequest request) {
-        var sourceId = joinIds(request.getId());
-        var newId = new ArrayList<>(request.getNewNamespaceId() != null && !request.getNewNamespaceId().isEmpty()
-                ? request.getNewNamespaceId()
-                : request.getId());
-        newId.set(newId.size() - 1, request.getNewTableName());
-        var destinationId = joinIds(newId);
-        return transactionManager.inTransactionR(tx -> {
-            var table = tableRepository.get(tx, sourceId);
-            if (table == null) {
-                throw new IllegalStateException("Table does not exist: " + sourceId);
+        var from = fullObjectName(request.getId());
+        var to = "";
+
+        if (request.getNewNamespaceId() == null || request.getNewNamespaceId().isEmpty()) {
+            // table stay in the same namespace
+            var namespace = namespaceFrom(from);
+            to = fullObjectName(List.of(namespace, to));
+        } else {
+            // table should also be moved to the another namespace
+            var ids = new ArrayList<>(request.getNewNamespaceId());
+            ids.add(request.getNewTableName());
+
+            to = fullObjectName(ids);
+        }
+
+        var fromId = from;
+        var toId = to;
+
+        transactionManager.inTransaction(tx -> {
+            var maybeFromTable = tableRepository.get(tx, fromId);
+            var isNewTableExist = tableRepository.exists(tx, toId);
+
+            if (isNewTableExist) {
+                throw new TableAlreadyExistsException(String.format("Table %s already exists", toId));
             }
 
-            tableRepository.delete(tx, sourceId);
+            if (maybeFromTable.isEmpty()) {
+                throw new TableNotFoundException(String.format("Table %s not found", fromId));
+            }
+
+            var table = maybeFromTable.get();
+            // rename through deletion
+            tableRepository.delete(tx, fromId);
             tableRepository.upsert(
                     tx,
-                    destinationId,
-                    namespaceFrom(destinationId),
-                    tableNameFrom(destinationId),
+                    toId,
+                    namespaceFrom(toId),
+                    tableNameFrom(toId),
                     table.location(),
-                    table.properties(),
-                    table.declaredOnly()
+                    table.properties()
             );
-
-            return new RenameTableResponse();
         });
+
+        return new RenameTableResponse();
     }
 
     @Override
     public DeclareTableResponse declareTable(DeclareTableRequest request) {
-        var tableId = joinIds(request.getId());
+        var tableId = fullObjectName(request.getId());
         var namespacePath = namespaceFrom(tableId);
         var tableName = tableNameFrom(tableId);
 
-        transactionManager.inTransaction(tx -> tableRepository.upsert(
-                tx,
-                tableId,
-                namespacePath,
-                tableName,
-                request.getLocation(),
-                mapOrEmpty(request.getProperties()),
-                true
-        ));
+        transactionManager.inTransaction(tx -> {
+            var isNamespaceExist = namespaceRepository.exists(tx, namespacePath);
+
+            if (!isNamespaceExist) {
+                throw new NamespaceNotFoundException(String.format("Namespace %s does not exist", namespacePath));
+            }
+
+            var isTableExist = tableRepository.exists(tx, tableId);
+
+            if (isTableExist) {
+                throw new TableAlreadyExistsException(String.format("Table %s already exist", tableId));
+            }
+
+            tableRepository.upsert(
+                    tx,
+                    tableId,
+                    namespacePath,
+                    tableName,
+                    request.getLocation(),
+                    mapOrEmpty(request.getProperties())
+            );
+        });
+
         return new DeclareTableResponse()
                 .location(request.getLocation())
-                .properties(mapOrEmpty(request.getProperties()))
+                .properties(request.getProperties())
                 .managedVersioning(true);
     }
 
     @Override
     public AlterTableAlterColumnsResponse alterTableAlterColumns(AlterTableAlterColumnsRequest request) {
-        var location = requireTableLocation(request.getId());
-        return LanceDatasetSupport.alterTableAlterColumns(allocator, location, request);
+        var tableId = fullObjectName(request.getId());
+        var location = transactionManager.inTransactionR(tx -> {
+            var maybeTable = tableRepository.get(tx, tableId);
+            if (maybeTable.isEmpty()) {
+                throw new TableNotFoundException(String.format("Table metadata %s not found", tableId));
+            }
+
+            return maybeTable.get().location();
+        });
+
+        try (var dataset = open(allocator, location)) {
+            var alterations = new ArrayList<ColumnAlteration>();
+
+            for (var entry : request.getAlterations()) {
+                var builder = new ColumnAlteration.Builder(entry.getPath());
+                if (entry.getRename() != null) {
+                    builder.rename(entry.getRename());
+                }
+                if (entry.getNullable() != null) {
+                    builder.nullable(entry.getNullable());
+                }
+                alterations.add(builder.build());
+            }
+
+            dataset.alterColumns(alterations);
+            return new AlterTableAlterColumnsResponse().version(dataset.version());
+        }
     }
 
     @Override
     public AlterTableDropColumnsResponse alterTableDropColumns(AlterTableDropColumnsRequest request) {
-        var location = requireTableLocation(request.getId());
-        return LanceDatasetSupport.alterTableDropColumns(allocator, location, request);
+        var tableId = fullObjectName(request.getId());
+        var location = transactionManager.inTransactionR(tx -> {
+            var maybeTable = tableRepository.get(tx, tableId);
+            if (maybeTable.isEmpty()) {
+                throw new TableNotFoundException(String.format("Table metadata %s not found", tableId));
+            }
+
+            return maybeTable.get().location();
+        });
+
+        try (var dataset = open(allocator, location)) {
+            dataset.dropColumns(request.getColumns());
+            return new AlterTableDropColumnsResponse().version(dataset.version());
+        }
     }
 
     @Override
@@ -293,34 +462,14 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         }
     }
 
-    private String requireTableLocation(List<String> tableId) {
-        var joined = joinIds(tableId);
-        var location = transactionManager.inTransactionR(tx -> {
-            var table = tableRepository.get(tx, joined);
-            return table == null ? null : table.location();
-        });
-        if (location == null || location.isBlank()) {
-            throw new IllegalStateException("Table does not exist or has no location: " + joined);
-        }
-        return location;
-    }
-
-    private Map<String, String> mapOrEmpty(Map<String, String> input) {
-        if (input == null) {
-            return Map.of();
-        }
-
-        return input;
-    }
-
-    private String joinIds(List<String> ids) {
+    private String fullObjectName(List<String> ids) {
         if (ids == null || ids.isEmpty()) {
             return "";
         }
         return String.join(".", ids);
     }
 
-    private static String namespaceFrom(String tableId) {
+    private String namespaceFrom(String tableId) {
         var idx = tableId.lastIndexOf('.');
         if (idx < 0) {
             return "";
@@ -328,7 +477,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         return tableId.substring(0, idx);
     }
 
-    private static String tableNameFrom(String tableId) {
+    private String tableNameFrom(String tableId) {
         var idx = tableId.lastIndexOf('.');
         if (idx < 0) {
             return tableId;
@@ -336,10 +485,29 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         return tableId.substring(idx + 1);
     }
 
-    private static java.util.List<String> splitNamespace(String namespacePath) {
-        if (namespacePath == null || namespacePath.isBlank()) {
-            return new ArrayList<>();
-        }
-        return java.util.List.of(namespacePath.split("[.]"));
+    private TableMetadata deleteTableMetadata(String tableId) {
+        return transactionManager.inTransactionR(tx -> {
+            var maybeTable = tableRepository.get(tx, tableId);
+
+            if (maybeTable.isEmpty()) {
+                throw new TableNotFoundException(String.format("Table %s not found", tableId));
+            }
+
+            var deleted = tableRepository.delete(tx, tableId);
+
+            if (deleted) {
+                return maybeTable.get();
+            }
+
+            throw new RuntimeException("Couldn't delete table metadata");
+        });
+    }
+
+    private void purgeTableData(String location, Map<String, String> properties) {
+        Dataset.drop(location, properties);
+    }
+
+    private Dataset open(BufferAllocator allocator, String location) {
+        return Dataset.open().allocator(allocator).uri(location).build();
     }
 }

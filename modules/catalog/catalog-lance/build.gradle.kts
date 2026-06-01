@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":modules:core"))
     implementation(project(":modules:platform:platform-aws"))
     implementation(project(":modules:platform:platform-hadoop"))
     implementation(project(":modules:platform:platform-lance"))

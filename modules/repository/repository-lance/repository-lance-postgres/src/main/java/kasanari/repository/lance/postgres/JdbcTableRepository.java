@@ -1,45 +1,31 @@
 package kasanari.repository.lance.postgres;
 
 import kasanari.repository.lance.TableRepository;
-import kasanari.repository.lance.model.TableRow;
+import kasanari.repository.lance.model.TableMetadata;
 import org.jdbi.v3.core.Handle;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class JdbcTableRepository implements TableRepository<Handle> {
     public JdbcTableRepository() {
     }
 
     @Override
-    public void upsert(Handle tx, String tableId, String namespacePath, String tableName, String location, Map<String, String> properties, boolean declaredOnly) {
-        tx.createUpdate("""
-                        INSERT INTO kasanari_lance_tables(table_id, namespace_path, table_name, location, properties, declared_only)
-                        VALUES (:table_id, :namespace_path, :table_name, :location, :properties::jsonb, :declared_only)
-                        ON CONFLICT (table_id)
-                        DO UPDATE SET
-                            namespace_path = EXCLUDED.namespace_path,
-                            table_name = EXCLUDED.table_name,
-                            location = EXCLUDED.location,
-                            properties = EXCLUDED.properties::jsonb,
-                            declared_only = EXCLUDED.declared_only
-                        """)
+    public void upsert(Handle tx, String tableId, String namespacePath, String tableName, String location, Map<String, String> properties) {
+        tx.createUpdate(JdbcQueries.UPSERT_TABLE)
                 .bind("table_id", tableId)
                 .bind("namespace_path", namespacePath)
                 .bind("table_name", tableName)
                 .bind("location", location)
                 .bind("properties", JsonSerde.encodeMap(properties))
-                .bind("declared_only", declaredOnly)
                 .execute();
     }
 
     @Override
     public boolean exists(Handle tx, String tableId) {
-        return tx.createQuery("""
-                        SELECT 1 FROM kasanari_lance_tables
-                        WHERE table_id = :table_id
-                        LIMIT 1
-                        """)
+        return tx.createQuery(JdbcQueries.TABLE_EXISTS)
                 .bind("table_id", tableId)
                 .mapTo(Integer.class)
                 .findOne()
@@ -47,45 +33,31 @@ public class JdbcTableRepository implements TableRepository<Handle> {
     }
 
     @Override
-    public TableRow get(Handle tx, String tableId) {
-        return tx.createQuery("""
-                        SELECT table_id, namespace_path, table_name, location, properties, declared_only
-                        FROM kasanari_lance_tables
-                        WHERE table_id = :table_id
-                        LIMIT 1
-                        """)
+    public Optional<TableMetadata> get(Handle tx, String tableId) {
+        return tx.createQuery(JdbcQueries.GET_TABLE)
                 .bind("table_id", tableId)
-                .map((rs, ctx) -> new TableRow(
+                .map((rs, ctx) -> new TableMetadata(
                         rs.getString("table_id"),
                         rs.getString("namespace_path"),
                         rs.getString("table_name"),
                         rs.getString("location"),
-                        JsonSerde.decodeMap(rs.getString("properties")),
-                        rs.getBoolean("declared_only")
+                        JsonSerde.decodeMap(rs.getString("properties"))
                 ))
-                .findOne()
-                .orElse(null);
+                .findOne();
     }
 
     @Override
     public List<String> listByNamespace(Handle tx, String namespacePath) {
-        return tx.createQuery("""
-                        SELECT table_id FROM kasanari_lance_tables
-                        WHERE namespace_path = :namespace_path
-                        ORDER BY table_name
-                        """)
+        return tx.createQuery(JdbcQueries.LIST_TABLE_IDS_BY_NAMESPACE)
                 .bind("namespace_path", namespacePath)
                 .mapTo(String.class)
                 .list();
     }
 
     @Override
-    public void delete(Handle tx, String tableId) {
-        tx.createUpdate("""
-                        DELETE FROM kasanari_lance_tables
-                        WHERE table_id = :table_id
-                        """)
+    public boolean delete(Handle tx, String tableId) {
+        return tx.createUpdate(JdbcQueries.DELETE_TABLE)
                 .bind("table_id", tableId)
-                .execute();
+                .execute() == 1;
     }
 }
