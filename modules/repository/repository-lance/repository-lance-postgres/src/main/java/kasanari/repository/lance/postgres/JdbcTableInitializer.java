@@ -14,6 +14,7 @@ public class JdbcTableInitializer {
         transactionManager.inTransaction(tx -> {
             tx.createUpdate(JdbcQueries.CREATE_NAMESPACES_DDL).execute();
             tx.createUpdate(JdbcQueries.CREATE_TABLES_DDL).execute();
+            tx.createUpdate(JdbcQueries.CREATE_TABLES_FK_INDEX).execute();
         });
     }
 }

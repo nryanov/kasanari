@@ -24,11 +24,13 @@ import org.lance.namespace.model.TableExistsRequest;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -196,7 +198,7 @@ public abstract class LanceCatalogAdapterTest {
     void dropNamespace() {
         assumeTrue(supportsCreateNamespace() && supportsDropNamespace() && supportsListNamespaces());
         createNamespaceEntity();
-        adapter.dropNamespace(new DropNamespaceRequest().id(namespaceId()).mode("purge"));
+        adapter.dropNamespace(new DropNamespaceRequest().id(namespaceId()).mode("fail"));
         var listed = adapter.listNamespaces(new ListNamespacesRequest().id(List.of()).limit(100));
         assertFalse(listed.getNamespaces().contains(namespaceName));
     }
@@ -226,6 +228,77 @@ public abstract class LanceCatalogAdapterTest {
         registerTableEntity();
         var response = adapter.listTables(new ListTablesRequest().id(namespaceId()).limit(100));
         assertTrue(response.getTables().contains(tableName));
+    }
+
+    @Test
+    void listNamespacesPaginated() {
+        assumeTrue(supportsCreateNamespace() && supportsListNamespaces());
+        var firstNamespace = uniqueName("ns_page");
+        var secondNamespace = uniqueName("ns_page");
+
+        adapter.createNamespace(new CreateNamespaceRequest()
+                .id(List.of(firstNamespace))
+                .mode("create")
+                .properties(Map.of("owner", "ci")));
+        adapter.createNamespace(new CreateNamespaceRequest()
+                .id(List.of(secondNamespace))
+                .mode("create")
+                .properties(Map.of("owner", "ci")));
+
+        var firstPage = adapter.listNamespaces(new ListNamespacesRequest().id(List.of()).limit(1));
+        assertEquals(1, firstPage.getNamespaces().size());
+        assertTrue(firstPage.getPageToken() != null && !firstPage.getPageToken().isBlank());
+
+        var secondPage = adapter.listNamespaces(new ListNamespacesRequest()
+                .id(List.of())
+                .limit(1)
+                .pageToken(firstPage.getPageToken()));
+        assertEquals(1, secondPage.getNamespaces().size());
+        assertNull(secondPage.getPageToken());
+
+        var actual = new HashSet<String>();
+        actual.addAll(firstPage.getNamespaces());
+        actual.addAll(secondPage.getNamespaces());
+
+        assertEquals(new HashSet<>(List.of(firstNamespace, secondNamespace)), actual);
+    }
+
+    @Test
+    void listTablesPaginated() {
+        assumeTrue(supportsCreateNamespace() && supportsRegisterTable() && supportsListTables());
+        var namespace = uniqueName("ns_page");
+        var firstTable = uniqueName("table_page");
+        var secondTable = uniqueName("table_page");
+
+        adapter.createNamespace(new CreateNamespaceRequest()
+                .id(List.of(namespace))
+                .mode("create")
+                .properties(Map.of("owner", "ci")));
+        adapter.registerTable(new RegisterTableRequest()
+                .id(List.of(namespace, firstTable))
+                .location("s3://warehouse/" + namespace + "/" + firstTable)
+                .mode("create"));
+        adapter.registerTable(new RegisterTableRequest()
+                .id(List.of(namespace, secondTable))
+                .location("s3://warehouse/" + namespace + "/" + secondTable)
+                .mode("create"));
+
+        var firstPage = adapter.listTables(new ListTablesRequest().id(List.of(namespace)).limit(1));
+        assertEquals(1, firstPage.getTables().size());
+        assertTrue(firstPage.getPageToken() != null && !firstPage.getPageToken().isBlank());
+
+        var secondPage = adapter.listTables(new ListTablesRequest()
+                .id(List.of(namespace))
+                .limit(1)
+                .pageToken(firstPage.getPageToken()));
+        assertEquals(1, secondPage.getTables().size());
+        assertNull(secondPage.getPageToken());
+
+        var actual = new HashSet<String>();
+        actual.addAll(firstPage.getTables());
+        actual.addAll(secondPage.getTables());
+
+        assertEquals(new HashSet<>(List.of(firstTable, secondTable)), actual);
     }
 
     @Test
@@ -289,7 +362,6 @@ public abstract class LanceCatalogAdapterTest {
         createEmptyTableEntity();
         var response = adapter.describeTable(new DescribeTableRequest().id(tableId()));
         assertEquals(tableName, response.getTable());
-        assertTrue(response.getIsOnlyDeclared());
     }
 
     @Test

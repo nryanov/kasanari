@@ -6,6 +6,7 @@ public final class JdbcQueries {
 
     public static final String CREATE_NAMESPACES_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_lance_namespaces (
+                id BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE,
                 namespace_path TEXT PRIMARY KEY,
                 properties JSONB NOT NULL DEFAULT '{}'::jsonb
             )
@@ -13,12 +14,18 @@ public final class JdbcQueries {
 
     public static final String CREATE_TABLES_DDL = """
             CREATE TABLE IF NOT EXISTS kasanari_lance_tables (
+                id BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE,
                 table_id TEXT PRIMARY KEY,
                 namespace_path TEXT NOT NULL,
                 table_name TEXT NOT NULL,
-                location TEXT,
-                properties JSONB NOT NULL DEFAULT '{}'::jsonb
+                location TEXT NOT NULL,
+                properties JSONB NOT NULL DEFAULT '{}'::jsonb,
+                CONSTRAINT kasanari_lance_namespaces_fk FOREIGN KEY (namespace_path) REFERENCES kasanari_lance_namespaces(namespace_path)
             )
+            """;
+
+    public static final String CREATE_TABLES_FK_INDEX = """
+            CREATE INDEX kasanari_lance_tables_fk_idx ON kasanari_lance_tables(namespace_path);
             """;
 
     public static final String UPSERT_NAMESPACE = """
@@ -43,6 +50,14 @@ public final class JdbcQueries {
     public static final String LIST_NAMESPACES = """
             SELECT namespace_path FROM kasanari_lance_namespaces
             ORDER BY namespace_path
+            """;
+
+    public static final String LIST_NAMESPACES_PAGE = """
+            SELECT id, namespace_path
+            FROM kasanari_lance_namespaces
+            WHERE id > :cursor_id
+            ORDER BY id
+            LIMIT :limit
             """;
 
     public static final String DELETE_NAMESPACE = """
@@ -78,6 +93,15 @@ public final class JdbcQueries {
             SELECT table_id FROM kasanari_lance_tables
             WHERE namespace_path = :namespace_path
             ORDER BY table_name
+            """;
+
+    public static final String LIST_TABLE_NAMES_BY_NAMESPACE_PAGE = """
+            SELECT id, table_name
+            FROM kasanari_lance_tables
+            WHERE namespace_path = :namespace_path
+              AND id > :cursor_id
+            ORDER BY id
+            LIMIT :limit
             """;
 
     public static final String DELETE_TABLE = """

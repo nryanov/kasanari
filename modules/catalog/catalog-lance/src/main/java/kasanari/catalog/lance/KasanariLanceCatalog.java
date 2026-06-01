@@ -5,6 +5,7 @@ import kasanari.repository.jdbc.JdbcTransactionManager;
 import kasanari.repository.jdbc.KasanariDataSource;
 import kasanari.repository.lance.NamespaceRepository;
 import kasanari.repository.lance.TableRepository;
+import kasanari.repository.lance.model.PagedValue;
 import kasanari.repository.lance.model.TableMetadata;
 import kasanari.repository.lance.postgres.JdbcNamespaceRepository;
 import kasanari.repository.lance.postgres.JdbcTableInitializer;
@@ -54,13 +55,20 @@ import org.lance.schema.ColumnAlteration;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static kasanari.core.Functions.mapOrEmpty;
 import static kasanari.core.Functions.valueOrDefault;
 
 public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
+    private static final int DEFAULT_PAGE_SIZE = 50;
+    private static final int MAX_PAGE_SIZE = 1000;
+
     private KasanariDataSource dataSource;
     private BufferAllocator allocator;
     private NamespaceRepository<Handle> namespaceRepository;
@@ -68,6 +76,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
     private TransactionManager<Handle> transactionManager;
 
     private String defaultLocation;
+    private Map<String, String> storageProperties;
 
     @Override
     public void initialize(Map<String, String> properties, BufferAllocator allocator) {
@@ -84,6 +93,15 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         if (defaultLocation == null) {
             throw new IllegalArgumentException("Default location is not set");
         }
+
+        this.storageProperties = new HashMap<>();
+        properties.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(KasanariLanceProperties.STORAGE_PROPERTIES_PREFIX))
+                .forEach(entry -> {
+                    var key = entry.getKey().substring(KasanariLanceProperties.STORAGE_PROPERTIES_PREFIX.length());
+                    var value = entry.getValue();
+                    storageProperties.put(key, value);
+                });
     }
 
     @Override
@@ -99,11 +117,12 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
         if (exists) {
             switch (mode) {
-                case "existok", "exist_ok": return new CreateNamespaceResponse().properties(mapOrEmpty(request.getProperties()));
-                case "create": throw new NamespaceAlreadyExistsException(String.format("Namespace %s already exists", namespacePath));
-                case "overwrite": {
-                    // the existing namespace is dropped and a new empty namespace with this name is created.
-                    transactionManager.inTransaction(tx -> {
+                case "existok", "exist_ok" -> {
+                    return new CreateNamespaceResponse().properties(mapOrEmpty(request.getProperties()));
+                }
+                case "create" -> throw new NamespaceAlreadyExistsException(String.format("Namespace %s already exists", namespacePath));
+                case "overwrite" -> // the existing namespace is dropped and a new empty namespace with this name is created.
+                        transactionManager.inTransaction(tx -> {
                         var tables = tableRepository.listByNamespace(tx, namespacePath);
 
                         for (var tableId : tables) {
@@ -115,7 +134,6 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
                         namespaceRepository.delete(tx, namespacePath);
                     });
-                }
             }
         }
 
@@ -151,8 +169,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         }
 
         switch (behavior) {
-            case "restrict": {
-                transactionManager.inTransaction(tx -> {
+            case "restrict" -> transactionManager.inTransaction(tx -> {
                     var tables = tableRepository.listByNamespace(tx, namespacePath);
                     if (!tables.isEmpty()) {
                         throw new NamespaceNotEmptyException(String.format("Not empty namespace: %s", namespacePath));
@@ -160,9 +177,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
                     namespaceRepository.delete(tx, namespacePath);
                 });
-            }
-            case "cascade": {
-                transactionManager.inTransaction(tx -> {
+            case "cascade" -> transactionManager.inTransaction(tx -> {
                     var tables = tableRepository.listByNamespace(tx, namespacePath);
 
                     for (var tableId : tables) {
@@ -174,9 +189,10 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
                     namespaceRepository.delete(tx, namespacePath);
                 });
-            }
-            default: throw new IllegalArgumentException("Unknown behaviour");
+            default -> throw new IllegalArgumentException(String.format("Unknown behaviour: %s", behavior));
         }
+
+        return new DropNamespaceResponse();
     }
 
     @Override
@@ -189,25 +205,37 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         }
     }
 
-    // todo: pagination
     @Override
     public ListNamespacesResponse listNamespaces(ListNamespacesRequest request) {
         var parent = fullObjectName(request.getId());
-        var children = transactionManager.inTransactionR(tx -> namespaceRepository.list(tx, parent));
+        var pageSize = resolvePageSize(request.getLimit());
+        var cursorId = decodePageToken(request.getPageToken());
+
+        var rows = transactionManager.inTransactionR(tx -> namespaceRepository.listPage(tx, parent, cursorId, pageSize + 1));
+        var hasMore = rows.size() > pageSize;
+        var pageRows = hasMore ? rows.subList(0, pageSize) : rows;
+
         var response = new ListNamespacesResponse();
-        response.setNamespaces(new java.util.LinkedHashSet<>(children));
-        response.setPageToken(null);
+        response.setNamespaces(new LinkedHashSet<>(pageRows.stream().map(PagedValue::value).toList()));
+        response.setPageToken(hasMore ? String.valueOf(pageRows.getLast().id()) : null);
+
         return response;
     }
 
-    // todo: pagination
     @Override
     public ListTablesResponse listTables(ListTablesRequest request) {
         var namespacePath = fullObjectName(request.getId());
-        var tables = transactionManager.inTransactionR(tx -> tableRepository.listByNamespace(tx, namespacePath));
+        var pageSize = resolvePageSize(request.getLimit());
+        var cursorId = decodePageToken(request.getPageToken());
+
+        var rows = transactionManager.inTransactionR(tx -> tableRepository.listNamesByNamespacePage(tx, namespacePath, cursorId, pageSize + 1));
+        var hasMore = rows.size() > pageSize;
+        var pageRows = hasMore ? rows.subList(0, pageSize) : rows;
+
         var response = new ListTablesResponse();
-        response.setTables(new java.util.LinkedHashSet<>(tables));
-        response.setPageToken(null);
+        response.setTables(new LinkedHashSet<>(pageRows.stream().map(PagedValue::value).toList()));
+        response.setPageToken(hasMore ? String.valueOf(pageRows.getLast().id()) : null);
+
         return response;
     }
 
@@ -310,8 +338,10 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
             if (maybeTable.isPresent()) {
                 switch (mode) {
-                    case "create": throw new TableAlreadyExistsException(String.format("Table %s already exists", tableId));
-                    case "existok", "exist_ok": return;
+                    case "create" -> throw new TableAlreadyExistsException(String.format("Table %s already exists", tableId));
+                    case "existok", "exist_ok" -> {
+                        return;
+                    }
                 }
             }
 
@@ -515,6 +545,28 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         return tableId.substring(idx + 1);
     }
 
+    private int resolvePageSize(Integer requestedLimit) {
+        if (requestedLimit == null || requestedLimit <= 0) {
+            return DEFAULT_PAGE_SIZE;
+        }
+        return Math.min(requestedLimit, MAX_PAGE_SIZE);
+    }
+
+    private long decodePageToken(String pageToken) {
+        if (pageToken == null || pageToken.isBlank()) {
+            return 0;
+        }
+        try {
+            var token = Long.parseLong(pageToken);
+            if (token < 0) {
+                throw new IllegalArgumentException("Invalid page token: " + pageToken);
+            }
+            return token;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid page token: " + pageToken, e);
+        }
+    }
+
     private TableMetadata deleteTableMetadata(String tableId) {
         return transactionManager.inTransactionR(tx -> {
             var maybeTable = tableRepository.get(tx, tableId);
@@ -534,7 +586,10 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
     }
 
     private void purgeTableData(String location, Map<String, String> properties) {
-        Dataset.drop(location, properties);
+        var totalStorageOptions = new HashMap<>(storageProperties);
+        totalStorageOptions.putAll(properties);
+
+        Dataset.drop(location, totalStorageOptions);
     }
 
     private Dataset open(BufferAllocator allocator, String location) {

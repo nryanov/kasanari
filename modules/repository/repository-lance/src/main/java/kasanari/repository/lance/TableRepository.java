@@ -1,5 +1,6 @@
 package kasanari.repository.lance;
 
+import kasanari.repository.lance.model.PagedValue;
 import kasanari.repository.lance.model.TableMetadata;
 
 import java.util.List;
@@ -14,6 +15,8 @@ public interface TableRepository<T> {
     Optional<TableMetadata> get(T tx, String tableId);
 
     List<String> listByNamespace(T tx, String namespacePath);
+
+    List<PagedValue<String>> listNamesByNamespacePage(T tx, String namespacePath, long cursorId, int limit);
 
     boolean delete(T tx, String tableId);
 }

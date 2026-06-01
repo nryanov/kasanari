@@ -2,6 +2,7 @@ package kasanari.catalog.lance;
 
 import org.apache.arrow.memory.RootAllocator;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class KasanariLanceCatalogFactory implements LanceCatalogFactory {
@@ -12,7 +13,10 @@ public class KasanariLanceCatalogFactory implements LanceCatalogFactory {
             Map<String, String> catalogProperties
     ) {
         var catalog = new KasanariLanceCatalog();
-        catalog.initialize(catalogProperties, new RootAllocator());
+        var mergedProperties = new HashMap<>(fileIoProperties);
+        mergedProperties.putAll(catalogProperties);
+
+        catalog.initialize(mergedProperties, new RootAllocator());
 
         return new DefaultLanceCatalogAdapter(catalog);
     }

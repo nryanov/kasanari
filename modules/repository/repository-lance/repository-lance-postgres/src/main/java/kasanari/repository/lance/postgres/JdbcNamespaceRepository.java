@@ -1,10 +1,10 @@
 package kasanari.repository.lance.postgres;
 
 import kasanari.repository.lance.NamespaceRepository;
+import kasanari.repository.lance.model.PagedValue;
 import org.jdbi.v3.core.Handle;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,6 +63,18 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
             }
         }
         return result;
+    }
+
+    @Override
+    public List<PagedValue<String>> listPage(Handle tx, String parentPath, long cursorId, int limit) {
+        return tx.createQuery(JdbcQueries.LIST_NAMESPACES_PAGE)
+                .bind("cursor_id", cursorId)
+                .bind("limit", limit)
+                .map((rs, ctx) -> new PagedValue<>(
+                        rs.getLong("id"),
+                        rs.getString("namespace_path")
+                ))
+                .list();
     }
 
     @Override
