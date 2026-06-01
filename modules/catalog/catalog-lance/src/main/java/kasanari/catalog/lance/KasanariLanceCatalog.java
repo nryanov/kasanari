@@ -67,6 +67,8 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
     private TableRepository<Handle> tableRepository;
     private TransactionManager<Handle> transactionManager;
 
+    private String defaultLocation;
+
     @Override
     public void initialize(Map<String, String> properties, BufferAllocator allocator) {
         this.allocator = allocator;
@@ -76,6 +78,12 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
         this.namespaceRepository = new JdbcNamespaceRepository();
         this.tableRepository = new JdbcTableRepository();
+
+        this.defaultLocation = properties.get(KasanariLanceProperties.LOCATION);
+
+        if (defaultLocation == null) {
+            throw new IllegalArgumentException("Default location is not set");
+        }
     }
 
     @Override
@@ -215,7 +223,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
 
             if (maybeTable.isPresent()) {
                 if (mode.equals("create")) {
-                    throw new TableAlreadyExistsException(String.format("Table %s already exusts", tableId));
+                    throw new TableAlreadyExistsException(String.format("Table %s already exists", tableId));
                 }
             }
 
@@ -287,7 +295,6 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
                 .properties(metadata.properties());
     }
 
-    // todo: use mode (Create, Overwrite, ExistOk) from request
     @Override
     public CreateTableResponse createTable(CreateTableRequest request, byte[] requestData) {
         var mode = valueOrDefault(request.getMode(), "create").toLowerCase();
@@ -296,9 +303,32 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         var tableName = tableNameFrom(tableId);
         var storageOptions = request.getStorageOptions();
         var tableProperties = request.getProperties();
+        var location = String.format("%s/%s/%s", defaultLocation, namespacePath, tableName);
 
-        // todo: resolve table location
-        return null;
+        transactionManager.inTransaction(tx -> {
+            var maybeTable = tableRepository.get(tx, tableId);
+
+            if (maybeTable.isPresent()) {
+                switch (mode) {
+                    case "create": throw new TableAlreadyExistsException(String.format("Table %s already exists", tableId));
+                    case "existok", "exist_ok": return;
+                }
+            }
+
+            tableRepository.upsert(
+                    tx,
+                    tableId,
+                    namespacePath,
+                    tableName,
+                    location,
+                    mapOrEmpty(request.getProperties())
+            );
+        });
+
+        return new CreateTableResponse()
+                .location(location)
+                .properties(tableProperties)
+                .storageOptions(storageOptions);
     }
 
     @Override
