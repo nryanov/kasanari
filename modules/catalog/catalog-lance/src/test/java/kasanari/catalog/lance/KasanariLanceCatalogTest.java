@@ -65,4 +65,9 @@ public class KasanariLanceCatalogTest extends LanceCatalogAdapterTest {
     protected boolean supportsCreateTable() {
         return true;
     }
+
+    @Override
+    protected boolean supportsMissingTableExistsError() {
+        return true;
+    }
 }

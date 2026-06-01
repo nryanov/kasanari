@@ -5,6 +5,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.lance.namespace.errors.NamespaceAlreadyExistsException;
+import org.lance.namespace.errors.NamespaceNotEmptyException;
+import org.lance.namespace.errors.NamespaceNotFoundException;
+import org.lance.namespace.errors.TableAlreadyExistsException;
+import org.lance.namespace.errors.TableNotFoundException;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
 import org.lance.namespace.model.CreateNamespaceRequest;
@@ -30,7 +35,9 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -178,10 +185,60 @@ public abstract class LanceCatalogAdapterTest {
         return false;
     }
 
+    protected boolean supportsNamespaceModeVariants() {
+        return true;
+    }
+
+    protected boolean supportsDropNamespaceBehaviorVariants() {
+        return true;
+    }
+
+    protected boolean supportsRegisterTableModeVariants() {
+        return true;
+    }
+
+    protected boolean supportsCreateTableModeVariants() {
+        return true;
+    }
+
+    protected boolean supportsInvalidPageTokenFailure() {
+        return true;
+    }
+
+    protected boolean supportsMissingTableExistsError() {
+        return false;
+    }
+
     @Test
     void createNamespace() {
         assumeTrue(supportsCreateNamespace() && supportsDescribeNamespace());
         createNamespaceEntity();
+        var response = adapter.describeNamespace(new DescribeNamespaceRequest().id(namespaceId()));
+        assertEquals("ci", response.getProperties().get("owner"));
+    }
+
+    @Test
+    void createNamespaceDuplicateCreateModeThrows() {
+        assumeTrue(supportsCreateNamespace() && supportsNamespaceModeVariants());
+        createNamespaceEntity();
+        assertThrows(
+                NamespaceAlreadyExistsException.class,
+                () -> adapter.createNamespace(new CreateNamespaceRequest().id(namespaceId()).mode("create"))
+        );
+    }
+
+    @Test
+    void createNamespaceExistOkIsIdempotent() {
+        assumeTrue(supportsCreateNamespace() && supportsDescribeNamespace() && supportsNamespaceModeVariants());
+        createNamespaceEntity();
+
+        assertDoesNotThrow(() -> adapter.createNamespace(
+                new CreateNamespaceRequest()
+                        .id(namespaceId())
+                        .mode("exist_ok")
+                        .properties(Map.of("owner", "ci"))
+        ));
+
         var response = adapter.describeNamespace(new DescribeNamespaceRequest().id(namespaceId()));
         assertEquals("ci", response.getProperties().get("owner"));
     }
@@ -195,12 +252,72 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     @Test
+    void describeNamespaceMissingThrows() {
+        assumeTrue(supportsDescribeNamespace());
+        assertThrows(
+                NamespaceNotFoundException.class,
+                () -> adapter.describeNamespace(new DescribeNamespaceRequest().id(namespaceId()))
+        );
+    }
+
+    @Test
     void dropNamespace() {
         assumeTrue(supportsCreateNamespace() && supportsDropNamespace() && supportsListNamespaces());
         createNamespaceEntity();
         adapter.dropNamespace(new DropNamespaceRequest().id(namespaceId()).mode("fail"));
         var listed = adapter.listNamespaces(new ListNamespacesRequest().id(List.of()).limit(100));
         assertFalse(listed.getNamespaces().contains(namespaceName));
+    }
+
+    @Test
+    void dropNamespaceMissingSkipMode() {
+        assumeTrue(supportsDropNamespace() && supportsNamespaceModeVariants());
+        assertDoesNotThrow(() -> adapter.dropNamespace(new DropNamespaceRequest().id(namespaceId()).mode("skip")));
+    }
+
+    @Test
+    void dropNamespaceMissingFailModeThrows() {
+        assumeTrue(supportsDropNamespace() && supportsNamespaceModeVariants());
+        assertThrows(
+                NamespaceNotFoundException.class,
+                () -> adapter.dropNamespace(new DropNamespaceRequest().id(namespaceId()).mode("fail"))
+        );
+    }
+
+    @Test
+    void dropNamespaceRestrictOnNonEmptyThrows() {
+        assumeTrue(
+                supportsCreateNamespace()
+                        && supportsRegisterTable()
+                        && supportsDropNamespace()
+                        && supportsDropNamespaceBehaviorVariants()
+        );
+        registerTableEntity();
+        assertThrows(
+                NamespaceNotEmptyException.class,
+                () -> adapter.dropNamespace(new DropNamespaceRequest().id(namespaceId()).behavior("restrict"))
+        );
+    }
+
+    @Test
+    void dropNamespaceCascadeOnNonEmptyRemovesNamespaceAndTables() {
+        assumeTrue(
+                supportsCreateNamespace()
+                        && supportsRegisterTable()
+                        && supportsDropNamespace()
+                        && supportsListNamespaces()
+                        && supportsListTables()
+                        && supportsDropNamespaceBehaviorVariants()
+        );
+        registerTableEntity();
+
+        adapter.dropNamespace(new DropNamespaceRequest().id(namespaceId()).behavior("cascade"));
+
+        var namespaces = adapter.listNamespaces(new ListNamespacesRequest().id(List.of()).limit(100));
+        assertFalse(namespaces.getNamespaces().contains(namespaceName));
+
+        var tables = adapter.listTables(new ListTablesRequest().id(namespaceId()).limit(100));
+        assertFalse(tables.getTables().contains(tableName));
     }
 
     @Test
@@ -264,6 +381,15 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     @Test
+    void listNamespacesInvalidPageTokenThrows() {
+        assumeTrue(supportsListNamespaces() && supportsInvalidPageTokenFailure());
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> adapter.listNamespaces(new ListNamespacesRequest().id(List.of()).limit(1).pageToken("bad-token"))
+        );
+    }
+
+    @Test
     void listTablesPaginated() {
         assumeTrue(supportsCreateNamespace() && supportsRegisterTable() && supportsListTables());
         var namespace = uniqueName("ns_page");
@@ -302,6 +428,15 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     @Test
+    void listTablesInvalidPageTokenThrows() {
+        assumeTrue(supportsListTables() && supportsInvalidPageTokenFailure());
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> adapter.listTables(new ListTablesRequest().id(namespaceId()).limit(1).pageToken("bad-token"))
+        );
+    }
+
+    @Test
     void registerTable() {
         assumeTrue(supportsCreateNamespace() && supportsRegisterTable() && supportsDescribeTable());
         createNamespaceEntity();
@@ -312,11 +447,42 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     @Test
+    void registerTableDuplicateCreateModeThrows() {
+        assumeTrue(supportsRegisterTable() && supportsRegisterTableModeVariants());
+        registerTableEntity();
+        assertThrows(
+                TableAlreadyExistsException.class,
+                () -> adapter.registerTable(new RegisterTableRequest().id(tableId()).location(tableLocation()).mode("create"))
+        );
+    }
+
+    @Test
+    void registerTableOverwriteModeUpdatesLocation() {
+        assumeTrue(supportsRegisterTable() && supportsDescribeTable() && supportsRegisterTableModeVariants());
+        registerTableEntity();
+
+        var updatedLocation = tableLocation() + "_overwritten";
+        adapter.registerTable(new RegisterTableRequest().id(tableId()).location(updatedLocation).mode("overwrite"));
+
+        var described = adapter.describeTable(new DescribeTableRequest().id(tableId()));
+        assertEquals(updatedLocation, described.getLocation());
+    }
+
+    @Test
     void describeTable() {
         assumeTrue(supportsRegisterTable() && supportsDescribeTable());
         registerTableEntity();
         var response = adapter.describeTable(new DescribeTableRequest().id(tableId()));
         assertEquals(tableName, response.getTable());
+    }
+
+    @Test
+    void describeTableMissingThrows() {
+        assumeTrue(supportsDescribeTable());
+        assertThrows(
+                TableNotFoundException.class,
+                () -> adapter.describeTable(new DescribeTableRequest().id(tableId()))
+        );
     }
 
     @Test
@@ -331,12 +497,30 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     @Test
+    void tableExistsMissingThrows() {
+        assumeTrue(supportsTableExists() && supportsMissingTableExistsError());
+        assertThrows(
+                IllegalStateException.class,
+                () -> adapter.tableExists(new TableExistsRequest().id(tableId()))
+        );
+    }
+
+    @Test
     void dropTable() {
         assumeTrue(supportsRegisterTable() && supportsDropTable() && supportsListTables());
         registerTableEntity();
         adapter.dropTable(new DropTableRequest().id(tableId()));
         var listed = adapter.listTables(new ListTablesRequest().id(namespaceId()).limit(100));
         assertFalse(listed.getTables().contains(tableName));
+    }
+
+    @Test
+    void dropTableMissingThrows() {
+        assumeTrue(supportsDropTable());
+        assertThrows(
+                TableNotFoundException.class,
+                () -> adapter.dropTable(new DropTableRequest().id(tableId()))
+        );
     }
 
     @Test
@@ -349,11 +533,44 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     @Test
+    void deregisterTableMissingThrows() {
+        assumeTrue(supportsDeregisterTable());
+        assertThrows(
+                TableNotFoundException.class,
+                () -> adapter.deregisterTable(new DeregisterTableRequest().id(tableId()))
+        );
+    }
+
+    @Test
     void createTable() {
         assumeTrue(supportsCreateTable() && supportsDescribeTable());
         createTableEntity();
         var response = adapter.describeTable(new DescribeTableRequest().id(tableId()));
         assertEquals(tableName, response.getTable());
+    }
+
+    @Test
+    void createTableDuplicateCreateModeThrows() {
+        assumeTrue(supportsCreateTable() && supportsCreateTableModeVariants());
+        createTableEntity();
+        assertThrows(
+                TableAlreadyExistsException.class,
+                () -> adapter.createTable(new CreateTableRequest().id(tableId()).mode("create"), LanceArrowIpc.emptyBatch())
+        );
+    }
+
+    @Test
+    void createTableExistOkIsIdempotent() {
+        assumeTrue(supportsCreateTable() && supportsDescribeTable() && supportsCreateTableModeVariants());
+        createTableEntity();
+
+        assertDoesNotThrow(() ->
+                adapter.createTable(new CreateTableRequest().id(tableId()).mode("existok"), LanceArrowIpc.emptyBatch())
+        );
+
+        var described = adapter.describeTable(new DescribeTableRequest().id(tableId()));
+        assertEquals(tableName, described.getTable());
+        assertNotEquals("", described.getLocation());
     }
 
     @Test
