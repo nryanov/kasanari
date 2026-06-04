@@ -6,6 +6,6 @@ kasanari.auth.oidc.issuer-url=http://localhost:8080/realms/kasanari
 kasanari.auth.oidc.client-id=kasanari-api
 kasanari.auth.oidc.client-secret=kasanari-api-secret
 
-management.metadata.jdbc-properties."kasanari.jdbc.user"=postgres
-management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
-management.metadata.jdbc-properties."uri"=jdbc:postgresql://localhost:5432/postgres
+kasanari.management.metadata.jdbc-properties."kasanari.jdbc.user"=postgres
+kasanari.management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
+kasanari.management.metadata.jdbc-properties."uri"=jdbc:postgresql://localhost:5432/postgres

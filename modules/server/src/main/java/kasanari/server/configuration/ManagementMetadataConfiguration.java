@@ -4,7 +4,7 @@ import io.smallrye.config.ConfigMapping;
 
 import java.util.Map;
 
-@ConfigMapping(prefix = "management.metadata")
+@ConfigMapping(prefix = "kasanari.management.metadata")
 public interface ManagementMetadataConfiguration {
     Map<String, String> jdbcProperties();
 }

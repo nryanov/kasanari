@@ -9,6 +9,6 @@ kasanari.authentication.ldap.bind-password=admin
 kasanari.authentication.ldap.search-base-dn=ou=users,dc=kasanari,dc=local
 kasanari.authentication.ldap.rdn-identifier=uid
 
-management.metadata.jdbc-properties."kasanari.jdbc.user"=postgres
-management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
-management.metadata.jdbc-properties."uri"=jdbc:postgresql://localhost:5432/postgres
+kasanari.management.metadata.jdbc-properties."kasanari.jdbc.user"=postgres
+kasanari.management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
+kasanari.management.metadata.jdbc-properties."uri"=jdbc:postgresql://localhost:5432/postgres

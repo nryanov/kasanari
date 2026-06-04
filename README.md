@@ -9,6 +9,10 @@ which may act like a complete catalog implementation or just a proxy to other (l
 ### Iceberg
 ### Paimon
 
+## Examples
+- Catalog usage examples: [examples/README.md](examples/README.md)
+- Includes Iceberg, Paimon, Lance, and auth/authz-focused local stacks.
+
 ## Testing
 ### Docker issues
 - Colima: `sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock`
