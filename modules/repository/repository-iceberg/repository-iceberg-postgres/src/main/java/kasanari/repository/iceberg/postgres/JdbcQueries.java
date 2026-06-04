@@ -73,7 +73,11 @@ public class JdbcQueries {
     // to avoid creation of additional tuples on upsert
     public final static String CHECK_IF_CATALOG_EXISTS = "SELECT EXISTS(SELECT 1 FROM kasanari_iceberg_catalog WHERE catalog_name = ?)";
 
-    public final static String REGISTER_CATALOG = "INSERT INTO kasanari_iceberg_catalog(catalog_name) VALUES (?)";
+    public final static String UPSERT_CATALOG = """
+            INSERT INTO kasanari_iceberg_catalog(catalog_name)
+            VALUES (?)
+            ON CONFLICT (catalog_name) DO NOTHING
+            """;
 
     public final static String CHECK_IF_NAMESPACE_EXISTS = "SELECT EXISTS(SELECT 1 FROM kasanari_iceberg_namespaces WHERE catalog_name = ? AND namespace_name = ?)";
 

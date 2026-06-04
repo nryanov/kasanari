@@ -14,7 +14,6 @@ public record AuthRequest(
             return Optional.empty();
         }
 
-        // todo: optimize
         for (var entry : headers.entrySet()) {
             if (name.equalsIgnoreCase(entry.getKey())) {
                 var value = entry.getValue();

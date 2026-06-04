@@ -82,12 +82,7 @@ public class KasanariIcebergCatalog extends BaseMetastoreViewCatalog implements 
         var initializer = new JdbcTableInitializer(dataSource);
         initializer.initialize();
 
-        // todo: change to upsert ?
-        transactionManager.inTransaction(tx -> {
-            if (catalogRepository.notExists(tx)) {
-                catalogRepository.register(tx);
-            }
-        });
+        transactionManager.inTransaction(tx -> catalogRepository.register(tx));
     }
 
     private void initializeFileIO(Map<String, String> properties) {
@@ -100,7 +95,6 @@ public class KasanariIcebergCatalog extends BaseMetastoreViewCatalog implements 
         this.hadoopConfig = conf;
     }
 
-    // todo: warehouse == catalogName. Correctly resolve defaultWarehouseLocation
     @Override
     protected String defaultWarehouseLocation(TableIdentifier tableIdentifier) {
         var namespace = tableIdentifier.namespace();

@@ -13,7 +13,7 @@ public class JdbcCatalogRepository implements CatalogRepository<Handle> {
 
     @Override
     public void register(Handle tx) {
-        var registerCatalogQuery = tx.createUpdate(JdbcQueries.REGISTER_CATALOG);
+        var registerCatalogQuery = tx.createUpdate(JdbcQueries.UPSERT_CATALOG);
         registerCatalogQuery.bind(0, catalogName);
         registerCatalogQuery.execute();
     }

@@ -165,7 +165,6 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
                         .map(ViewRepresentation::type)
                         .collect(Collectors.toSet());
 
-        // todo: domain error
         if (!unsupportedRepresentations.isEmpty()) {
             throw new IllegalStateException(
                     String.format("Found unsupported view representations: %s", unsupportedRepresentations));
@@ -252,13 +251,13 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
 
         var isRetry = new AtomicBoolean(false);
         Tasks.foreach(ops)
-                .retry(COMMIT_NUM_RETRIES_DEFAULT) // todo: configure
+                .retry(COMMIT_NUM_RETRIES_DEFAULT)
                 .exponentialBackoff(
                         COMMIT_MIN_RETRY_WAIT_MS_DEFAULT,
                         COMMIT_MAX_RETRY_WAIT_MS_DEFAULT,
                         COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT,
                         2.0
-                ) // todo: configure
+                )
                 .onlyRetryOn(CommitFailedException.class)
                 .run(task -> {
                     var base = isRetry.get() ? task.refresh() : task.current();
@@ -269,7 +268,7 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
                         rq.requirements().forEach(it -> it.validate(base));
                     } catch (CommitFailedException e) {
                         // to avoid unnecessary retry
-                        throw new IllegalStateException("Unsatisfied requirement"); // todo: domain error
+                        throw new IllegalStateException("Unsatisfied requirement");
                     }
 
                     var metadataBuilder = ViewMetadata.buildFrom(base);
@@ -414,13 +413,13 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
     protected TableMetadata commitTableUpdates(UpdateTableRequest updates, TableOperations ops) {
         var isRetry = new AtomicBoolean(false);
         Tasks.foreach(ops)
-                .retry(COMMIT_NUM_RETRIES_DEFAULT) // todo: configure
+                .retry(COMMIT_NUM_RETRIES_DEFAULT)
                 .exponentialBackoff(
                         COMMIT_MIN_RETRY_WAIT_MS_DEFAULT,
                         COMMIT_MAX_RETRY_WAIT_MS_DEFAULT,
                         COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT,
                         2.0
-                ) // todo: configure
+                )
                 .onlyRetryOn(CommitFailedException.class)
                 .run(task -> {
                     var base = isRetry.get() ? task.refresh() : task.current();
@@ -431,7 +430,7 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
                         updates.requirements().forEach(it -> it.validate(base));
                     } catch (CommitFailedException e) {
                         // to avoid unnecessary retry
-                        throw new IllegalStateException("Unsatisfied requirement"); // todo: domain error
+                        throw new IllegalStateException("Unsatisfied requirement");
                     }
 
                     var metadataBuilder = TableMetadata.buildFrom(base);
