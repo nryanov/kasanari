@@ -11,6 +11,12 @@ Runs Kasanari with a PAIMON catalog in `INTERNAL` mode and a Spark-enabled Jupyt
 ./scripts/build-container-images.sh
 ```
 
+- Built Spark Jupyter image:
+
+```shell
+docker build -f examples/common/jupyter/Dockerfile -t local/jupyter-spark:0.1.0 examples/common/jupyter
+```
+
 ## Startup
 
 From repository root:

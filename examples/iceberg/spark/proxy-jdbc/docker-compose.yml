@@ -45,14 +45,16 @@ services:
         -Dkasanari.management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
         -Dkasanari.management.metadata.jdbc-properties."uri"=jdbc:postgresql://catalog-storage:5432/postgres
         -Dkasanari.authentication.type=none
+      AWS_REGION: none
 
   spark:
-    image: quay.io/jupyter/pyspark-notebook:spark-4.1.1
+    image: local/jupyter-spark:0.1.0
     depends_on:
       - kasanari
     ports:
       - "8889:8888"
     environment:
-      - JUPYTER_TOKEN=iceberg
+      JUPYTER_TOKEN: iceberg
+      AWS_REGION: none
     volumes:
       - ./notebooks:/home/jovyan/work

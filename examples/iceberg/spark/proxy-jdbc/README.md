@@ -13,6 +13,12 @@ Build the local Kasanari image from repository root:
 ./scripts/build-container-images.sh
 ```
 
+Build the Spark Jupyter image used by this example:
+
+```shell
+docker build -f examples/common/jupyter/Dockerfile -t local/jupyter-spark:0.1.0 examples/common/jupyter
+```
+
 ## Startup
 
 ```shell

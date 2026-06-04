@@ -46,7 +46,7 @@ services:
         -Dkasanari.authorization.type=allow-all
 
   spark-notebook:
-    image: quay.io/jupyter/pyspark-notebook:spark-4.1.1
+    image: local/jupyter-spark:0.1.0
     depends_on:
       - kasanari
     ports:
