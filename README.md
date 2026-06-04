@@ -9,6 +9,17 @@ which may act like a complete catalog implementation or just a proxy to other (l
 ### Iceberg
 ### Paimon
 
+## Documentation
+
+Project documentation is in `docs/` and built with MkDocs.
+
+Local preview:
+
+```shell
+python -m pip install -r docs/requirements.txt
+mkdocs serve
+```
+
 ## Testing
 ### Docker issues
 - Colima: `sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock`

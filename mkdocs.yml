@@ -1,0 +1,21 @@
+site_name: Kasanari Documentation
+site_description: REST catalogs for Iceberg, Paimon, and Lance
+repo_name: kasanari
+repo_url: https://github.com/nryanov/kasanari
+theme:
+  name: material
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+nav:
+  - General Information: index.md
+  - Quickstart: quickstart.md
+  - Catalogs:
+      - Iceberg Catalog: catalogs/iceberg.md
+      - Paimon Catalog: catalogs/paimon.md
+      - Lance Catalog: catalogs/lance.md
+  - Management API: management/api.md
+  - Authorization and Authentication: security/authentication-authorization.md
+  - Instrumentation via SPI: instrumentation/spi.md
