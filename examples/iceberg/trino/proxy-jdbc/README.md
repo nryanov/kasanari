@@ -59,7 +59,7 @@ curl -sS -X POST "http://localhost:9095/management/v1/catalogs" \
 - Run SQL smoke check:
 
 ```shell
-docker compose exec trino trino --execute "$(cat queries/01_smoke.sql)"
+docker compose exec trino trino --execute "$(cat queries/example.sql)"
 ```
 
 - Expected output contains `trino_proxy_jdbc_ready = 1`.

@@ -52,7 +52,7 @@ curl -sS -X POST "http://localhost:9098/management/v1/catalogs" \
 - Run SQL smoke query:
 
 ```shell
-docker compose exec starrocks mysql -h 127.0.0.1 -P 9030 -uroot -e "$(cat queries/01_smoke.sql)"
+docker compose exec starrocks mysql -h 127.0.0.1 -P 9030 -uroot -e "$(cat queries/example.sql)"
 ```
 
 - Expected output contains `starrocks_internal_ready` and value `1`.

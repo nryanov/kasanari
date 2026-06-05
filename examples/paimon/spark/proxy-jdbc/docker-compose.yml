@@ -46,7 +46,7 @@ services:
         -Dkasanari.authorization.type=allow-all
 
   spark-notebook:
-    image: local/jupyter-spark:0.1.0
+    image: nryanov/tools-jupyter:sha-3ceec6971fe0c32c13fa9fa83e40f80d6251e648
     depends_on:
       - kasanari
     ports:
@@ -56,5 +56,6 @@ services:
       KASANARI_BASE_URL: http://kasanari:9090
       KASANARI_S3_ENDPOINT: http://minio:9000
       KASANARI_JDBC_URI: jdbc:postgresql://catalog-storage:5432/postgres
+      AWS_REGION: none
     volumes:
       - ./:/home/jovyan/work

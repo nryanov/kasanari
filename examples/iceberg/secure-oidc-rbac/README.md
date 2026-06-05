@@ -100,7 +100,7 @@ curl -sS "http://localhost:9102/management/v1/security/roles" \
 - Run Trino client smoke SQL:
 
 ```shell
-docker compose exec trino trino --execute "$(cat queries/01_smoke.sql)"
+docker compose exec trino trino --execute "$(cat queries/example.sql)"
 ```
 
 - Expected SQL output includes `secure_oidc_rbac_ready = 1`.

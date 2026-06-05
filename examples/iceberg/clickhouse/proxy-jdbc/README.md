@@ -59,7 +59,7 @@ curl -sS -X POST "http://localhost:9097/management/v1/catalogs" \
 - Run SQL smoke query:
 
 ```shell
-docker compose exec clickhouse clickhouse-client --query "$(cat queries/01_smoke.sql)"
+docker compose exec clickhouse clickhouse-client --query "$(cat queries/example.sql)"
 ```
 
 - Expected output: `1`.

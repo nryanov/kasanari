@@ -47,7 +47,7 @@ services:
         -Dkasanari.authentication.type=none
 
   trino:
-    image: trinodb/trino:472
+    image: trinodb/trino:479
     depends_on:
       - kasanari
     ports:

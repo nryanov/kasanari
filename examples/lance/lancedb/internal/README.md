@@ -56,7 +56,7 @@ curl -s -X POST http://localhost:9090/management/v1/catalogs \
 - Run SQL smoke query from the client container:
 
 ```shell
-docker compose exec lancedb python -c "import duckdb, pathlib; print(duckdb.sql(pathlib.Path('queries/01_smoke.sql').read_text()).fetchall())"
+docker compose exec lancedb python -c "import duckdb, pathlib; print(duckdb.sql(pathlib.Path('queries/example.sql').read_text()).fetchall())"
 ```
 
 ## Teardown

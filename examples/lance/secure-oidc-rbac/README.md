@@ -107,7 +107,7 @@ curl -s -H "Authorization: Bearer ${TOKEN}" \
 
 ```shell
 docker compose exec client psql "postgresql://postgres:postgres@catalog-storage:5432/postgres" \
-  -f queries/01_smoke.sql
+  -f queries/example.sql
 ```
 
 ## Teardown
