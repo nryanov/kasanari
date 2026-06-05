@@ -23,7 +23,7 @@ docker compose up -d
 ## Register catalog via API
 
 ```shell
-curl -sS -X POST "http://localhost:9098/management/v1/catalogs" \
+curl -sS -X POST "http://localhost:9090/management/v1/catalogs" \
   -H "Content-Type: application/json" \
   -d '{
     "catalogId": "iceberg_starrocks_internal",

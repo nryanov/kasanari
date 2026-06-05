@@ -45,11 +45,14 @@ services:
         -Dkasanari.management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
         -Dkasanari.management.metadata.jdbc-properties."uri"=jdbc:postgresql://catalog-storage:5432/postgres
         -Dkasanari.authentication.type=none
+      AWS_REGION: none
 
   starrocks:
     image: starrocks/allin1-ubuntu:4.1.1
     depends_on:
       - kasanari
+    environment:
+      AWS_REGION: none
     ports:
       - "8030:8030"
       - "9030:9030"
