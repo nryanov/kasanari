@@ -45,10 +45,14 @@ services:
         -Dkasanari.management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
         -Dkasanari.management.metadata.jdbc-properties."uri"=jdbc:postgresql://catalog-storage:5432/postgres
         -Dkasanari.authentication.type=none
+      AWS_REGION: none
 
   trino:
-    image: trinodb/trino:472
+    image: trinodb/trino:479
     depends_on:
       - kasanari
+    environment:
+      CATALOG_MANAGEMENT: dynamic
+      AWS_REGION: none
     ports:
       - "8080:8080"

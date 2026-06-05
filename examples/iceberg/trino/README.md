@@ -1,6 +1,6 @@
-# Iceberg + Trino (proxy JDBC)
+# Iceberg + Trino (internal)
 
-This scaffold demonstrates Kasanari Iceberg `PROXY` mode with JDBC-oriented proxy configuration.
+This scaffold uses Trino as the query engine and Kasanari with Iceberg `INTERNAL` mode.
 
 ## Prerequisites
 
@@ -16,39 +16,32 @@ Build the local Kasanari image from repository root:
 ## Startup
 
 ```shell
-cd examples/iceberg/trino/proxy-jdbc
+cd examples/iceberg/trino/internal
 docker compose up -d
 ```
 
 ## Register catalog via API
 
 ```shell
-curl -sS -X POST "http://localhost:9095/management/v1/catalogs" \
+curl -sS -X POST "http://localhost:9090/management/v1/catalogs" \
   -H "Content-Type: application/json" \
   -d '{
-    "catalogId": "iceberg_trino_proxy_jdbc",
+    "catalogId": "iceberg_trino_internal",
     "catalogType": "ICEBERG",
-    "mode": "PROXY",
+    "mode": "INTERNAL",
     "spec": {
-      "fileIoProperties": {
-        "fs.s3a.endpoint": "http://minio:9000",
-        "fs.s3a.access.key": "admin",
-        "fs.s3a.secret.key": "password",
-        "fs.s3a.path.style.access": "true",
-        "fs.s3a.connection.ssl.enabled": "false"
-      },
+      "fileIoProperties": {},
       "catalogProperties": {
-        "catalog-impl": "org.apache.iceberg.jdbc.JdbcCatalog",
         "uri": "jdbc:postgresql://catalog-storage:5432/postgres",
-        "jdbc.user": "postgres",
-        "jdbc.password": "postgres",
         "warehouse": "s3a://warehouse",
         "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
         "s3.endpoint": "http://minio:9000",
         "s3.access-key-id": "admin",
         "s3.secret-access-key": "password",
         "s3.path-style-access": "true",
-        "s3.client-factory": "kasanari.catalog.iceberg.s3.NoneRegionS3FileIOAwsClientFactory"
+        "s3.client-factory": "kasanari.catalog.iceberg.s3.NoneRegionS3FileIOAwsClientFactory",
+        "kasanari.jdbc.user": "postgres",
+        "kasanari.jdbc.password": "postgres"
       }
     }
   }'
@@ -62,8 +55,12 @@ curl -sS -X POST "http://localhost:9095/management/v1/catalogs" \
 docker compose exec trino trino --execute "$(cat queries/example.sql)"
 ```
 
-- Expected output contains `trino_proxy_jdbc_ready = 1`.
-- Expected registration response: HTTP `201` and subsequent GET on catalog metadata returns `200`.
+- Expected output contains `trino_internal_ready = 1`.
+- Verify catalog exists:
+
+```shell
+curl -sS "http://localhost:9090/management/v1/catalogs/ICEBERG/iceberg_trino_internal" | jq .
+```
 
 ## Teardown
 
