@@ -6,8 +6,8 @@ services:
       - MINIO_ROOT_PASSWORD=password
       - MINIO_DOMAIN=minio
     ports:
-      - "9100:9000"
-      - "9101:9001"
+      - "9000:9000"
+      - "9001:9001"
     command: ["server", "/data", "--console-address", ":9001"]
 
   mc:
@@ -25,7 +25,7 @@ services:
   catalog-storage:
     image: postgres:17
     ports:
-      - "5442:5432"
+      - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -35,7 +35,7 @@ services:
     image: keycloak/keycloak:26.6
     command: start-dev --import-realm
     ports:
-      - "8084:8080"
+      - "8080:8080"
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -50,7 +50,7 @@ services:
       - mc
       - keycloak
     ports:
-      - "9102:9090"
+      - "9090:9090"
     environment:
       JVM_OPTS: >-
         -Dkasanari.management.metadata.jdbc-properties."kasanari.jdbc.user"=postgres
@@ -71,4 +71,4 @@ services:
     depends_on:
       - kasanari
     ports:
-      - "8085:8080"
+      - "8081:8080"

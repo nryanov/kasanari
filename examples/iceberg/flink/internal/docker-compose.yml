@@ -6,8 +6,8 @@ services:
       - MINIO_ROOT_PASSWORD=password
       - MINIO_DOMAIN=minio
     ports:
-      - "9020:9000"
-      - "9021:9001"
+      - "9000:9000"
+      - "9001:9001"
     command: ["server", "/data", "--console-address", ":9001"]
 
   mc:
@@ -25,7 +25,7 @@ services:
   catalog-storage:
     image: postgres:17
     ports:
-      - "5434:5432"
+      - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -38,7 +38,7 @@ services:
       - minio
       - mc
     ports:
-      - "9092:9090"
+      - "9090:9090"
     environment:
       JVM_OPTS: >-
         -Dkasanari.management.metadata.jdbc-properties."kasanari.jdbc.user"=postgres
