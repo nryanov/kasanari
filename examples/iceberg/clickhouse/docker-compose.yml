@@ -47,9 +47,11 @@ services:
         -Dkasanari.authentication.type=none
 
   clickhouse:
-    image: clickhouse/clickhouse-server:24.8
+    image: clickhouse/clickhouse-server:26.3
     depends_on:
       - kasanari
+    environment:
+      CLICKHOUSE_PASSWORD: password
     ports:
       - "8123:8123"
       - "9002:9000"
