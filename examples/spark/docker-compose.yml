@@ -2,12 +2,13 @@ services:
   minio:
     image: minio/minio:RELEASE.2025-02-28T09-55-16Z
     environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: password
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password
+      - MINIO_DOMAIN=minio
     ports:
       - "9000:9000"
       - "9001:9001"
-    command: [ "server", "/data", "--console-address", ":9001" ]
+    command: ["server", "/data", "--console-address", ":9001"]
 
   mc:
     image: minio/minio:RELEASE.2025-02-28T09-55-16Z
@@ -16,24 +17,25 @@ services:
     entrypoint: >
       /bin/sh -c "
       until (/usr/bin/mc config host add minio http://minio:9000 admin password) do echo '...waiting...' && sleep 1; done;
-      /usr/bin/mc mb --ignore-existing minio/warehouse;
+      /usr/bin/mc mb minio/warehouse;
       /usr/bin/mc policy set public minio/warehouse;
       tail -f /dev/null
       "
 
   catalog-storage:
     image: postgres:17
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
-    ports:
-      - "5432:5432"
 
   kasanari:
     image: ${KASANARI_IMAGE:-local/kasanari:0.1.0}
     depends_on:
       - catalog-storage
+      - minio
       - mc
     ports:
       - "9090:9090"
@@ -43,20 +45,16 @@ services:
         -Dkasanari.management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
         -Dkasanari.management.metadata.jdbc-properties."uri"=jdbc:postgresql://catalog-storage:5432/postgres
         -Dkasanari.authentication.type=none
-        -Dkasanari.authorization.type=allow-all
       AWS_REGION: none
 
-  spark-notebook:
-    image: nryanov/tools-jupyter-spark-4.0:sha-89f781f93cb554597ede40fb35dbc214403cce05
+  spark:
+    image: jupyter-spark-local:latest
     depends_on:
       - kasanari
     ports:
       - "8888:8888"
     environment:
-      JUPYTER_TOKEN: kasanari
-      KASANARI_BASE_URL: http://kasanari:9090
-      KASANARI_S3_ENDPOINT: http://minio:9000
-      KASANARI_JDBC_URI: jdbc:postgresql://catalog-storage:5432/postgres
+      JUPYTER_TOKEN: iceberg
       AWS_REGION: none
     volumes:
-      - ./:/home/jovyan/work
+      - ./notebooks:/home/jovyan/work

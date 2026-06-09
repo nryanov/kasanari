@@ -47,7 +47,7 @@ services:
       AWS_REGION: none
 
   spark-notebook:
-    image: jupyter-spark-paimon-local:latest
+    image: jupyter-spark-local:latest
     depends_on:
       - kasanari
     ports:
