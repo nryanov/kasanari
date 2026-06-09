@@ -48,7 +48,7 @@ services:
       AWS_REGION: none
 
   spark:
-    image: nryanov/tools-jupyter:sha-3ceec6971fe0c32c13fa9fa83e40f80d6251e648
+    image: nryanov/tools-jupyter-spark-4.0:sha-89f781f93cb554597ede40fb35dbc214403cce05
     depends_on:
       - kasanari
     ports:

@@ -223,14 +223,28 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     @Override
     public GetTableResponse getTable(String database, String table) {
         var loaded = call(() -> catalog.getTable(Identifier.create(database, table)));
+
+        long schemaId = -1;
+        Schema schema = null;
+
+        if (loaded instanceof PrimaryKeyFileStoreTable) {
+            schema = ((PrimaryKeyFileStoreTable) loaded).schema().toSchema();
+            schemaId = ((PrimaryKeyFileStoreTable) loaded).schema().id();
+        }
+
+        if (loaded instanceof AppendOnlyFileStoreTable) {
+            schema = ((AppendOnlyFileStoreTable) loaded).schema().toSchema();
+            schemaId = ((AppendOnlyFileStoreTable) loaded).schema().id();
+        }
+
         return new GetTableResponse(
                 loaded.uuid(),
                 database,
                 loaded.name(),
                 loaded.options().get("path"),
                 false,
-                -1L,
-                null,
+                schemaId,
+                schema,
                 null,
                 0L,
                 null,
