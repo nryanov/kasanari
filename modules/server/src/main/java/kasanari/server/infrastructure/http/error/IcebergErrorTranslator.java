@@ -13,7 +13,6 @@ import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.rest.responses.ErrorResponse;
 
 public final class IcebergErrorTranslator {
-    private static final String INTERNAL_ERROR_MESSAGE = "Internal server error";
     private static final String INTERNAL_ERROR_TYPE = "InternalServerError";
 
     private IcebergErrorTranslator() {
@@ -61,7 +60,7 @@ public final class IcebergErrorTranslator {
 
         return mapped(
                 Response.Status.INTERNAL_SERVER_ERROR,
-                INTERNAL_ERROR_MESSAGE,
+                cause.getMessage(),
                 INTERNAL_ERROR_TYPE);
     }
 
