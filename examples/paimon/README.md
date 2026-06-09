@@ -8,7 +8,9 @@ This directory contains runnable Paimon-focused Kasanari examples.
 - [`spark/proxy-jdbc`](./spark/proxy-jdbc): PAIMON `PROXY` mode with JDBC-oriented proxy registration (best effort) and Spark notebook client.
 - [`flink/internal`](./flink/internal): PAIMON `INTERNAL` mode with Flink client and notebook.
 - [`flink/proxy-jdbc`](./flink/proxy-jdbc): PAIMON `PROXY` mode with JDBC-oriented proxy registration (best effort) and Flink client/notebook.
+- [`trino`](./trino): PAIMON `INTERNAL` mode with Trino client and full SQL lifecycle.
 - [`secure-oidc-rbac`](./secure-oidc-rbac): PAIMON secure setup with OIDC auth and Casbin RBAC authorization.
+- [`starrocks`](./starrocks): PAIMON `INTERNAL` mode with StarRocks external catalog and lifecycle SQL.
 
 ## Build Kasanari image once
 
