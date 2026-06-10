@@ -17,7 +17,7 @@ import org.lance.namespace.model.NamespaceExistsRequest;
 import java.util.List;
 import java.util.Map;
 
-import static kasanari.server.infrastructure.lance.LanceCatalogHelper.parseCatalogNamespaceTableId;
+import static kasanari.server.infrastructure.lance.LanceCatalogHelper.parseCatalogNamespace;
 
 @ApplicationScoped
 public class LanceNamespaceServiceHandler implements LanceRestNamespaceService {
@@ -31,7 +31,7 @@ public class LanceNamespaceServiceHandler implements LanceRestNamespaceService {
 
     @Override
     public Response createNamespace(String id, CreateNamespaceRequest orgLanceNamespaceModelCreateNamespaceRequest, String delimiter, SecurityContext securityContext) {
-        var parsedId = parseCatalogNamespaceTableId(id, delimiter);
+        var parsedId = parseCatalogNamespace(id, delimiter);
         orgLanceNamespaceModelCreateNamespaceRequest.id(List.of(parsedId.namespace()));
 
         return executor.execute(
@@ -46,7 +46,7 @@ public class LanceNamespaceServiceHandler implements LanceRestNamespaceService {
 
     @Override
     public Response describeNamespace(String id, DescribeNamespaceRequest orgLanceNamespaceModelDescribeNamespaceRequest, String delimiter, SecurityContext securityContext) {
-        var parsedId = parseCatalogNamespaceTableId(id, delimiter);
+        var parsedId = parseCatalogNamespace(id, delimiter);
         orgLanceNamespaceModelDescribeNamespaceRequest.id(List.of(parsedId.namespace()));
 
         return executor.execute(
@@ -61,7 +61,7 @@ public class LanceNamespaceServiceHandler implements LanceRestNamespaceService {
 
     @Override
     public Response dropNamespace(String id, DropNamespaceRequest orgLanceNamespaceModelDropNamespaceRequest, String delimiter, SecurityContext securityContext) {
-        var parsedId = parseCatalogNamespaceTableId(id, delimiter);
+        var parsedId = parseCatalogNamespace(id, delimiter);
         orgLanceNamespaceModelDropNamespaceRequest.id(List.of(parsedId.namespace()));
 
         return executor.execute(
@@ -76,7 +76,7 @@ public class LanceNamespaceServiceHandler implements LanceRestNamespaceService {
 
     @Override
     public Response listNamespaces(String id, String delimiter, String pageToken, Integer limit, SecurityContext securityContext) {
-        var parsedId = parseCatalogNamespaceTableId(id, delimiter);
+        var parsedId = parseCatalogNamespace(id, delimiter);
         var request = new ListNamespacesRequest()
                 .id(List.of(parsedId.namespace()))
                 .pageToken(pageToken)
@@ -101,7 +101,7 @@ public class LanceNamespaceServiceHandler implements LanceRestNamespaceService {
             Boolean includeDeclared,
             SecurityContext securityContext
     ) {
-        var parsedId = parseCatalogNamespaceTableId(id, delimiter);
+        var parsedId = parseCatalogNamespace(id, delimiter);
         var request = new ListTablesRequest()
                 .id(List.of(parsedId.namespace()))
                 .pageToken(pageToken)
@@ -120,7 +120,7 @@ public class LanceNamespaceServiceHandler implements LanceRestNamespaceService {
 
     @Override
     public Response namespaceExists(String id, NamespaceExistsRequest orgLanceNamespaceModelNamespaceExistsRequest, String delimiter, SecurityContext securityContext) {
-        var parsedId = parseCatalogNamespaceTableId(id, delimiter);
+        var parsedId = parseCatalogNamespace(id, delimiter);
         orgLanceNamespaceModelNamespaceExistsRequest.id(List.of(parsedId.namespace()));
 
         return executor.execute(

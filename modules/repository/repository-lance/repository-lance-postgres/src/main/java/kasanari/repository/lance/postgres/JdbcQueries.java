@@ -25,7 +25,7 @@ public final class JdbcQueries {
             """;
 
     public static final String CREATE_TABLES_FK_INDEX = """
-            CREATE INDEX kasanari_lance_tables_fk_idx ON kasanari_lance_tables(namespace_path);
+            CREATE INDEX IF NOT EXISTS kasanari_lance_tables_fk_idx ON kasanari_lance_tables(namespace_path);
             """;
 
     public static final String UPSERT_NAMESPACE = """

@@ -1,12 +1,11 @@
 package kasanari.server.infrastructure.http.error;
 
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotSupportedException;
 import jakarta.ws.rs.core.Response;
 import kasanari.catalog.management.dto.ErrorResponseDto;
 
 public final class ManagementErrorTranslator {
-    private static final String INTERNAL_ERROR_MESSAGE = "Internal server error";
-
     private ManagementErrorTranslator() {
     }
 
@@ -22,8 +21,11 @@ public final class ManagementErrorTranslator {
         if (cause instanceof UnsupportedOperationException e) {
             return mapped(Response.Status.NOT_IMPLEMENTED, e.getMessage());
         }
+        if (cause instanceof NotSupportedException e) {
+            return mapped(Response.Status.UNSUPPORTED_MEDIA_TYPE, e.getMessage());
+        }
 
-        return mapped(Response.Status.INTERNAL_SERVER_ERROR, INTERNAL_ERROR_MESSAGE);
+        return mapped(Response.Status.INTERNAL_SERVER_ERROR, cause.getMessage());
     }
 
     private static MappedError mapped(Response.Status status, String message) {

@@ -5,7 +5,6 @@ import jakarta.ws.rs.core.Response;
 import org.lance.namespace.model.ErrorResponse;
 
 public final class LanceErrorTranslator {
-    private static final String INTERNAL_ERROR_MESSAGE = "Internal server error";
     private static final String INTERNAL_ERROR_TYPE = "InternalServerError";
 
     private LanceErrorTranslator() {
@@ -35,7 +34,7 @@ public final class LanceErrorTranslator {
 
         return mapped(
                 Response.Status.INTERNAL_SERVER_ERROR,
-                INTERNAL_ERROR_MESSAGE,
+                cause.getMessage(),
                 INTERNAL_ERROR_TYPE);
     }
 

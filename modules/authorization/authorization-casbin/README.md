@@ -8,7 +8,7 @@ Default Kasanari authorization provider using in-memory Casbin RBAC with role bi
 kasanari.authorization.type=casbin
 ```
 
-JDBC settings are read from `kasanari.authorization.casbin.*` or, if unset, from `management.metadata.jdbc-properties.*`.
+JDBC settings are read from `kasanari.authorization.casbin.*` or, if unset, from `kasanari.management.metadata.jdbc-properties.*`.
 
 Optional superusers (always allowed):
 
