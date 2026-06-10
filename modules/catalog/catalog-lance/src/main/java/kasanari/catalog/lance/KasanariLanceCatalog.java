@@ -279,6 +279,19 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
             var table = maybeTable.get();
             var namespace = Arrays.stream(table.namespacePath().split("[.]")).toList();
 
+            // TODO: set schema
+//            var schema = Dataset.open().allocator(allocator).tableId(request.getId()).build().getSchema();
+            //     DescribeTableResponse response = new DescribeTableResponse();
+            //    response.setMetadata(table.properties());
+            //    response.setLocation(table.properties().get(LANCE_LOCATION));
+            //    response.setSchema(toJsonArrowSchema(table.columns()));
+            //    response.setVersion(
+            //        Optional.ofNullable(table.properties().get(LANCE_TABLE_VERSION))
+            //            .map(Long::valueOf)
+            //            .orElse(null));
+            //    response.setStorageOptions(
+            //        LancePropertiesUtils.resolveLanceStorageOptions(catalog.properties(), table.properties()));
+
             return new DescribeTableResponse()
                     .table(table.tableName())
                     .namespace(namespace)
@@ -434,6 +447,13 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         var namespacePath = namespaceFrom(tableId);
         var tableName = tableNameFrom(tableId);
 
+        var location = request.getLocation();
+        if (location == null) {
+            location = String.format("%s/%s/%s", defaultLocation, namespacePath, tableName);
+        }
+
+        var resolvedLocation = location;
+
         transactionManager.inTransaction(tx -> {
             var isNamespaceExist = namespaceRepository.exists(tx, namespacePath);
 
@@ -452,13 +472,13 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
                     tableId,
                     namespacePath,
                     tableName,
-                    request.getLocation(),
+                    resolvedLocation,
                     mapOrEmpty(request.getProperties())
             );
         });
 
         return new DeclareTableResponse()
-                .location(request.getLocation())
+                .location(resolvedLocation)
                 .properties(request.getProperties())
                 .managedVersioning(true);
     }
