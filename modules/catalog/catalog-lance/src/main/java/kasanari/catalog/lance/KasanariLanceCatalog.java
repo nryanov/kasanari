@@ -56,11 +56,9 @@ import org.lance.schema.ColumnAlteration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static kasanari.core.Functions.mapOrEmpty;
 import static kasanari.core.Functions.valueOrDefault;
@@ -278,25 +276,20 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         if (maybeTable.isPresent()) {
             var table = maybeTable.get();
             var namespace = Arrays.stream(table.namespacePath().split("[.]")).toList();
-
-            // TODO: set schema
-//            var schema = Dataset.open().allocator(allocator).tableId(request.getId()).build().getSchema();
-            //     DescribeTableResponse response = new DescribeTableResponse();
-            //    response.setMetadata(table.properties());
-            //    response.setLocation(table.properties().get(LANCE_LOCATION));
-            //    response.setSchema(toJsonArrowSchema(table.columns()));
-            //    response.setVersion(
-            //        Optional.ofNullable(table.properties().get(LANCE_TABLE_VERSION))
-            //            .map(Long::valueOf)
-            //            .orElse(null));
-            //    response.setStorageOptions(
-            //        LancePropertiesUtils.resolveLanceStorageOptions(catalog.properties(), table.properties()));
-
-            return new DescribeTableResponse()
+            var response = new DescribeTableResponse()
                     .table(table.tableName())
                     .namespace(namespace)
                     .location(table.location())
                     .properties(table.properties());
+
+            try (var dataset = open(allocator, table.location())) {
+                response.schema(ArrowJsonSchemaMapper.toJsonArrowSchema(dataset.getSchema()));
+                response.version(dataset.version());
+            } catch (Exception ignored) {
+                // Fallback to metadata-only response for declared/registered tables without dataset files.
+            }
+
+            return response;
         }
 
         throw new TableNotFoundException(String.format("Table %s not found", tableId));

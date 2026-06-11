@@ -5,6 +5,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.apache.arrow.memory.RootAllocator;
+import org.lance.Dataset;
 import org.lance.namespace.errors.NamespaceAlreadyExistsException;
 import org.lance.namespace.errors.NamespaceNotEmptyException;
 import org.lance.namespace.errors.NamespaceNotFoundException;
@@ -31,11 +33,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.UUID;
+import java.nio.file.Files;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -103,6 +107,29 @@ public abstract class LanceCatalogAdapterTest {
         createNamespaceEntity();
         var location = tableLocation();
         adapter.registerTable(new RegisterTableRequest().id(tableId()).location(location).mode("create"));
+    }
+
+    protected void registerMaterializedTableEntity() {
+        createNamespaceEntity();
+        var location = localTableLocation();
+        try (var allocator = new RootAllocator();
+             var ignored = Dataset.write()
+                     .allocator(allocator)
+                     .uri(location)
+                     .schema(LanceArrowIpc.TABLE_SCHEMA)
+                     .execute()) {
+            adapter.registerTable(new RegisterTableRequest().id(tableId()).location(location).mode("create"));
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create materialized Lance dataset for tests", e);
+        }
+    }
+
+    protected String localTableLocation() {
+        try {
+            return Files.createTempDirectory("kasanari-lance-" + tableName).toUri().toString();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create local table location for tests", e);
+        }
     }
 
     protected void createTableEntity() {
@@ -474,6 +501,33 @@ public abstract class LanceCatalogAdapterTest {
         registerTableEntity();
         var response = adapter.describeTable(new DescribeTableRequest().id(tableId()));
         assertEquals(tableName, response.getTable());
+    }
+
+    @Test
+    void describeTableReturnsSchemaWhenDatasetExists() {
+        assumeTrue(supportsRegisterTable() && supportsDescribeTable());
+        registerMaterializedTableEntity();
+        var response = adapter.describeTable(new DescribeTableRequest().id(tableId()));
+
+        assertNotNull(response.getSchema());
+        assertEquals(2, response.getSchema().getFields().size());
+        assertEquals("id", response.getSchema().getFields().get(0).getName());
+        assertEquals("int64", response.getSchema().getFields().get(0).getType().getType());
+        assertEquals("col_a", response.getSchema().getFields().get(1).getName());
+        assertEquals("utf8", response.getSchema().getFields().get(1).getType().getType());
+        assertNotNull(response.getVersion());
+    }
+
+    @Test
+    void describeTableReturnsBaseResponseWhenDatasetMissing() {
+        assumeTrue(supportsRegisterTable() && supportsDescribeTable());
+        registerTableEntity();
+        var response = adapter.describeTable(new DescribeTableRequest().id(tableId()));
+
+        assertEquals(tableName, response.getTable());
+        assertEquals(tableLocation(), response.getLocation());
+        assertNull(response.getSchema());
+        assertNull(response.getVersion());
     }
 
     @Test
