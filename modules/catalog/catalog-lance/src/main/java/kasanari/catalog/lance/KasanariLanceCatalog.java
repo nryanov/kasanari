@@ -22,6 +22,8 @@ import org.lance.namespace.errors.NamespaceNotEmptyException;
 import org.lance.namespace.errors.NamespaceNotFoundException;
 import org.lance.namespace.errors.TableAlreadyExistsException;
 import org.lance.namespace.errors.TableNotFoundException;
+import org.lance.namespace.model.AlterTableAddColumnsRequest;
+import org.lance.namespace.model.AlterTableAddColumnsResponse;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableAlterColumnsResponse;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
@@ -58,6 +60,7 @@ import org.lance.namespace.model.RestoreTableResponse;
 import org.lance.namespace.model.TableExistsRequest;
 import org.lance.namespace.model.TableVersion;
 import org.lance.schema.ColumnAlteration;
+import org.lance.schema.SqlExpressions;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
@@ -66,6 +69,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static kasanari.core.Functions.mapOrEmpty;
 import static kasanari.core.Functions.valueOrDefault;
@@ -548,6 +552,34 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         try (var dataset = open(allocator, location)) {
             dataset.dropColumns(request.getColumns());
             return new AlterTableDropColumnsResponse().version(dataset.version());
+        }
+    }
+
+    @Override
+    public AlterTableAddColumnsResponse alterTableAddColumns(AlterTableAddColumnsRequest request) {
+        var tableId = fullObjectName(request.getId());
+        var location = transactionManager.inTransactionR(tx -> {
+            var maybeTable = tableRepository.get(tx, tableId);
+            if (maybeTable.isEmpty()) {
+                throw new TableNotFoundException(String.format("Table metadata %s not found", tableId));
+            }
+
+            return maybeTable.get().location();
+        });
+
+        try (var dataset = open(allocator, location)) {
+            var expressionsBuilder =new SqlExpressions.Builder();
+
+            request.getNewColumns().forEach(it -> {
+                if (it.getVirtualColumn() == null) {
+                    // only non-virtual columns currently supported for adding
+                    expressionsBuilder.withExpression(it.getName(), it.getExpression());
+                }
+            });
+            var expressions = expressionsBuilder.build();
+            dataset.addColumns(expressions, Optional.empty());
+
+            return new AlterTableAddColumnsResponse().version(dataset.version());
         }
     }
 

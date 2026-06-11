@@ -1,6 +1,8 @@
 package kasanari.catalog.lance;
 
 import org.lance.namespace.LanceNamespace;
+import org.lance.namespace.model.AlterTableAddColumnsRequest;
+import org.lance.namespace.model.AlterTableAddColumnsResponse;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableAlterColumnsResponse;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
@@ -68,6 +70,8 @@ public interface LanceCatalogAdapter extends AutoCloseable {
     AlterTableAlterColumnsResponse alterTableAlterColumns(AlterTableAlterColumnsRequest request);
 
     AlterTableDropColumnsResponse alterTableDropColumns(AlterTableDropColumnsRequest request);
+
+    AlterTableAddColumnsResponse alterTableAddColumns(AlterTableAddColumnsRequest request);
 
     LanceNamespace delegate();
 }

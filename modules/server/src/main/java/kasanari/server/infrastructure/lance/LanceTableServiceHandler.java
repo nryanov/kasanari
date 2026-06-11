@@ -9,6 +9,7 @@ import kasanari.catalog.lance.api.LanceRestTableService;
 import kasanari.authorization.spi.Permission;
 import kasanari.instrumentation.spi.lance.LanceCatalogOperation;
 import kasanari.server.infrastructure.instrumentation.LanceCatalogRequestExecutor;
+import org.lance.namespace.model.AlterTableAddColumnsRequest;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.CreateTableRequest;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
@@ -44,12 +45,12 @@ public class LanceTableServiceHandler implements LanceRestTableService {
     @Override
     public Response alterTableAlterColumns(
             String id,
-            AlterTableAlterColumnsRequest orgLanceNamespaceModelAlterTableAlterColumnsRequest,
+            AlterTableAlterColumnsRequest request,
             String delimiter,
             SecurityContext securityContext
     ) {
         var parsedId = parseCatalogNamespaceTableId(id, delimiter);
-        orgLanceNamespaceModelAlterTableAlterColumnsRequest.id(List.of(parsedId.namespace(), parsedId.table()));
+        request.id(List.of(parsedId.namespace(), parsedId.table()));
 
         return executor.execute(
                 securityContext,
@@ -57,19 +58,19 @@ public class LanceTableServiceHandler implements LanceRestTableService {
                 LanceCatalogOperation.ALTER_TABLE_ALTER_COLUMNS,
                 Permission.LanceTableAlter,
                 Map.of("namespace", parsedId.namespace(), "table", parsedId.table()),
-                () -> Response.ok(catalogRouter.getOrThrow(parsedId.catalog()).alterTableAlterColumns(orgLanceNamespaceModelAlterTableAlterColumnsRequest)).build()
+                () -> Response.ok(catalogRouter.getOrThrow(parsedId.catalog()).alterTableAlterColumns(request)).build()
         );
     }
 
     @Override
     public Response alterTableDropColumns(
             String id,
-            AlterTableDropColumnsRequest orgLanceNamespaceModelAlterTableDropColumnsRequest,
+            AlterTableDropColumnsRequest request,
             String delimiter,
             SecurityContext securityContext
     ) {
         var parsedId = parseCatalogNamespaceTableId(id, delimiter);
-        orgLanceNamespaceModelAlterTableDropColumnsRequest.id(List.of(parsedId.namespace(), parsedId.table()));
+        request.id(List.of(parsedId.namespace(), parsedId.table()));
 
         return executor.execute(
                 securityContext,
@@ -77,7 +78,27 @@ public class LanceTableServiceHandler implements LanceRestTableService {
                 LanceCatalogOperation.ALTER_TABLE_DROP_COLUMNS,
                 Permission.LanceTableAlter,
                 Map.of("namespace", parsedId.namespace(), "table", parsedId.table()),
-                () -> Response.ok(catalogRouter.getOrThrow(parsedId.catalog()).alterTableDropColumns(orgLanceNamespaceModelAlterTableDropColumnsRequest)).build()
+                () -> Response.ok(catalogRouter.getOrThrow(parsedId.catalog()).alterTableDropColumns(request)).build()
+        );
+    }
+
+    @Override
+    public Response alterTableAddColumns(
+            String id,
+            AlterTableAddColumnsRequest request,
+            String delimiter,
+            SecurityContext securityContext
+    ) {
+        var parsedId = parseCatalogNamespaceTableId(id, delimiter);
+        request.id(List.of(parsedId.namespace(), parsedId.table()));
+
+        return executor.execute(
+                securityContext,
+                parsedId.catalog(),
+                LanceCatalogOperation.ALTER_TABLE_ADD_COLUMNS,
+                Permission.LanceTableAlter,
+                Map.of("namespace", parsedId.namespace(), "table", parsedId.table()),
+                () -> Response.ok(catalogRouter.getOrThrow(parsedId.catalog()).alterTableAddColumns(request)).build()
         );
     }
 

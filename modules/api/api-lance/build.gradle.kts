@@ -55,6 +55,8 @@ openApiGenerate {
         "AlterTableAlterColumnsResponse",
         "AlterTableDropColumnsRequest",
         "AlterTableDropColumnsResponse",
+        "AlterTableAddColumnsRequest",
+        "AlterTableAddColumnsResponse",
         "AlterTransactionRequest",
         "AlterTransactionResponse",
         "BatchCommitTablesRequest",

@@ -54,7 +54,7 @@ services:
     ports:
       - "8888:8888"
     environment:
-      JUPYTER_TOKEN: iceberg
+      JUPYTER_TOKEN: spark
       AWS_REGION: none
     volumes:
       - ./notebooks:/home/jovyan/work

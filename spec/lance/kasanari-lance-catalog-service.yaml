@@ -93,69 +93,11 @@ paths:
   /lance/v1/table/{id}/drop_columns:
     $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1drop_columns'
 
+  /lance/v1/table/{id}/add_columns:
+    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1add_columns'
+
   /lance/v1/table/{id}/declare:
     $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1declare'
-
-# not implemented yet
-#  /lance/v1/table/{id}/schema_metadata/update:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1schema_metadata~1update'
-#
-#  /lance/v1/table/{id}/version/list:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1version~1list'
-#
-#  /lance/v1/table/{id}/version/create:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1version~1create'
-#
-#  /lance/v1/table/{id}/version/describe:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1version~1describe'
-#
-#  /lance/v1/table/{id}/version/delete:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1version~1delete'
-#
-#  /lance/v1/table/version/batch-create:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1version~1batch-create'
-#
-#  /lance/v1/table/batch-commit:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1batch-commit'
-#
-#  /lance/v1/table/{id}/stats:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1stats'
-#
-#  /lance/v1/table/{id}/create_index:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1create_index'
-#
-#  /lance/v1/table/{id}/create_scalar_index:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1create_scalar_index'
-#
-#  /lance/v1/table/{id}/index/list:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1index~1list'
-#
-#  /lance/v1/table/{id}/index/{index_name}/stats:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1index~1{index_name}~1stats'
-#
-#  /lance/v1/table/{id}/index/{index_name}/drop:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1index~1{index_name}~1drop'
-#
-#  /lance/v1/table/{id}/tags/list:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1tags~1list'
-#
-#  /lance/v1/table/{id}/tags/version:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1tags~1version'
-#
-#  /lance/v1/table/{id}/tags/create:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1tags~1create'
-#
-#  /lance/v1/table/{id}/tags/delete:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1tags~1delete'
-#
-#  /lance/v1/table/{id}/tags/update:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1table~1{id}~1tags~1update'
-#
-#  /lance/v1/transaction/{id}/describe:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1transaction~1{id}~1describe'
-#
-#  /lance/v1/transaction/{id}/alter:
-#    $ref: './lance-openapi-0.7.2.yaml#/paths/~1v1~1transaction~1{id}~1alter'
 
 components:
   securitySchemes:
