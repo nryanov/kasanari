@@ -62,6 +62,8 @@ import org.apache.paimon.view.ViewSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -108,22 +110,40 @@ public class DefaultPaimonCatalogAdapter implements PaimonCatalogAdapter {
     public AlterDatabaseResponse alterDatabase(String database, AlterDatabaseRequest request) {
         var changes = new ArrayList<PropertyChange>();
 
-        for (var removal : listOrEmpty(request.getRemovals())) {
+        var updates = mapOrEmpty(request.getUpdates());
+        var removals = new HashSet<>(listOrEmpty(request.getRemovals()));
+
+        var filteredUpdates = new HashMap<>(updates);
+        for (var update : updates.entrySet()) {
+            if (!removals.contains(update.getKey())) {
+                filteredUpdates.put(update.getKey(), update.getValue());
+                changes.add(PropertyChange.setProperty(update.getKey(), update.getValue()));
+            }
+        }
+
+        for (var removal : removals) {
             changes.add(PropertyChange.removeProperty(removal));
         }
 
-        for (var update : mapOrEmpty(request.getUpdates()).entrySet()) {
-            changes.add(PropertyChange.setProperty(update.getKey(), update.getValue()));
-        }
+        return call(() -> {
+            var db = catalog.getDatabase(database);
+            var currentOptions = db.options();
 
-        run(() -> catalog.alterDatabase(database, changes, false));
+            catalog.alterDatabase(database, changes, false);
 
-        // todo: fill in missing properties
-        return new AlterDatabaseResponse(
-                listOrEmpty(request.getRemovals()),
-                new ArrayList<>(mapOrEmpty(request.getUpdates()).keySet()),
-                Collections.emptyList()
-        );
+            var missingProperties = removals.stream()
+                    .filter(key -> !currentOptions.containsKey(key))
+                    .toList();
+
+            var removed = new HashSet<>(removals);
+            removed.retainAll(currentOptions.keySet());
+
+            return new AlterDatabaseResponse(
+                    removed.stream().toList(),
+                    filteredUpdates.keySet().stream().toList(),
+                    missingProperties
+            );
+        });
     }
 
     @Override
