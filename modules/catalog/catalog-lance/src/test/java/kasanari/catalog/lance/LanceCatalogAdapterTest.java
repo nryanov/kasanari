@@ -12,6 +12,7 @@ import org.lance.namespace.errors.NamespaceNotEmptyException;
 import org.lance.namespace.errors.NamespaceNotFoundException;
 import org.lance.namespace.errors.TableAlreadyExistsException;
 import org.lance.namespace.errors.TableNotFoundException;
+import org.lance.namespace.model.AlterColumnsEntry;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
 import org.lance.namespace.model.CreateNamespaceRequest;
@@ -22,6 +23,7 @@ import org.lance.namespace.model.DescribeNamespaceRequest;
 import org.lance.namespace.model.DescribeTableRequest;
 import org.lance.namespace.model.DropNamespaceRequest;
 import org.lance.namespace.model.DropTableRequest;
+import org.lance.namespace.model.JsonArrowField;
 import org.lance.namespace.model.ListNamespacesRequest;
 import org.lance.namespace.model.ListTablesRequest;
 import org.lance.namespace.model.NamespaceExistsRequest;
@@ -32,8 +34,10 @@ import org.lance.namespace.model.TableExistsRequest;
 import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.nio.file.Files;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -193,11 +197,11 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     protected boolean supportsRenameTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsCreateTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsCreateEmptyTable() {
@@ -205,11 +209,11 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     protected boolean supportsAlterTableAlterColumns() {
-        return false;
+        return true;
     }
 
     protected boolean supportsAlterTableDropColumns() {
-        return false;
+        return true;
     }
 
     protected boolean supportsNamespaceModeVariants() {
@@ -233,7 +237,7 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     protected boolean supportsMissingTableExistsError() {
-        return false;
+        return true;
     }
 
     @Test
@@ -638,19 +642,39 @@ public abstract class LanceCatalogAdapterTest {
     @Test
     void alterTableAlterColumns() {
         assumeTrue(supportsRegisterTable() && supportsAlterTableAlterColumns() && supportsDescribeTable());
-        registerTableEntity();
-        var alter = adapter.alterTableAlterColumns(new AlterTableAlterColumnsRequest().id(tableId()));
+        createTableEntity();
+
+        var alterColumnEntry = new AlterColumnsEntry()
+                .nullable(true)
+                .path("col_a")
+                .rename("renamed_column_a");
+
+        var alter = adapter.alterTableAlterColumns(new AlterTableAlterColumnsRequest().addAlterationsItem(alterColumnEntry).id(tableId()));
         var described = adapter.describeTable(new DescribeTableRequest().id(tableId()));
+
         assertEquals(alter.getVersion(), described.getVersion());
+        assertNotNull(described.getSchema());
+        assertNotNull(described.getSchema().getFields());
+
+        var expectedFieldNames = Set.of("id", "renamed_column_a");
+        var actualFieldNames = described.getSchema().getFields().stream().map(JsonArrowField::getName).collect(Collectors.toSet());
+        assertEquals(expectedFieldNames, actualFieldNames);
     }
 
     @Test
     void alterTableDropColumns() {
         assumeTrue(supportsRegisterTable() && supportsAlterTableDropColumns() && supportsDescribeTable());
-        registerTableEntity();
+        createTableEntity();
         var alter = adapter.alterTableDropColumns(new AlterTableDropColumnsRequest().id(tableId()).columns(List.of("col_a")));
         var described = adapter.describeTable(new DescribeTableRequest().id(tableId()));
         assertEquals(alter.getVersion(), described.getVersion());
+
+        assertNotNull(described.getSchema());
+        assertNotNull(described.getSchema().getFields());
+
+        var expectedFieldNames = Set.of("id");
+        var actualFieldNames = described.getSchema().getFields().stream().map(JsonArrowField::getName).collect(Collectors.toSet());
+        assertEquals(expectedFieldNames, actualFieldNames);
     }
 
     @Test
