@@ -11,6 +11,7 @@ dependencies {
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-container-image-jib")
     implementation("io.quarkus:quarkus-security")
+    implementation("io.quarkus:quarkus-logging-json")
 
     // instrumentation
     implementation(project(":modules:instrumentation:instrumentation-listener-runtime"))

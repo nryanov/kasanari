@@ -5,20 +5,9 @@
 Goal: implement REST catalogs for `Apache Iceberg` and `Apache Paimon` 
 which may act like a complete catalog implementation or just a proxy to other (like `hive`, `jdbc` or even another `rest` catalog implementation).
 
-## Features
-### Iceberg
-### Paimon
-
-## Documentation
-
-Project documentation is in `docs/` and built with MkDocs.
-
-Local preview:
-
-```shell
-python -m pip install -r docs/requirements.txt
-mkdocs serve
-```
+## Examples
+- Catalog usage examples: [examples/README.md](examples/README.md)
+- Includes Iceberg, Paimon, Lance, and auth/authz-focused local stacks.
 
 ## Testing
 ### Docker issues

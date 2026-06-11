@@ -8,8 +8,6 @@ import org.apache.paimon.rest.responses.ErrorResponse;
 import org.apache.paimon.utils.SnapshotNotExistException;
 
 public final class PaimonErrorTranslator {
-    private static final String INTERNAL_ERROR_MESSAGE = "Internal server error";
-
     private PaimonErrorTranslator() {
     }
 
@@ -117,7 +115,7 @@ public final class PaimonErrorTranslator {
             return mapped(Response.Status.NOT_IMPLEMENTED, e.getMessage(), null, null);
         }
 
-        return mapped(Response.Status.INTERNAL_SERVER_ERROR, INTERNAL_ERROR_MESSAGE, null, null);
+        return mapped(Response.Status.INTERNAL_SERVER_ERROR, cause.getMessage(), null, null);
     }
 
     private static String resourceName(Identifier identifier) {

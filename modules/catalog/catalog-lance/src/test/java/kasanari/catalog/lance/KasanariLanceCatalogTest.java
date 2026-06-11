@@ -34,7 +34,7 @@ public class KasanariLanceCatalogTest extends LanceCatalogAdapterTest {
         properties.put(KasanariLanceProperties.STORAGE_PROPERTIES_PREFIX + "aws_access_key_id", s3Container.username());
         properties.put(KasanariLanceProperties.STORAGE_PROPERTIES_PREFIX + "aws_secret_access_key", s3Container.password());
         properties.put(KasanariLanceProperties.STORAGE_PROPERTIES_PREFIX + "aws_endpoint", s3Container.url());
-        properties.put(KasanariLanceProperties.STORAGE_PROPERTIES_PREFIX + "allow_http", "true");
+        properties.put(KasanariLanceProperties.STORAGE_PROPERTIES_PREFIX + "aws_allow_http", "true");
 
         var factory = new KasanariLanceCatalogFactory();
         return factory.create("kasanari", Map.of(), properties);
@@ -59,15 +59,5 @@ public class KasanariLanceCatalogTest extends LanceCatalogAdapterTest {
     protected void onClose() {
         postgres.stop();
         s3Container.stop();
-    }
-
-    @Override
-    protected boolean supportsCreateTable() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsMissingTableExistsError() {
-        return true;
     }
 }

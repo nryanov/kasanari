@@ -34,6 +34,8 @@ import org.apache.iceberg.view.ViewMetadata;
 import org.apache.iceberg.view.ViewRepresentation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -126,21 +128,32 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
     public UpdateNamespacePropertiesResponse updateNamespace(Namespace namespace, Map<String, String> updates, Set<String> removals) {
         isNamespaceMethodAllowed("updateNamespace");
 
-        if (!updates.isEmpty()) {
-            namespaceCatalog.setProperties(namespace, updates);
+        var currentProperties = namespaceCatalog.loadNamespaceMetadata(namespace);
+
+        var filteredUpdates = new HashMap<>(updates);
+        if (!filteredUpdates.isEmpty()) {
+            // remove from updates properties which also exist in 'removals'
+            removals.forEach(filteredUpdates::remove);
+            namespaceCatalog.setProperties(namespace, filteredUpdates);
         }
 
         if (!removals.isEmpty()) {
             namespaceCatalog.removeProperties(namespace, removals);
         }
 
-        // todo: build diff
-        var updatedProperties = namespaceCatalog.loadNamespaceMetadata(namespace);
+        var updatedProperties = filteredUpdates.keySet();
+        var removed = new HashSet<>(removals);
+        removed.retainAll(currentProperties.keySet());
+
+        var missingProperties = removals.stream()
+                .filter(key -> !currentProperties.containsKey(key))
+                .collect(Collectors.toSet());
 
         return UpdateNamespacePropertiesResponse
                 .builder()
-                .addUpdated(updates.keySet())
-                .addRemoved(removals)
+                .addUpdated(updatedProperties)
+                .addRemoved(removed)
+                .addMissing(missingProperties)
                 .build();
     }
 

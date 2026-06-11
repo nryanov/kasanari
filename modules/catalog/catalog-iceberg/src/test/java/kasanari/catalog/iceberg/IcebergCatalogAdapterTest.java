@@ -193,6 +193,7 @@ public abstract class IcebergCatalogAdapterTest {
     @Test
     public void successfullyUpdateNamespaceProperties() {
         Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
+
         var namespace = Namespace.of(uniqueNamespaceName());
         var properties = new HashMap<>(Map.of(
                 "property1", "value1",
@@ -201,15 +202,62 @@ public abstract class IcebergCatalogAdapterTest {
         ));
         catalog.createNamespace(namespace, properties);
 
-        catalog.updateNamespace(namespace, new HashMap<>(Map.of("property4", "value4")), new HashSet<>(Set.of("property2")));
-
+        var response = catalog.updateNamespace(
+                namespace,
+                new HashMap<>(Map.of("property4", "value4")),
+                new HashSet<>(Set.of("property2"))
+        );
         var loadedNamespace = catalog.loadNamespaceMetadata(namespace);
-
         var loadedProperties = loadedNamespace.properties();
+
         assertEquals("value1", loadedProperties.get("property1"));
         assertFalse(loadedProperties.containsKey("property2"));
         assertEquals("value3", loadedProperties.get("property3"));
         assertEquals("value4", loadedProperties.get("property4"));
+
+        assertEquals(List.of("property4"), response.updated());
+        assertEquals(List.of("property2"), response.removed());
+    }
+
+    @Test
+    public void correctlyReturnMissingNamespaceProperties() {
+        Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
+
+        var namespace = Namespace.of(uniqueNamespaceName());
+        catalog.createNamespace(namespace, new HashMap<>(Map.of(
+                "property1", "value1",
+                "property2", "value2"
+        )));
+
+        var response = catalog.updateNamespace(
+                namespace,
+                new HashMap<>(Map.of("property1", "new-value1")),
+                new HashSet<>(Set.of("property2", "missing-property"))
+        );
+
+        assertEquals(List.of("property1"), response.updated());
+        assertEquals(List.of("property2"), response.removed());
+        assertEquals(List.of("missing-property"), response.missing());
+    }
+
+    @Test
+    public void correctlyHandleNamespacePropertyUpdateWhenUpdatedPropertyShouldBeRemoved() {
+        Assumptions.assumeTrue(this::isNamespaceSupported, "Test skipped: namespaces are not supported in this catalog");
+
+        var namespace = Namespace.of(uniqueNamespaceName());
+        catalog.createNamespace(namespace, new HashMap<>(Map.of(
+                "property1", "value1"
+        )));
+
+        var response = catalog.updateNamespace(
+                namespace,
+                new HashMap<>(Map.of("property1", "new-value1")),
+                new HashSet<>(Set.of("property1"))
+        );
+
+        assertEquals(List.of(), response.updated());
+        assertEquals(List.of("property1"), response.removed());
+        assertEquals(List.of(), response.missing());
     }
 
     @Test

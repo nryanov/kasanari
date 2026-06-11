@@ -1,6 +1,8 @@
 package kasanari.catalog.lance;
 
 import org.lance.namespace.LanceNamespace;
+import org.lance.namespace.model.AlterTableAddColumnsRequest;
+import org.lance.namespace.model.AlterTableAddColumnsResponse;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableAlterColumnsResponse;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
@@ -124,6 +126,11 @@ public class DefaultLanceCatalogAdapter implements LanceCatalogAdapter {
     @Override
     public AlterTableDropColumnsResponse alterTableDropColumns(AlterTableDropColumnsRequest request) {
         return namespace.alterTableDropColumns(request);
+    }
+
+    @Override
+    public AlterTableAddColumnsResponse alterTableAddColumns(AlterTableAddColumnsRequest request) {
+        return namespace.alterTableAddColumns(request);
     }
 
     @Override

@@ -277,6 +277,21 @@ public abstract class PaimonCatalogAdapterTest {
     }
 
     @Test
+    void alterDatabaseFillsMissingProperties() {
+        assumeTrue(supportsDatabases() && supportAlterDatabase());
+
+        var createDatabaseRequest = new CreateDatabaseRequest(database, Map.of("owner", "test"));
+        var alterDatabaseRequest = new AlterDatabaseRequest(List.of("owner", "missing_property"), Map.of("retention", "7d"));
+        catalog.createDatabase(createDatabaseRequest);
+
+        var result = catalog.alterDatabase(database, alterDatabaseRequest);
+
+        assertTrue(result.getRemoved().contains("owner"));
+        assertTrue(result.getUpdated().contains("retention"));
+        assertTrue(result.getMissing().contains("missing_property"));
+    }
+
+    @Test
     void registerTable() {
         assumeTrue(supportsDatabases() && supportsTables() && supportRegisterTable());
 

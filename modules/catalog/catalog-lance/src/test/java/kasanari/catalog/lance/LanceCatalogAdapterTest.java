@@ -5,11 +5,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.apache.arrow.memory.RootAllocator;
+import org.lance.Dataset;
 import org.lance.namespace.errors.NamespaceAlreadyExistsException;
 import org.lance.namespace.errors.NamespaceNotEmptyException;
 import org.lance.namespace.errors.NamespaceNotFoundException;
 import org.lance.namespace.errors.TableAlreadyExistsException;
 import org.lance.namespace.errors.TableNotFoundException;
+import org.lance.namespace.model.AlterColumnsEntry;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
 import org.lance.namespace.model.CreateNamespaceRequest;
@@ -20,6 +23,7 @@ import org.lance.namespace.model.DescribeNamespaceRequest;
 import org.lance.namespace.model.DescribeTableRequest;
 import org.lance.namespace.model.DropNamespaceRequest;
 import org.lance.namespace.model.DropTableRequest;
+import org.lance.namespace.model.JsonArrowField;
 import org.lance.namespace.model.ListNamespacesRequest;
 import org.lance.namespace.model.ListTablesRequest;
 import org.lance.namespace.model.NamespaceExistsRequest;
@@ -30,12 +34,16 @@ import org.lance.namespace.model.TableExistsRequest;
 import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
+import java.nio.file.Files;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -105,6 +113,29 @@ public abstract class LanceCatalogAdapterTest {
         adapter.registerTable(new RegisterTableRequest().id(tableId()).location(location).mode("create"));
     }
 
+    protected void registerMaterializedTableEntity() {
+        createNamespaceEntity();
+        var location = localTableLocation();
+        try (var allocator = new RootAllocator();
+             var ignored = Dataset.write()
+                     .allocator(allocator)
+                     .uri(location)
+                     .schema(LanceArrowIpc.TABLE_SCHEMA)
+                     .execute()) {
+            adapter.registerTable(new RegisterTableRequest().id(tableId()).location(location).mode("create"));
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create materialized Lance dataset for tests", e);
+        }
+    }
+
+    protected String localTableLocation() {
+        try {
+            return Files.createTempDirectory("kasanari-lance-" + tableName).toUri().toString();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create local table location for tests", e);
+        }
+    }
+
     protected void createTableEntity() {
         createNamespaceEntity();
         adapter.createTable(
@@ -166,11 +197,11 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     protected boolean supportsRenameTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsCreateTable() {
-        return false;
+        return true;
     }
 
     protected boolean supportsCreateEmptyTable() {
@@ -178,11 +209,11 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     protected boolean supportsAlterTableAlterColumns() {
-        return false;
+        return true;
     }
 
     protected boolean supportsAlterTableDropColumns() {
-        return false;
+        return true;
     }
 
     protected boolean supportsNamespaceModeVariants() {
@@ -206,7 +237,7 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     protected boolean supportsMissingTableExistsError() {
-        return false;
+        return true;
     }
 
     @Test
@@ -477,6 +508,33 @@ public abstract class LanceCatalogAdapterTest {
     }
 
     @Test
+    void describeTableReturnsSchemaWhenDatasetExists() {
+        assumeTrue(supportsRegisterTable() && supportsDescribeTable());
+        registerMaterializedTableEntity();
+        var response = adapter.describeTable(new DescribeTableRequest().id(tableId()));
+
+        assertNotNull(response.getSchema());
+        assertEquals(2, response.getSchema().getFields().size());
+        assertEquals("id", response.getSchema().getFields().get(0).getName());
+        assertEquals("int64", response.getSchema().getFields().get(0).getType().getType());
+        assertEquals("col_a", response.getSchema().getFields().get(1).getName());
+        assertEquals("utf8", response.getSchema().getFields().get(1).getType().getType());
+        assertNotNull(response.getVersion());
+    }
+
+    @Test
+    void describeTableReturnsBaseResponseWhenDatasetMissing() {
+        assumeTrue(supportsRegisterTable() && supportsDescribeTable());
+        registerTableEntity();
+        var response = adapter.describeTable(new DescribeTableRequest().id(tableId()));
+
+        assertEquals(tableName, response.getTable());
+        assertEquals(tableLocation(), response.getLocation());
+        assertNull(response.getSchema());
+        assertNull(response.getVersion());
+    }
+
+    @Test
     void describeTableMissingThrows() {
         assumeTrue(supportsDescribeTable());
         assertThrows(
@@ -584,19 +642,39 @@ public abstract class LanceCatalogAdapterTest {
     @Test
     void alterTableAlterColumns() {
         assumeTrue(supportsRegisterTable() && supportsAlterTableAlterColumns() && supportsDescribeTable());
-        registerTableEntity();
-        var alter = adapter.alterTableAlterColumns(new AlterTableAlterColumnsRequest().id(tableId()));
+        createTableEntity();
+
+        var alterColumnEntry = new AlterColumnsEntry()
+                .nullable(true)
+                .path("col_a")
+                .rename("renamed_column_a");
+
+        var alter = adapter.alterTableAlterColumns(new AlterTableAlterColumnsRequest().addAlterationsItem(alterColumnEntry).id(tableId()));
         var described = adapter.describeTable(new DescribeTableRequest().id(tableId()));
+
         assertEquals(alter.getVersion(), described.getVersion());
+        assertNotNull(described.getSchema());
+        assertNotNull(described.getSchema().getFields());
+
+        var expectedFieldNames = Set.of("id", "renamed_column_a");
+        var actualFieldNames = described.getSchema().getFields().stream().map(JsonArrowField::getName).collect(Collectors.toSet());
+        assertEquals(expectedFieldNames, actualFieldNames);
     }
 
     @Test
     void alterTableDropColumns() {
         assumeTrue(supportsRegisterTable() && supportsAlterTableDropColumns() && supportsDescribeTable());
-        registerTableEntity();
+        createTableEntity();
         var alter = adapter.alterTableDropColumns(new AlterTableDropColumnsRequest().id(tableId()).columns(List.of("col_a")));
         var described = adapter.describeTable(new DescribeTableRequest().id(tableId()));
         assertEquals(alter.getVersion(), described.getVersion());
+
+        assertNotNull(described.getSchema());
+        assertNotNull(described.getSchema().getFields());
+
+        var expectedFieldNames = Set.of("id");
+        var actualFieldNames = described.getSchema().getFields().stream().map(JsonArrowField::getName).collect(Collectors.toSet());
+        assertEquals(expectedFieldNames, actualFieldNames);
     }
 
     @Test

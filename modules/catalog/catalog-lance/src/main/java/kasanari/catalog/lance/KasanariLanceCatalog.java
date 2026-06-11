@@ -11,14 +11,19 @@ import kasanari.repository.lance.postgres.JdbcNamespaceRepository;
 import kasanari.repository.lance.postgres.JdbcTableInitializer;
 import kasanari.repository.lance.postgres.JdbcTableRepository;
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.jdbi.v3.core.Handle;
 import org.lance.Dataset;
+import org.lance.ReadOptions;
+import org.lance.WriteParams;
 import org.lance.namespace.LanceNamespace;
 import org.lance.namespace.errors.NamespaceAlreadyExistsException;
 import org.lance.namespace.errors.NamespaceNotEmptyException;
 import org.lance.namespace.errors.NamespaceNotFoundException;
 import org.lance.namespace.errors.TableAlreadyExistsException;
 import org.lance.namespace.errors.TableNotFoundException;
+import org.lance.namespace.model.AlterTableAddColumnsRequest;
+import org.lance.namespace.model.AlterTableAddColumnsResponse;
 import org.lance.namespace.model.AlterTableAlterColumnsRequest;
 import org.lance.namespace.model.AlterTableAlterColumnsResponse;
 import org.lance.namespace.model.AlterTableDropColumnsRequest;
@@ -41,6 +46,8 @@ import org.lance.namespace.model.DropTableRequest;
 import org.lance.namespace.model.DropTableResponse;
 import org.lance.namespace.model.ListNamespacesRequest;
 import org.lance.namespace.model.ListNamespacesResponse;
+import org.lance.namespace.model.ListTableVersionsRequest;
+import org.lance.namespace.model.ListTableVersionsResponse;
 import org.lance.namespace.model.ListTablesRequest;
 import org.lance.namespace.model.ListTablesResponse;
 import org.lance.namespace.model.NamespaceExistsRequest;
@@ -51,16 +58,18 @@ import org.lance.namespace.model.RenameTableResponse;
 import org.lance.namespace.model.RestoreTableRequest;
 import org.lance.namespace.model.RestoreTableResponse;
 import org.lance.namespace.model.TableExistsRequest;
+import org.lance.namespace.model.TableVersion;
 import org.lance.schema.ColumnAlteration;
+import org.lance.schema.SqlExpressions;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import static kasanari.core.Functions.mapOrEmpty;
 import static kasanari.core.Functions.valueOrDefault;
@@ -278,12 +287,20 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         if (maybeTable.isPresent()) {
             var table = maybeTable.get();
             var namespace = Arrays.stream(table.namespacePath().split("[.]")).toList();
-
-            return new DescribeTableResponse()
+            var response = new DescribeTableResponse()
                     .table(table.tableName())
                     .namespace(namespace)
                     .location(table.location())
                     .properties(table.properties());
+
+            try (var dataset = open(allocator, table.location())) {
+                response.schema(ArrowJsonSchemaMapper.toJsonArrowSchema(dataset.getSchema()));
+                response.version(dataset.version());
+            } catch (Exception ignored) {
+                // Fallback to metadata-only response for declared/registered tables without dataset files.
+            }
+
+            return response;
         }
 
         throw new TableNotFoundException(String.format("Table %s not found", tableId));
@@ -333,14 +350,16 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         var tableProperties = request.getProperties();
         var location = String.format("%s/%s/%s", defaultLocation, namespacePath, tableName);
 
-        transactionManager.inTransaction(tx -> {
+        var version = transactionManager.inTransactionR(tx -> {
             var maybeTable = tableRepository.get(tx, tableId);
 
             if (maybeTable.isPresent()) {
                 switch (mode) {
                     case "create" -> throw new TableAlreadyExistsException(String.format("Table %s already exists", tableId));
                     case "existok", "exist_ok" -> {
-                        return;
+                        try (var dataset = open(allocator, location)) {
+                            return dataset.version();
+                        }
                     }
                 }
             }
@@ -353,12 +372,29 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
                     location,
                     mapOrEmpty(request.getProperties())
             );
+
+            try(var dataset = write(allocator, mapOrEmpty(storageOptions), location, requestData)) {
+                return dataset.version();
+            }
         });
 
         return new CreateTableResponse()
                 .location(location)
+                .version(version)
                 .properties(tableProperties)
                 .storageOptions(storageOptions);
+    }
+
+    @Override
+    public ListTableVersionsResponse listTableVersions(ListTableVersionsRequest request) {
+        return new ListTableVersionsResponse()
+                .addVersionsItem(
+                        new TableVersion()
+                                .version(1L)
+                                .timestampMillis(1L)
+                                .metadata(Map.of())
+                                .eTag("eTag")
+                );
     }
 
     @Override
@@ -388,7 +424,7 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         if (request.getNewNamespaceId() == null || request.getNewNamespaceId().isEmpty()) {
             // table stay in the same namespace
             var namespace = namespaceFrom(from);
-            to = fullObjectName(List.of(namespace, to));
+            to = fullObjectName(List.of(namespace, request.getNewTableName()));
         } else {
             // table should also be moved to the another namespace
             var ids = new ArrayList<>(request.getNewNamespaceId());
@@ -434,6 +470,13 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         var namespacePath = namespaceFrom(tableId);
         var tableName = tableNameFrom(tableId);
 
+        var location = request.getLocation();
+        if (location == null) {
+            location = String.format("%s/%s/%s", defaultLocation, namespacePath, tableName);
+        }
+
+        var resolvedLocation = location;
+
         transactionManager.inTransaction(tx -> {
             var isNamespaceExist = namespaceRepository.exists(tx, namespacePath);
 
@@ -452,13 +495,13 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
                     tableId,
                     namespacePath,
                     tableName,
-                    request.getLocation(),
+                    resolvedLocation,
                     mapOrEmpty(request.getProperties())
             );
         });
 
         return new DeclareTableResponse()
-                .location(request.getLocation())
+                .location(resolvedLocation)
                 .properties(request.getProperties())
                 .managedVersioning(true);
     }
@@ -509,6 +552,34 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         try (var dataset = open(allocator, location)) {
             dataset.dropColumns(request.getColumns());
             return new AlterTableDropColumnsResponse().version(dataset.version());
+        }
+    }
+
+    @Override
+    public AlterTableAddColumnsResponse alterTableAddColumns(AlterTableAddColumnsRequest request) {
+        var tableId = fullObjectName(request.getId());
+        var location = transactionManager.inTransactionR(tx -> {
+            var maybeTable = tableRepository.get(tx, tableId);
+            if (maybeTable.isEmpty()) {
+                throw new TableNotFoundException(String.format("Table metadata %s not found", tableId));
+            }
+
+            return maybeTable.get().location();
+        });
+
+        try (var dataset = open(allocator, location)) {
+            var expressionsBuilder =new SqlExpressions.Builder();
+
+            request.getNewColumns().forEach(it -> {
+                if (it.getVirtualColumn() == null) {
+                    // only non-virtual columns currently supported for adding
+                    expressionsBuilder.withExpression(it.getName(), it.getExpression());
+                }
+            });
+            var expressions = expressionsBuilder.build();
+            dataset.addColumns(expressions, Optional.empty());
+
+            return new AlterTableAddColumnsResponse().version(dataset.version());
         }
     }
 
@@ -593,6 +664,24 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
     }
 
     private Dataset open(BufferAllocator allocator, String location) {
-        return Dataset.open().allocator(allocator).uri(location).build();
+        return Dataset
+                .open()
+                .readOptions(new ReadOptions.Builder().setStorageOptions(storageProperties).build())
+                .allocator(allocator)
+                .uri(location)
+                .build();
+    }
+
+    private Dataset write(BufferAllocator allocator, Map<String, String> properties, String location, byte[] data) {
+        var totalStorageOptions = new HashMap<>(storageProperties);
+        totalStorageOptions.putAll(properties);
+
+        return Dataset.write()
+                .storageOptions(totalStorageOptions)
+                .allocator(allocator)
+                .uri(location)
+                .mode(WriteParams.WriteMode.CREATE)
+                .reader(new ArrowStreamReader(new ByteArrayInputStream(data), allocator))
+                .execute();
     }
 }
