@@ -96,53 +96,53 @@ Status values:
 
 ### Implemented/partial endpoints
 
-| Method | Path | Status | Notes |
-|---|---|---|---|
-| POST | `/lance/v1/namespace/{id}/create` | Implemented | |
-| GET | `/lance/v1/namespace/{id}/list` | Implemented | |
-| POST | `/lance/v1/namespace/{id}/describe` | Implemented | |
-| POST | `/lance/v1/namespace/{id}/drop` | Implemented | |
-| POST | `/lance/v1/namespace/{id}/exists` | Implemented | |
-| GET | `/lance/v1/namespace/{id}/table/list` | Implemented | |
-| POST | `/lance/v1/table/{id}/create` | Implemented | |
-| POST | `/lance/v1/table/{id}/register` | Implemented | |
-| POST | `/lance/v1/table/{id}/describe` | Implemented | |
-| POST | `/lance/v1/table/{id}/exists` | Implemented | |
-| POST | `/lance/v1/table/{id}/drop` | Implemented | |
-| POST | `/lance/v1/table/{id}/deregister` | Implemented | |
-| POST | `/lance/v1/table/{id}/restore` | Implemented | |
-| POST | `/lance/v1/table/{id}/rename` | Implemented | |
-| POST | `/lance/v1/table/{id}/alter_columns` | Implemented | |
-| POST | `/lance/v1/table/{id}/drop_columns` | Implemented | |
-| POST | `/lance/v1/table/{id}/add_columns` | Partial | Internal mode currently supports only non-virtual columns. |
-| POST | `/lance/v1/table/{id}/declare` | Implemented | Maps to create-empty-table behavior. |
+| Method | Path                                  | Status      | Notes                                                      |
+|--------|---------------------------------------|-------------|------------------------------------------------------------|
+| POST   | `/lance/v1/namespace/{id}/create`     | Implemented |                                                            |
+| GET    | `/lance/v1/namespace/{id}/list`       | Implemented |                                                            |
+| POST   | `/lance/v1/namespace/{id}/describe`   | Implemented |                                                            |
+| POST   | `/lance/v1/namespace/{id}/drop`       | Implemented |                                                            |
+| POST   | `/lance/v1/namespace/{id}/exists`     | Implemented |                                                            |
+| GET    | `/lance/v1/namespace/{id}/table/list` | Implemented |                                                            |
+| POST   | `/lance/v1/table/{id}/create`         | Implemented |                                                            |
+| POST   | `/lance/v1/table/{id}/register`       | Implemented |                                                            |
+| POST   | `/lance/v1/table/{id}/describe`       | Implemented |                                                            |
+| POST   | `/lance/v1/table/{id}/exists`         | Implemented |                                                            |
+| POST   | `/lance/v1/table/{id}/drop`           | Implemented |                                                            |
+| POST   | `/lance/v1/table/{id}/deregister`     | Implemented |                                                            |
+| POST   | `/lance/v1/table/{id}/restore`        | Implemented |                                                            |
+| POST   | `/lance/v1/table/{id}/rename`         | Implemented |                                                            |
+| POST   | `/lance/v1/table/{id}/alter_columns`  | Implemented |                                                            |
+| POST   | `/lance/v1/table/{id}/drop_columns`   | Implemented |                                                            |
+| POST   | `/lance/v1/table/{id}/add_columns`    | Partial     | Internal mode currently supports only non-virtual columns. |
+| POST   | `/lance/v1/table/{id}/declare`        | Implemented | Maps to create-empty-table behavior.                       |
 
 ### Not implemented endpoint groups
 
-| Methods | Path group | Status | Notes |
-|---|---|---|---|
-| GET | `/lance/v1/table` | Not implemented | Table listing/details endpoint from upstream spec not exposed. |
-| POST | `/lance/v1/table/{id}/schema_metadata/update` | Not implemented | |
-| POST | `/lance/v1/table/{id}/version/*` | Not implemented | Version lifecycle endpoints not exposed. |
-| POST | `/lance/v1/table/version/batch-create` | Not implemented | |
-| POST | `/lance/v1/table/batch-commit` | Not implemented | |
-| POST | `/lance/v1/table/{id}/stats` | Not implemented | |
-| POST | `/lance/v1/table/{id}/insert` | Not implemented | Data plane. |
-| POST | `/lance/v1/table/{id}/merge_insert` | Not implemented | Data plane. |
-| POST | `/lance/v1/table/{id}/update` | Not implemented | Data plane. |
-| POST | `/lance/v1/table/{id}/delete` | Not implemented | Data plane. |
-| POST | `/lance/v1/table/{id}/query` | Not implemented | Data plane. |
-| POST | `/lance/v1/table/{id}/count_rows` | Not implemented | Data plane. |
-| POST | `/lance/v1/table/{id}/explain_plan` | Not implemented | |
-| POST | `/lance/v1/table/{id}/analyze_plan` | Not implemented | |
-| POST | `/lance/v1/table/{id}/create_index` | Not implemented | |
-| POST | `/lance/v1/table/{id}/create_scalar_index` | Not implemented | |
-| POST | `/lance/v1/table/{id}/index/list` | Not implemented | |
-| POST | `/lance/v1/table/{id}/index/{index_name}/stats` | Not implemented | |
-| POST | `/lance/v1/table/{id}/index/{index_name}/drop` | Not implemented | |
-| POST | `/lance/v1/table/{id}/tags/*` | Not implemented | Tag APIs are not exposed. |
-| POST | `/lance/v1/transaction/{id}/*` | Not implemented | Transaction APIs are not exposed. |
-| POST | `/lance/v1/oauth/tokens` | Not implemented | Token URL exists in security scheme, not routed by catalog API. |
+| Methods | Path group                                      | Status          | Notes                                                           |
+|---------|-------------------------------------------------|-----------------|-----------------------------------------------------------------|
+| GET     | `/lance/v1/table`                               | Not implemented | Table listing/details endpoint from upstream spec not exposed.  |
+| POST    | `/lance/v1/table/{id}/schema_metadata/update`   | Not implemented |                                                                 |
+| POST    | `/lance/v1/table/{id}/version/*`                | Not implemented | Version lifecycle endpoints not exposed.                        |
+| POST    | `/lance/v1/table/version/batch-create`          | Not implemented |                                                                 |
+| POST    | `/lance/v1/table/batch-commit`                  | Not implemented |                                                                 |
+| POST    | `/lance/v1/table/{id}/stats`                    | Not implemented |                                                                 |
+| POST    | `/lance/v1/table/{id}/insert`                   | Not implemented | Data plane.                                                     |
+| POST    | `/lance/v1/table/{id}/merge_insert`             | Not implemented | Data plane.                                                     |
+| POST    | `/lance/v1/table/{id}/update`                   | Not implemented | Data plane.                                                     |
+| POST    | `/lance/v1/table/{id}/delete`                   | Not implemented | Data plane.                                                     |
+| POST    | `/lance/v1/table/{id}/query`                    | Not implemented | Data plane.                                                     |
+| POST    | `/lance/v1/table/{id}/count_rows`               | Not implemented | Data plane.                                                     |
+| POST    | `/lance/v1/table/{id}/explain_plan`             | Not implemented |                                                                 |
+| POST    | `/lance/v1/table/{id}/analyze_plan`             | Not implemented |                                                                 |
+| POST    | `/lance/v1/table/{id}/create_index`             | Not implemented |                                                                 |
+| POST    | `/lance/v1/table/{id}/create_scalar_index`      | Not implemented |                                                                 |
+| POST    | `/lance/v1/table/{id}/index/list`               | Not implemented |                                                                 |
+| POST    | `/lance/v1/table/{id}/index/{index_name}/stats` | Not implemented |                                                                 |
+| POST    | `/lance/v1/table/{id}/index/{index_name}/drop`  | Not implemented |                                                                 |
+| POST    | `/lance/v1/table/{id}/tags/*`                   | Not implemented | Tag APIs are not exposed.                                       |
+| POST    | `/lance/v1/transaction/{id}/*`                  | Not implemented | Transaction APIs are not exposed.                               |
+| POST    | `/lance/v1/oauth/tokens`                        | Not implemented | Token URL exists in security scheme, not routed by catalog API. |
 
 ## Important limitations
 

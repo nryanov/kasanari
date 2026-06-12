@@ -92,38 +92,38 @@ Status values:
 - `Partial`: endpoint exists but has known limitations.
 - `Not implemented`: endpoint exists in upstream ecosystem but not exposed by Kasanari.
 
-| Method | Path | Status | Notes |
-|---|---|---|---|
-| GET | `/iceberg/v1/config` | Implemented | Configuration negotiation endpoint. |
-| GET | `/iceberg/v1/{prefix}/namespaces` | Implemented | |
-| POST | `/iceberg/v1/{prefix}/namespaces` | Implemented | |
-| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}` | Implemented | |
-| HEAD | `/iceberg/v1/{prefix}/namespaces/{namespace}` | Implemented | Namespace exists check. |
-| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}` | Implemented | |
-| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/properties` | Implemented | |
-| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables` | Implemented | |
-| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables` | Implemented | Create table. |
-| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/register` | Implemented | Register existing table. |
-| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}` | Partial | Some optional request parameters are currently not propagated. |
-| HEAD | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}` | Implemented | Table exists check. |
-| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}` | Implemented | Commit table update. |
-| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}` | Implemented | Drop table. |
-| POST | `/iceberg/v1/{prefix}/tables/rename` | Implemented | |
-| POST | `/iceberg/v1/{prefix}/transactions/commit` | Implemented | |
-| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}/views` | Implemented | |
-| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/views` | Implemented | |
-| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}` | Implemented | |
-| HEAD | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}` | Implemented | View exists check. |
-| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}` | Implemented | Commit view update. |
-| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}` | Implemented | |
-| POST | `/iceberg/v1/{prefix}/views/rename` | Implemented | |
-| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics` | Partial | Routed, but current default adapter handling is minimal/no-op. |
-| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials` | Not implemented | Explicitly excluded in Kasanari spec. |
-| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan` | Not implemented | Explicitly excluded in Kasanari spec. |
-| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan/{plan-id}` | Not implemented | Explicitly excluded in Kasanari spec. |
-| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan/{plan-id}` | Not implemented | Explicitly excluded in Kasanari spec. |
-| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/tasks` | Not implemented | Explicitly excluded in Kasanari spec. |
-| POST | `/iceberg/v1/oauth/tokens` | Not implemented | Token URL exists in security scheme, not routed by catalog API. |
+| Method | Path                                                                        | Status          | Notes                                                           |
+|--------|-----------------------------------------------------------------------------|-----------------|-----------------------------------------------------------------|
+| GET    | `/iceberg/v1/config`                                                        | Implemented     | Configuration negotiation endpoint.                             |
+| GET    | `/iceberg/v1/{prefix}/namespaces`                                           | Implemented     |                                                                 |
+| POST   | `/iceberg/v1/{prefix}/namespaces`                                           | Implemented     |                                                                 |
+| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}`                               | Implemented     |                                                                 |
+| HEAD   | `/iceberg/v1/{prefix}/namespaces/{namespace}`                               | Implemented     | Namespace exists check.                                         |
+| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}`                               | Implemented     |                                                                 |
+| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/properties`                    | Implemented     |                                                                 |
+| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables`                        | Implemented     |                                                                 |
+| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables`                        | Implemented     | Create table.                                                   |
+| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/register`                      | Implemented     | Register existing table.                                        |
+| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}`                | Partial         | Some optional request parameters are currently not propagated.  |
+| HEAD   | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}`                | Implemented     | Table exists check.                                             |
+| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}`                | Implemented     | Commit table update.                                            |
+| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}`                | Implemented     | Drop table.                                                     |
+| POST   | `/iceberg/v1/{prefix}/tables/rename`                                        | Implemented     |                                                                 |
+| POST   | `/iceberg/v1/{prefix}/transactions/commit`                                  | Implemented     |                                                                 |
+| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}/views`                         | Implemented     |                                                                 |
+| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/views`                         | Implemented     |                                                                 |
+| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}`                  | Implemented     |                                                                 |
+| HEAD   | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}`                  | Implemented     | View exists check.                                              |
+| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}`                  | Implemented     | Commit view update.                                             |
+| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}`                  | Implemented     |                                                                 |
+| POST   | `/iceberg/v1/{prefix}/views/rename`                                         | Implemented     |                                                                 |
+| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics`        | Partial         | Routed, but current default adapter handling is minimal/no-op.  |
+| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials`    | Not implemented | Explicitly excluded in Kasanari spec.                           |
+| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan`           | Not implemented | Explicitly excluded in Kasanari spec.                           |
+| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan/{plan-id}` | Not implemented | Explicitly excluded in Kasanari spec.                           |
+| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan/{plan-id}` | Not implemented | Explicitly excluded in Kasanari spec.                           |
+| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/tasks`          | Not implemented | Explicitly excluded in Kasanari spec.                           |
+| POST   | `/iceberg/v1/oauth/tokens`                                                  | Not implemented | Token URL exists in security scheme, not routed by catalog API. |
 
 ## Important limitations
 

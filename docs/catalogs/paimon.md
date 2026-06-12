@@ -95,61 +95,61 @@ Status values:
 - `Partial`: endpoint exists but has known mode-specific or adapter limitations.
 - `Not implemented`: endpoint is not currently supported.
 
-| Method | Path | Status | Notes |
-|---|---|---|---|
-| GET | `/paimon/v1/config` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}` | Implemented | Alter database. |
-| DELETE | `/paimon/v1/{prefix}/databases/{database}` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/register` | Partial | Internal mode register behavior is limited. |
-| GET | `/paimon/v1/{prefix}/databases/{database}/tables` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/table-details` | Implemented | |
-| GET | `/paimon/v1/{prefix}/tables` | Implemented | |
-| GET | `/paimon/v1/{prefix}/tables/id/{tableId}` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/tables/{table}` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables/{table}` | Implemented | Alter table. |
-| DELETE | `/paimon/v1/{prefix}/databases/{database}/tables/{table}` | Implemented | |
-| POST | `/paimon/v1/{prefix}/tables/rename` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/commit` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/rollback` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/rollback-schema` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/token` | Partial | Currently returns unsupported in default adapter. |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/auth` | Partial | Currently returns unsupported in default adapter. |
-| GET | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/snapshot` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/snapshots/{version}` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/snapshots` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/partitions` | Partial | Pattern-based filtering has internal-mode limitations. |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/partitions/mark` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/partitions/list-by-names` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/branches` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/branches` | Implemented | |
-| DELETE | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/branches/{branch}` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/branches/{branch}/rename` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/branches/{branch}/forward` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/tags` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/tags` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/tags/{tag}` | Implemented | |
-| DELETE | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/tags/{tag}` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/consumers` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/consumers/reset` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/views` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/views` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/view-details` | Implemented | |
-| GET | `/paimon/v1/{prefix}/views` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/views/{view}` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/views/{view}` | Implemented | |
-| DELETE | `/paimon/v1/{prefix}/databases/{database}/views/{view}` | Implemented | |
-| POST | `/paimon/v1/{prefix}/views/rename` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/functions` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/functions` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/function-details` | Implemented | |
-| GET | `/paimon/v1/{prefix}/functions` | Implemented | |
-| GET | `/paimon/v1/{prefix}/databases/{database}/functions/{function}` | Implemented | |
-| POST | `/paimon/v1/{prefix}/databases/{database}/functions/{function}` | Implemented | |
-| DELETE | `/paimon/v1/{prefix}/databases/{database}/functions/{function}` | Implemented | |
+| Method | Path                                                                                | Status      | Notes                                                  |
+|--------|-------------------------------------------------------------------------------------|-------------|--------------------------------------------------------|
+| GET    | `/paimon/v1/config`                                                                 | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases`                                                     | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases`                                                     | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}`                                          | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}`                                          | Implemented | Alter database.                                        |
+| DELETE | `/paimon/v1/{prefix}/databases/{database}`                                          | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/register`                                 | Partial     | Internal mode register behavior is limited.            |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/tables`                                   | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables`                                   | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/table-details`                            | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/tables`                                                        | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/tables/id/{tableId}`                                           | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/tables/{table}`                           | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables/{table}`                           | Implemented | Alter table.                                           |
+| DELETE | `/paimon/v1/{prefix}/databases/{database}/tables/{table}`                           | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/tables/rename`                                                 | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/commit`                    | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/rollback`                  | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/rollback-schema`           | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/token`                     | Partial     | Currently returns unsupported in default adapter.      |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/auth`                      | Partial     | Currently returns unsupported in default adapter.      |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/snapshot`                  | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/snapshots/{version}`       | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/snapshots`                 | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/partitions`                | Partial     | Pattern-based filtering has internal-mode limitations. |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/partitions/mark`           | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/partitions/list-by-names`  | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/branches`                  | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/branches`                  | Implemented |                                                        |
+| DELETE | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/branches/{branch}`         | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/branches/{branch}/rename`  | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/branches/{branch}/forward` | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/tags`                      | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/tags`                      | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/tags/{tag}`                | Implemented |                                                        |
+| DELETE | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/tags/{tag}`                | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/consumers`                 | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/tables/{table}/consumers/reset`           | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/views`                                    | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/views`                                    | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/view-details`                             | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/views`                                                         | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/views/{view}`                             | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/views/{view}`                             | Implemented |                                                        |
+| DELETE | `/paimon/v1/{prefix}/databases/{database}/views/{view}`                             | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/views/rename`                                                  | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/functions`                                | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/functions`                                | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/function-details`                         | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/functions`                                                     | Implemented |                                                        |
+| GET    | `/paimon/v1/{prefix}/databases/{database}/functions/{function}`                     | Implemented |                                                        |
+| POST   | `/paimon/v1/{prefix}/databases/{database}/functions/{function}`                     | Implemented |                                                        |
+| DELETE | `/paimon/v1/{prefix}/databases/{database}/functions/{function}`                     | Implemented |                                                        |
 
 ## Important limitations
 
