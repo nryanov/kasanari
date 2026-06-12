@@ -16,7 +16,7 @@ Build the local Kasanari image from repository root:
 ## Startup
 
 ```shell
-cd examples/iceberg/trino/internal
+cd examples/trino
 docker compose up -d
 ```
 

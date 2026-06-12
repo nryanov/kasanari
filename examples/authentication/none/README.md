@@ -13,11 +13,11 @@ docker compose up -d
 From the repository root, with env vars from this directory:
 
 ```shell
-set -a && source examples/auth-none/kasanari.env && set +a
+set -a && source examples/authentication/none/kasanari.env && set +a
 ./gradlew :modules:server:quarkusDev
 ```
 
-Or set `kasanari.auth.type=none` in `modules/server/src/main/resources/application.properties` (default).
+Or set `kasanari.authentication.type=none` in `modules/server/src/main/resources/application.properties` (default).
 
 ## Verify
 

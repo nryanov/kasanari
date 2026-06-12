@@ -1,0 +1,40 @@
+site_name: Kasanari Documentation
+site_description: REST catalogs for Iceberg, Paimon, and Lance
+repo_name: kasanari
+repo_url: https://github.com/nryanov/kasanari
+theme:
+  name: material
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+nav:
+  - General Information: index.md
+  - Quickstart: quickstart.md
+  - Catalogs:
+      - Iceberg Catalog:
+          - Overview: catalogs/iceberg.md
+          - Kasanari: catalogs/iceberg/kasanari.md
+          - JDBC: catalogs/iceberg/jdbc.md
+          - Hive: catalogs/iceberg/hive.md
+          - REST: catalogs/iceberg/rest.md
+          - Hadoop: catalogs/iceberg/hadoop.md
+      - Paimon Catalog:
+          - Overview: catalogs/paimon.md
+          - Kasanari: catalogs/paimon/kasanari.md
+          - JDBC: catalogs/paimon/jdbc.md
+          - Hive: catalogs/paimon/hive.md
+          - Filesystem: catalogs/paimon/filesystem.md
+          - REST: catalogs/paimon/rest.md
+      - Lance Catalog:
+          - Overview: catalogs/lance.md
+          - Kasanari: catalogs/lance/kasanari.md
+  - Management API: management/api.md
+  - Security:
+      - Overview: security/index.md
+      - Authentication Providers: security/authentication.md
+      - Authorization Providers: security/authorization.md
+      - RBAC Roles and Permissions: security/rbac.md
+  - Instrumentation via SPI: instrumentation/spi.md
+  - Examples: examples/index.md

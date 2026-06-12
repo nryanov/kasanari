@@ -7,10 +7,10 @@ Minimal third-party authorization provider that allows only configured subject n
 From the repository root:
 
 ```shell
-./gradlew :examples:authorization-custom:jar
+./gradlew -p examples/authorization/custom jar
 ```
 
-The jar is written to `examples/authorization-custom/build/libs/authorization-custom-example.jar`.
+The jar is written to `examples/authorization/custom/build/libs/authorization-custom-example.jar`.
 
 ## Wire into Kasanari
 
@@ -28,4 +28,4 @@ kasanari.authorization.allow-list.allowed-subjects=alice,bob
 3. Optionally implement role binding administration by overriding `roleBindings()` (Casbin provider does this for `/management/v1/security/roles`).
 4. Package as a jar, add to the server classpath, set `kasanari.authorization.type=<your-type>`.
 
-Authorization is separate from authentication (`kasanari.auth.type`).
+Authorization is separate from authentication (`kasanari.authentication.type`).

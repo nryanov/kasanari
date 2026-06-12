@@ -1,10 +1,10 @@
 # Copy relevant settings into application.properties or set as environment variables.
 
-kasanari.auth.type=oidc
+kasanari.authentication.type=oidc
 
-kasanari.auth.oidc.issuer-url=http://localhost:8080/realms/kasanari
-kasanari.auth.oidc.client-id=kasanari-api
-kasanari.auth.oidc.client-secret=kasanari-api-secret
+kasanari.authentication.oidc.issuer-url=http://localhost:8080/realms/kasanari
+kasanari.authentication.oidc.client-id=kasanari-api
+kasanari.authentication.oidc.client-secret=kasanari-api-secret
 
 kasanari.management.metadata.jdbc-properties."kasanari.jdbc.user"=postgres
 kasanari.management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
