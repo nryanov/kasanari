@@ -5,7 +5,7 @@ Bearer token authentication via Keycloak. Realm `kasanari`, client `kasanari-api
 ## Start backing services
 
 ```shell
-cd examples/auth-oidc
+cd examples/authentication/oidc
 docker compose up -d
 ```
 
@@ -14,10 +14,10 @@ Wait until Keycloak is ready (check `http://localhost:8080/realms/kasanari/.well
 ## Run Kasanari
 
 ```shell
-export KASANARI_AUTH_TYPE=oidc
-export KASANARI_AUTH_OIDC_ISSUER_URL=http://localhost:8080/realms/kasanari
-export KASANARI_AUTH_OIDC_CLIENT_ID=kasanari-api
-export KASANARI_AUTH_OIDC_CLIENT_SECRET=kasanari-api-secret
+export KASANARI_AUTHENTICATION_TYPE=oidc
+export KASANARI_AUTHENTICATION_OIDC_ISSUER_URL=http://localhost:8080/realms/kasanari
+export KASANARI_AUTHENTICATION_OIDC_CLIENT_ID=kasanari-api
+export KASANARI_AUTHENTICATION_OIDC_CLIENT_SECRET=kasanari-api-secret
 
 ./gradlew :modules:server:quarkusDev
 ```

@@ -9,10 +9,10 @@ This example is **not wired into the server by default**. Build the jar and add 
 From the repository root:
 
 ```shell
-./gradlew :examples:auth-custom:jar
+./gradlew -p examples/authentication/custom jar
 ```
 
-The jar is written to `examples/auth-custom/build/libs/auth-custom-example.jar`.
+The jar is written to `examples/authentication/custom/build/libs/auth-custom-example.jar`.
 
 ## Wire into Kasanari
 
@@ -21,7 +21,7 @@ Add the jar to the server runtime classpath. Options:
 1. **Gradle dependency** (custom fork/image):
 
 ```kotlin
-implementation(files("examples/auth-custom/build/libs/auth-custom-example.jar"))
+implementation(files("examples/authentication/custom/build/libs/auth-custom-example.jar"))
 // or publish the example module and depend on it normally
 ```
 
@@ -30,7 +30,7 @@ implementation(files("examples/auth-custom/build/libs/auth-custom-example.jar"))
 ```shell
 ./gradlew :modules:server:quarkusDev \
   -Dquarkus.class-loading.removed=true \
-  -Dquarkus.classpath.additions=examples/auth-custom/build/libs/auth-custom-example.jar
+  -Dquarkus.classpath.additions=examples/authentication/custom/build/libs/auth-custom-example.jar
 ```
 
 3. **Container image**: copy the jar into `lib/` or add via your image build.
@@ -38,14 +38,14 @@ implementation(files("examples/auth-custom/build/libs/auth-custom-example.jar"))
 ## Configure
 
 ```shell
-export KASANARI_AUTH_TYPE=header-token
-export KASANARI_AUTH_HEADER_TOKEN_SECRET=dev-secret
-export KASANARI_AUTH_HEADER_TOKEN_HEADER=X-Kasanari-Token
+export KASANARI_AUTHENTICATION_TYPE=header-token
+export KASANARI_AUTHENTICATION_HEADER_TOKEN_SECRET=dev-secret
+export KASANARI_AUTHENTICATION_HEADER_TOKEN_HEADER=X-Kasanari-Token
 
 ./gradlew :modules:server:quarkusDev
 ```
 
-Properties map to `kasanari.auth.header-token.*` because the provider type is `header-token`.
+Properties map to `kasanari.authentication.header-token.*` because the provider type is `header-token`.
 
 ## Verify
 
@@ -67,10 +67,10 @@ Health and Swagger UI stay public: `/q/health`, `/docs`.
 
 ## Implement your own provider
 
-1. Implement `kasanari.auth.spi.AuthProvider` from `authentication-spi`.
-2. Register the class in `META-INF/services/kasanari.auth.spi.AuthProvider`.
-3. Return a unique `type()` string and read config from `AuthProviderContext` (`kasanari.auth.<type>.*`).
+1. Implement `kasanari.authentication.spi.AuthProvider` from `authentication-spi`.
+2. Register the class in `META-INF/services/kasanari.authentication.spi.AuthProvider`.
+3. Return a unique `type()` string and read config from `AuthProviderContext` (`kasanari.authentication.<type>.*`).
 4. Package as a jar and add to the server classpath.
-5. Set `kasanari.auth.type=<your-type>` and restart.
+5. Set `kasanari.authentication.type=<your-type>` and restart.
 
 See `src/main/java/kasanari/auth/custom/HeaderTokenAuthProvider.java` in this directory.

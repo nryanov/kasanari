@@ -6,7 +6,6 @@ This directory contains runnable Lance/LanceDB-focused Kasanari examples.
 
 - [`lancedb/internal`](./lancedb/internal): LANCE `INTERNAL` mode with a LanceDB Python client container.
 - [`lancedb/proxy`](./lancedb/proxy): LANCE `PROXY` mode with a LanceDB Python client container.
-- [`secure-oidc-rbac`](./secure-oidc-rbac): LANCE secure setup with OIDC auth and Casbin RBAC authorization.
 
 ## Build Kasanari image once
 

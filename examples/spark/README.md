@@ -1,6 +1,11 @@
-# Iceberg + Spark (proxy JDBC)
+# Spark notebooks (Iceberg, Paimon, Lance)
 
-This example runs Kasanari with an Iceberg `PROXY` catalog configured for `JdbcCatalog`-style properties.
+This example runs Kasanari with Spark/Jupyter and provides notebooks for:
+
+- Iceberg `INTERNAL`
+- Iceberg `PROXY` (`JdbcCatalog`)
+- Paimon `INTERNAL`
+- Lance `INTERNAL`
 
 ## Prerequisites
 
@@ -13,16 +18,10 @@ Build the local Kasanari image from repository root:
 ./scripts/build-container-images.sh
 ```
 
-Build the Spark Jupyter image used by this example:
-
-```shell
-docker build -f examples/common/jupyter/Dockerfile -t local/jupyter-spark:0.1.0 examples/common/jupyter
-```
-
 ## Startup
 
 ```shell
-cd examples/iceberg/spark/proxy-jdbc
+cd examples/spark
 docker compose up -d
 ```
 
@@ -31,7 +30,7 @@ Open Jupyter at `http://localhost:8889` with token `iceberg`.
 ## Register catalog via API
 
 ```shell
-curl -sS -X POST "http://localhost:9091/management/v1/catalogs" \
+curl -sS -X POST "http://localhost:9090/management/v1/catalogs" \
   -H "Content-Type: application/json" \
   -d '{
     "catalogId": "iceberg_spark_proxy_jdbc",
@@ -64,10 +63,12 @@ curl -sS -X POST "http://localhost:9091/management/v1/catalogs" \
 
 ## Sample operations and expected outcomes
 
-- Run `notebooks/01_register_and_list.ipynb` inside Jupyter.
-- The notebook now includes Spark SQL catalog lifecycle operations: create namespace/table, insert/select, alter table, create/query view, delete rows, drop view/table.
+- Run notebook(s) in `notebooks/`:
+  - `iceberg-kasanari.ipynb`
+  - `iceberg-jdbc-proxy.ipynb`
+  - `paimon-kasanari.ipynb`
+  - `lance-kasanari.ipynb`
 - Expected catalog registration response: HTTP `201`.
-- Expected metadata read response: HTTP `200` with `catalogId` equal to `iceberg_spark_proxy_jdbc`.
 
 ## Teardown
 

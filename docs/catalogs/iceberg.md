@@ -1,34 +1,45 @@
 # Iceberg Catalog
 
-Kasanari serves Iceberg through adapters selected by catalog mode.
+Kasanari's Iceberg support is **almost full REST coverage** of Iceberg REST Catalog API with a few intentionally excluded areas.
+
+## Implemented versions
+
+- Runtime library version: Iceberg `1.10.1`
+- Kasanari API wrapper spec: `spec/iceberg/kasanari-iceberg-catalog-service.yaml`
+- Upstream reference spec: `spec/iceberg/iceberg-openapi-1.10.1.yaml`
+
+## Base URL pattern
+
+- `http://<host>:<port>/iceberg/v1/{catalogId}/...`
+- `{catalogId}` is the Management API registration ID.
 
 ## Modes
 
-## Internal mode
+### INTERNAL
 
 - Factory: `KasanariIcebergCatalogFactory`
 - Adapter: `KasanariIcebergCatalogAdapter`
-- Backing metadata: JDBC repositories in `modules/repository/repository-iceberg/*`
+- Metadata storage: JDBC repositories in `modules/repository/repository-iceberg`
 
-Use `INTERNAL` when you want Kasanari-managed metadata and behavior.
+Use `INTERNAL` for Kasanari-owned catalog metadata and behavior.
 
-## Proxy mode
+### PROXY
 
 - Factory: `ProxyIcebergCatalogFactory`
-- Delegate creation: `CatalogUtil.buildIcebergCatalog(...)`
+- Delegate construction: `CatalogUtil.buildIcebergCatalog(...)`
 - Adapter: `DefaultIcebergCatalogAdapter`
 
-Use `PROXY` when you want Kasanari to front an existing Iceberg catalog implementation.
+Use `PROXY` when Kasanari should front an existing Iceberg catalog.
 
-## Registration payloads
+## Registration examples
 
-Catalogs are registered via Management API `POST /management/v1/catalogs`.
+Catalogs are registered with `POST /management/v1/catalogs`.
 
-### Internal example
+### INTERNAL example
 
 ```json
 {
-  "catalogId": "iceberg-internal",
+  "catalogId": "iceberg_internal",
   "catalogType": "ICEBERG",
   "mode": "INTERNAL",
   "spec": {
@@ -49,11 +60,11 @@ Catalogs are registered via Management API `POST /management/v1/catalogs`.
 }
 ```
 
-### Proxy example
+### PROXY example
 
 ```json
 {
-  "catalogId": "iceberg-proxy",
+  "catalogId": "iceberg_proxy",
   "catalogType": "ICEBERG",
   "mode": "PROXY",
   "spec": {
@@ -62,8 +73,7 @@ Catalogs are registered via Management API `POST /management/v1/catalogs`.
       "fs.s3a.access.key": "admin",
       "fs.s3a.secret.key": "password",
       "fs.s3a.path.style.access": "true",
-      "fs.s3a.connection.ssl.enabled": "false",
-      "fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
+      "fs.s3a.connection.ssl.enabled": "false"
     },
     "catalogProperties": {
       "catalog-impl": "org.apache.iceberg.hadoop.HadoopCatalog",
@@ -74,7 +84,49 @@ Catalogs are registered via Management API `POST /management/v1/catalogs`.
 }
 ```
 
-## Operational notes
+## Method implementation status
 
-- Catalogs are reloaded from management metadata on `kasanari.catalog.refresh-interval` (default `30s`).
-- Re-register/update metadata through management endpoints to rotate config without restarting the server.
+Status values:
+
+- `Implemented`: endpoint is exposed and handled.
+- `Partial`: endpoint exists but has known limitations.
+- `Not implemented`: endpoint exists in upstream ecosystem but not exposed by Kasanari.
+
+| Method | Path | Status | Notes |
+|---|---|---|---|
+| GET | `/iceberg/v1/config` | Implemented | Configuration negotiation endpoint. |
+| GET | `/iceberg/v1/{prefix}/namespaces` | Implemented | |
+| POST | `/iceberg/v1/{prefix}/namespaces` | Implemented | |
+| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}` | Implemented | |
+| HEAD | `/iceberg/v1/{prefix}/namespaces/{namespace}` | Implemented | Namespace exists check. |
+| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}` | Implemented | |
+| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/properties` | Implemented | |
+| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables` | Implemented | |
+| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables` | Implemented | Create table. |
+| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/register` | Implemented | Register existing table. |
+| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}` | Partial | Some optional request parameters are currently not propagated. |
+| HEAD | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}` | Implemented | Table exists check. |
+| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}` | Implemented | Commit table update. |
+| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}` | Implemented | Drop table. |
+| POST | `/iceberg/v1/{prefix}/tables/rename` | Implemented | |
+| POST | `/iceberg/v1/{prefix}/transactions/commit` | Implemented | |
+| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}/views` | Implemented | |
+| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/views` | Implemented | |
+| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}` | Implemented | |
+| HEAD | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}` | Implemented | View exists check. |
+| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}` | Implemented | Commit view update. |
+| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}` | Implemented | |
+| POST | `/iceberg/v1/{prefix}/views/rename` | Implemented | |
+| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics` | Partial | Routed, but current default adapter handling is minimal/no-op. |
+| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials` | Not implemented | Explicitly excluded in Kasanari spec. |
+| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan` | Not implemented | Explicitly excluded in Kasanari spec. |
+| GET | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan/{plan-id}` | Not implemented | Explicitly excluded in Kasanari spec. |
+| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan/{plan-id}` | Not implemented | Explicitly excluded in Kasanari spec. |
+| POST | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/tasks` | Not implemented | Explicitly excluded in Kasanari spec. |
+| POST | `/iceberg/v1/oauth/tokens` | Not implemented | Token URL exists in security scheme, not routed by catalog API. |
+
+## Important limitations
+
+- Scan planning (`/plan`, `/tasks`) and credentials endpoints are intentionally not exposed.
+- OAuth token issuance endpoint is not implemented in catalog API surface.
+- Catalog adapters are refreshed based on metadata updates (`kasanari.catalog.refresh-interval`).

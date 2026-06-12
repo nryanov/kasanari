@@ -5,7 +5,7 @@ LDAP authentication with HTTP Basic. Test users: `alice` / `alice`, `bob` / `bob
 ## Start backing services
 
 ```shell
-cd examples/auth-ldap
+cd examples/authentication/ldap
 docker compose up -d
 ```
 

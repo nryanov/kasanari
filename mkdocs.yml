@@ -16,6 +16,12 @@ nav:
       - Iceberg Catalog: catalogs/iceberg.md
       - Paimon Catalog: catalogs/paimon.md
       - Lance Catalog: catalogs/lance.md
+  - Integrations: integrations/index.md
   - Management API: management/api.md
-  - Authorization and Authentication: security/authentication-authorization.md
+  - Security:
+      - Overview: security/index.md
+      - Authentication Providers: security/authentication.md
+      - Authorization Providers: security/authorization.md
+      - RBAC Roles and Permissions: security/rbac.md
   - Instrumentation via SPI: instrumentation/spi.md
+  - Examples: examples/index.md

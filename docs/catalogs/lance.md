@@ -1,36 +1,46 @@
 # Lance Catalog
 
-Kasanari supports Lance catalogs in internal and proxy modes.
+Kasanari's Lance support currently focuses on the **metadata API** and selected table DDL operations. It does **not** expose the full Lance data-plane API.
+
+## Implemented versions
+
+- Runtime library versions: `lance-namespace-core 0.7.2`, `lance-core 6.0.0`
+- Kasanari API wrapper spec: `spec/lance/kasanari-lance-catalog-service.yaml`
+- Upstream reference spec: `spec/lance/lance-openapi-0.7.2.yaml`
+
+## Base URL pattern
+
+Lance routes use:
+
+- `http://<host>:<port>/lance/v1/...`
+
+Catalog identity is encoded in the `id` path parameter (for example `catalog.namespace` or `catalog.namespace.table`).
 
 ## Modes
 
-## Internal mode
+### INTERNAL
 
 - Factory: `KasanariLanceCatalogFactory`
 - Adapter: `DefaultLanceCatalogAdapter`
-- Backing metadata: JDBC repositories in `modules/repository/repository-lance/*`
+- Metadata storage: JDBC repositories in `modules/repository/repository-lance`
 
-Internal mode merges `fileIoProperties` and `catalogProperties` before initialization.
+`INTERNAL` mode requires `implementation=kasanari` plus JDBC and warehouse properties.
 
-## Proxy mode
+### PROXY
 
 - Factory: `ProxyLanceCatalogFactory`
-- Delegate creation: `LanceNamespace.connect(...)`
+- Delegate construction: `LanceNamespace.connect(...)`
 - Adapter: `DefaultLanceCatalogAdapter`
 
-Required property in both modes:
+`PROXY` mode commonly uses `implementation=dir` and delegates to an upstream Lance namespace backend.
 
-- `implementation`
+## Registration examples
 
-If `implementation` is missing, router creation is skipped and logged as error.
-
-## Registration payloads
-
-### Proxy example
+### PROXY example (`implementation=dir`)
 
 ```json
 {
-  "catalogId": "lance-proxy",
+  "catalogId": "lance_proxy",
   "catalogType": "LANCE",
   "mode": "PROXY",
   "spec": {
@@ -51,11 +61,11 @@ If `implementation` is missing, router creation is skipped and logged as error.
 }
 ```
 
-### Internal example
+### INTERNAL example
 
 ```json
 {
-  "catalogId": "lance-internal",
+  "catalogId": "lance_internal",
   "catalogType": "LANCE",
   "mode": "INTERNAL",
   "spec": {
@@ -76,7 +86,67 @@ If `implementation` is missing, router creation is skipped and logged as error.
 }
 ```
 
-## Operational notes
+## Method implementation status
 
-- Lance adapters are hot-reloaded on metadata version change.
-- Router closes old adapters on replace/remove to release resources safely.
+Status values:
+
+- `Implemented`: endpoint is exposed and handled.
+- `Partial`: endpoint exists but has known limitations.
+- `Not implemented`: endpoint is not exposed by Kasanari.
+
+### Implemented/partial endpoints
+
+| Method | Path | Status | Notes |
+|---|---|---|---|
+| POST | `/lance/v1/namespace/{id}/create` | Implemented | |
+| GET | `/lance/v1/namespace/{id}/list` | Implemented | |
+| POST | `/lance/v1/namespace/{id}/describe` | Implemented | |
+| POST | `/lance/v1/namespace/{id}/drop` | Implemented | |
+| POST | `/lance/v1/namespace/{id}/exists` | Implemented | |
+| GET | `/lance/v1/namespace/{id}/table/list` | Implemented | |
+| POST | `/lance/v1/table/{id}/create` | Implemented | |
+| POST | `/lance/v1/table/{id}/register` | Implemented | |
+| POST | `/lance/v1/table/{id}/describe` | Implemented | |
+| POST | `/lance/v1/table/{id}/exists` | Implemented | |
+| POST | `/lance/v1/table/{id}/drop` | Implemented | |
+| POST | `/lance/v1/table/{id}/deregister` | Implemented | |
+| POST | `/lance/v1/table/{id}/restore` | Implemented | |
+| POST | `/lance/v1/table/{id}/rename` | Implemented | |
+| POST | `/lance/v1/table/{id}/alter_columns` | Implemented | |
+| POST | `/lance/v1/table/{id}/drop_columns` | Implemented | |
+| POST | `/lance/v1/table/{id}/add_columns` | Partial | Internal mode currently supports only non-virtual columns. |
+| POST | `/lance/v1/table/{id}/declare` | Implemented | Maps to create-empty-table behavior. |
+
+### Not implemented endpoint groups
+
+| Methods | Path group | Status | Notes |
+|---|---|---|---|
+| GET | `/lance/v1/table` | Not implemented | Table listing/details endpoint from upstream spec not exposed. |
+| POST | `/lance/v1/table/{id}/schema_metadata/update` | Not implemented | |
+| POST | `/lance/v1/table/{id}/version/*` | Not implemented | Version lifecycle endpoints not exposed. |
+| POST | `/lance/v1/table/version/batch-create` | Not implemented | |
+| POST | `/lance/v1/table/batch-commit` | Not implemented | |
+| POST | `/lance/v1/table/{id}/stats` | Not implemented | |
+| POST | `/lance/v1/table/{id}/insert` | Not implemented | Data plane. |
+| POST | `/lance/v1/table/{id}/merge_insert` | Not implemented | Data plane. |
+| POST | `/lance/v1/table/{id}/update` | Not implemented | Data plane. |
+| POST | `/lance/v1/table/{id}/delete` | Not implemented | Data plane. |
+| POST | `/lance/v1/table/{id}/query` | Not implemented | Data plane. |
+| POST | `/lance/v1/table/{id}/count_rows` | Not implemented | Data plane. |
+| POST | `/lance/v1/table/{id}/explain_plan` | Not implemented | |
+| POST | `/lance/v1/table/{id}/analyze_plan` | Not implemented | |
+| POST | `/lance/v1/table/{id}/create_index` | Not implemented | |
+| POST | `/lance/v1/table/{id}/create_scalar_index` | Not implemented | |
+| POST | `/lance/v1/table/{id}/index/list` | Not implemented | |
+| POST | `/lance/v1/table/{id}/index/{index_name}/stats` | Not implemented | |
+| POST | `/lance/v1/table/{id}/index/{index_name}/drop` | Not implemented | |
+| POST | `/lance/v1/table/{id}/tags/*` | Not implemented | Tag APIs are not exposed. |
+| POST | `/lance/v1/transaction/{id}/*` | Not implemented | Transaction APIs are not exposed. |
+| POST | `/lance/v1/oauth/tokens` | Not implemented | Token URL exists in security scheme, not routed by catalog API. |
+
+## Important limitations
+
+- Current implementation is metadata-focused; data plane APIs are intentionally absent.
+- Alter-table support is partial (`add_columns` has constraints).
+- `PROXY` mode with `implementation=dir` works for namespace/table metadata operations, with behavior constrained by upstream backend capabilities.
+- Adapter refresh and replacement follows catalog metadata updates and refresh interval settings.

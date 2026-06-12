@@ -16,7 +16,7 @@ Build the local Kasanari image from repository root:
 ## Startup
 
 ```shell
-cd examples/iceberg/starrocks/internal
+cd examples/starrocks
 docker compose up -d
 ```
 

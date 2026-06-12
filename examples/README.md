@@ -10,14 +10,15 @@ Build the server image once from the repository root:
 
 ## Catalog families
 
-- [Iceberg examples](iceberg/README.md)
-- [Paimon examples](paimon/README.md)
+- [Iceberg + Trino (internal)](trino/README.md)
+- [Iceberg + StarRocks (internal)](starrocks/README.md)
+- [Spark notebooks (Iceberg/Paimon/Lance)](spark/README.md)
 - [Lance examples](lance/README.md)
 
 ## Existing auth-focused examples
 
-- [Auth none](auth-none/README.md)
-- [Auth LDAP](auth-ldap/README.md)
-- [Auth OIDC](auth-oidc/README.md)
-- [Auth custom provider](auth-custom/README.md)
-- [Authorization custom provider](authorization-custom/README.md)
+- [Auth none](authentication/none/README.md)
+- [Auth LDAP](authentication/ldap/README.md)
+- [Auth OIDC](authentication/oidc/README.md)
+- [Auth custom provider](authentication/custom/README.md)
+- [Authorization custom provider](authorization/custom/README.md)
