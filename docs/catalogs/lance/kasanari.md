@@ -1,7 +1,5 @@
 # Lance `kasanari` implementation
 
-Support status: **Verified** for `INTERNAL` (`implementation=kasanari`)
-
 - Catalog type: `LANCE`
 - Factory (internal): `KasanariLanceCatalogFactory`
 - Factory (proxy): `ProxyLanceCatalogFactory`
@@ -122,7 +120,3 @@ Support status: **Verified** for `INTERNAL` (`implementation=kasanari`)
 | `manifest_enabled` | implementation-specific | Proxy `dir` backend setting to control manifests behavior. |
 | `dir_listing_enabled` | implementation-specific | Proxy `dir` backend setting for namespace/table listing behavior. |
 
-## Notes
-
-- Router-level validation requires `catalogProperties.implementation`; missing value prevents adapter creation.
-- Internal mode currently focuses on metadata APIs and selected DDL operations.

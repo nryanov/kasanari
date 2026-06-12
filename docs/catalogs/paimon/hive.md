@@ -1,7 +1,5 @@
 # Paimon `hive` implementation
 
-Support status: **Verified**
-
 - Catalog type: `PAIMON`
 - Implementation mode: `PROXY`
 - `catalogProperties.type`: `hive`
@@ -63,7 +61,3 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Paimon
 | `uri` | none | Hive Metastore URI used by Paimon Hive catalog. Required. |
 | `fs.s3a.*` (in `fileIoProperties`) | none | Hadoop S3A options used by Paimon storage access. |
 
-## Notes
-
-- Kasanari forwards properties to upstream Paimon `CatalogFactory`.
-- Feature support may differ from `kasanari` internal mode and depends on Hive-backed Paimon behavior.

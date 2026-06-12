@@ -1,7 +1,5 @@
 # Paimon `jdbc` implementation
 
-Support status: **Verified**
-
 - Catalog type: `PAIMON`
 - Implementation mode: `PROXY`
 - `catalogProperties.type`: `jdbc`
@@ -73,7 +71,3 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Paimon
 | `jdbc-table-prefix` | implementation-specific | Prefix for metadata tables in JDBC backend. |
 | `fs.s3a.*` (in `fileIoProperties`) | none | Hadoop S3A options used by Paimon storage access. |
 
-## Notes
-
-- Kasanari delegates proxy setup to Paimon `CatalogFactory.createCatalog(...)`.
-- Supported features depend on the selected upstream Paimon JDBC catalog capabilities.

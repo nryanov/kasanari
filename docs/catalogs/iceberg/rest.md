@@ -1,7 +1,5 @@
 # Iceberg `rest` implementation
 
-Support status: **Experimental (not verified in this repo)**
-
 - Catalog type: `ICEBERG`
 - Implementation mode: `PROXY`
 - `catalogProperties.catalog-impl`: `org.apache.iceberg.rest.RESTCatalog`
@@ -74,10 +72,3 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Iceber
 | `io-impl` | engine default | Optional Iceberg `FileIO` implementation override. |
 | `s3.*` | none | Storage settings needed when tables are backed by S3-compatible object storage. |
 
-## Notes
-
-- Kasanari does not pre-validate these keys; it delegates to Iceberg REST catalog initialization.
-- Mark this configuration as experimental in production runbooks until validated in your environment.
-- Upstream references:
-  - [Apache Polaris](https://polaris.apache.org/)
-  - [Apache Gravitino](https://gravitino.apache.org/docs/1.2.1/)

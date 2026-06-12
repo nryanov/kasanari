@@ -1,7 +1,5 @@
 # Paimon `filesystem` implementation
 
-Support status: **Verified**
-
 - Catalog type: `PAIMON`
 - Implementation mode: `PROXY`
 - `catalogProperties.type`: `filesystem`
@@ -85,7 +83,3 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Paimon
 | `s3.endpoint` | none | S3 endpoint URL (for example MinIO). |
 | `s3.path.style.access` | none | Enables path-style addressing for S3-compatible storage. |
 
-## Notes
-
-- Both `s3a://` and `s3://` styles are used in tested setups.
-- Pick one approach (Hadoop `fileIoProperties` or Paimon `s3.*` options) consistent with your runtime.

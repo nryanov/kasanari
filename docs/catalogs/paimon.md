@@ -15,13 +15,13 @@ Kasanari exposes Paimon REST APIs in `INTERNAL` and `PROXY` catalog modes.
 
 ## Implementations
 
-| Implementation | Modes | Support status | Details |
-|---|---|---|---|
-| `kasanari` | `INTERNAL` | Verified | [Paimon Kasanari](paimon/kasanari.md) |
-| `filesystem` | `PROXY` | Verified | [Paimon Filesystem](paimon/filesystem.md) |
-| `jdbc` | `PROXY` | Verified | [Paimon JDBC](paimon/jdbc.md) |
-| `hive` | `PROXY` | Verified | [Paimon Hive](paimon/hive.md) |
-| `rest` | `PROXY` | Experimental (not verified in this repo) | [Paimon REST](paimon/rest.md) |
+| Implementation | Modes | Details |
+|---|---|---|
+| `kasanari` | `INTERNAL` | [Paimon Kasanari](paimon/kasanari.md) |
+| `filesystem` | `PROXY` | [Paimon Filesystem](paimon/filesystem.md) |
+| `jdbc` | `PROXY` | [Paimon JDBC](paimon/jdbc.md) |
+| `hive` | `PROXY` | [Paimon Hive](paimon/hive.md) |
+| `rest` | `PROXY` | [Paimon REST](paimon/rest.md) |
 
 Catalogs are registered via `POST /management/v1/catalogs` with:
 
@@ -73,17 +73,3 @@ Catalogs are registered via `POST /management/v1/catalogs` with:
 }
 ```
 
-## API coverage summary
-
-- `Implemented`: most database, table, view, function, branch, tag, and consumer endpoints.
-- `Partial`: a small set of endpoints such as auth/token table endpoints and some partition filter behavior.
-- `Not implemented`: currently minimal; behavior can still vary by underlying proxied catalog type.
-
-See details in `spec/paimon/kasanari-paimon-catalog-service.yaml`.
-
-## Important limitations
-
-- `token` and `auth` table endpoints are exposed but not fully implemented by the default adapter.
-- Some partition filtering behavior differs in `INTERNAL` mode.
-- In `PROXY` mode, behavior depends on the selected upstream Paimon catalog type.
-- Catalog adapters are refreshed using `kasanari.catalog.refresh-interval` (default `30s`).

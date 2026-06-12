@@ -1,7 +1,5 @@
 # Paimon `rest` implementation
 
-Support status: **Experimental (not verified in this repo)**
-
 - Catalog type: `PAIMON`
 - Implementation mode: `PROXY`
 - Intended upstream mode: REST metastore/catalog
@@ -73,10 +71,3 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Paimon
 | `dlf.security-token` | none | Optional DLF temporary security token. |
 | `s3.*` | none | Optional object storage properties required by your backend. |
 
-## Notes
-
-- Kasanari forwards these options to upstream Paimon `CatalogFactory`.
-- Validate keys against your target REST server implementation before production use.
-- Upstream references:
-  - [Apache Paimon REST Catalog docs](https://paimon.apache.org/docs/master/concepts/rest/)
-  - [Apache Gravitino](https://gravitino.apache.org/docs/1.2.1/)

@@ -1,7 +1,5 @@
 # Iceberg `kasanari` implementation
 
-Support status: **Verified**
-
 - Catalog type: `ICEBERG`
 - Implementation mode: `INTERNAL`
 - Factory: `KasanariIcebergCatalogFactory`
@@ -49,8 +47,7 @@ Support status: **Verified**
       "s3.endpoint": "http://localhost:9000",
       "s3.access-key-id": "admin",
       "s3.secret-access-key": "password",
-      "s3.path-style-access": "true",
-      "s3.client-factory": "kasanari.catalog.iceberg.s3.NoneRegionS3FileIOAwsClientFactory"
+      "s3.path-style-access": "true"
     }
   }
 }
@@ -82,9 +79,4 @@ Not applicable for this implementation. Use one of the `PROXY` pages:
 | `s3.access-key-id` | none | S3 access key for `S3FileIO`. |
 | `s3.secret-access-key` | none | S3 secret key for `S3FileIO`. |
 | `s3.path-style-access` | none | Enables path-style S3 addressing when needed. |
-| `s3.client-factory` | none | Custom S3 client factory class. |
 
-## Notes
-
-- `warehouse` is validated by Kasanari at catalog initialization.
-- Catalog adapters are refreshed according to `kasanari.catalog.refresh-interval` (default `30s`).

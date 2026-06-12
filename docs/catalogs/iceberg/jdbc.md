@@ -1,7 +1,5 @@
 # Iceberg `jdbc` implementation
 
-Support status: **Verified**
-
 - Catalog type: `ICEBERG`
 - Implementation mode: `PROXY`
 - `catalogProperties.catalog-impl`: `org.apache.iceberg.jdbc.JdbcCatalog`
@@ -59,8 +57,7 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Iceber
       "s3.endpoint": "http://localhost:9000",
       "s3.access-key-id": "admin",
       "s3.secret-access-key": "password",
-      "s3.path-style-access": "true",
-      "s3.client-factory": "kasanari.catalog.iceberg.s3.NoneRegionS3FileIOAwsClientFactory"
+      "s3.path-style-access": "true"
     }
   }
 }
@@ -81,10 +78,5 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Iceber
 | `s3.access-key-id` | none | S3 access key for `S3FileIO`. |
 | `s3.secret-access-key` | none | S3 secret key for `S3FileIO`. |
 | `s3.path-style-access` | none | Enables path-style S3 addressing. |
-| `s3.client-factory` | none | Optional custom S3 client factory class. |
 | `fs.s3a.*` (in `fileIoProperties`) | none | Hadoop S3A settings passed into the delegated catalog environment. |
 
-## Notes
-
-- Kasanari passes `catalogProperties` and `fileIoProperties` directly to Iceberg `CatalogUtil.buildIcebergCatalog(...)`.
-- Behavior and accepted extra keys may vary across Iceberg versions and JDBC driver settings.

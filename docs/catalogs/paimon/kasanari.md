@@ -1,7 +1,5 @@
 # Paimon `kasanari` implementation
 
-Support status: **Verified**
-
 - Catalog type: `PAIMON`
 - Implementation mode: `INTERNAL`
 - Factory: `KasanariPaimonCatalogFactory`
@@ -81,7 +79,3 @@ Not applicable for this implementation. Use one of the `PROXY` pages:
 | `kasanari.jdbc.connection-pool.max-lifetime.millis` | `0` | Max JDBC connection lifetime in milliseconds (`0` means no lifetime limit). |
 | `fs.s3a.*` (in `fileIoProperties`) | none | Hadoop S3A options used by Paimon FileIO for S3-compatible storage. |
 
-## Notes
-
-- `warehouse` is validated by Kasanari and must not be empty.
-- Catalog adapters are refreshed according to `kasanari.catalog.refresh-interval` (default `30s`).

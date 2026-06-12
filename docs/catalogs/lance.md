@@ -15,9 +15,9 @@ Kasanari currently focuses on Lance metadata APIs and selected DDL flows.
 
 ## Implementations
 
-| Implementation | Modes | Support status | Details |
-|---|---|---|---|
-| `kasanari` | `INTERNAL` | Verified | [Lance Kasanari](lance/kasanari.md) |
+| Implementation | Modes | Details |
+|---|---|---|
+| `kasanari` | `INTERNAL` | [Lance Kasanari](lance/kasanari.md) |
 
 `PROXY` mode is also supported through `implementation=<backend>` (commonly `dir`), and is documented in the Lance Kasanari page as a runnable proxy setup example.
 
@@ -66,17 +66,3 @@ Catalogs are registered via `POST /management/v1/catalogs` with:
 }
 ```
 
-## API coverage summary
-
-- `Implemented`: namespace lifecycle and most table metadata/DDL routes.
-- `Partial`: `add_columns` (internal adapter currently supports non-virtual columns only).
-- `Not implemented`: data-plane and advanced version/index/transaction endpoint groups.
-
-See details in `spec/lance/kasanari-lance-catalog-service.yaml`.
-
-## Important limitations
-
-- Current implementation is metadata-focused; data-plane APIs are intentionally absent.
-- `PROXY` mode behavior depends on the selected upstream backend implementation.
-- Catalog loading requires `catalogProperties.implementation` in both modes.
-- Adapter refresh follows metadata updates and `kasanari.catalog.refresh-interval` (default `30s`).

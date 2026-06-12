@@ -1,7 +1,5 @@
 # Iceberg `hadoop` implementation
 
-Support status: **Verified**
-
 - Catalog type: `ICEBERG`
 - Implementation mode: `PROXY`
 - `catalogProperties.catalog-impl`: `org.apache.iceberg.hadoop.HadoopCatalog`
@@ -59,8 +57,7 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Iceber
       "s3.endpoint": "http://localhost:9000",
       "s3.access-key-id": "admin",
       "s3.secret-access-key": "password",
-      "s3.path-style-access": "true",
-      "s3.client-factory": "kasanari.catalog.iceberg.s3.NoneRegionS3FileIOAwsClientFactory"
+      "s3.path-style-access": "true"
     }
   }
 }
@@ -77,7 +74,6 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Iceber
 | `s3.access-key-id` | none | S3 access key for `S3FileIO`. |
 | `s3.secret-access-key` | none | S3 secret key for `S3FileIO`. |
 | `s3.path-style-access` | none | Enables path-style S3 addressing. |
-| `s3.client-factory` | none | Optional custom S3 client factory class. |
 | `fs.s3a.endpoint` | none | Hadoop S3A endpoint for delegated Hadoop configuration. |
 | `fs.s3a.access.key` | none | Hadoop S3A access key. |
 | `fs.s3a.secret.key` | none | Hadoop S3A secret key. |
@@ -85,7 +81,3 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Iceber
 | `fs.s3a.connection.ssl.enabled` | implementation default | Enables/disables TLS for S3A endpoint. |
 | `fs.s3a.aws.credentials.provider` | implementation default | Optional AWS credentials provider class for S3A. |
 
-## Notes
-
-- In tested setup, Hadoop properties are required for MinIO/S3A connectivity.
-- Upstream Hadoop catalog does not support every Iceberg operation (for example rename behavior depends on backend support).
