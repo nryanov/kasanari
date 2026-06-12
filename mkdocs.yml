@@ -13,9 +13,23 @@ nav:
   - General Information: index.md
   - Quickstart: quickstart.md
   - Catalogs:
-      - Iceberg Catalog: catalogs/iceberg.md
-      - Paimon Catalog: catalogs/paimon.md
-      - Lance Catalog: catalogs/lance.md
+      - Iceberg Catalog:
+          - Overview: catalogs/iceberg.md
+          - Kasanari: catalogs/iceberg/kasanari.md
+          - JDBC: catalogs/iceberg/jdbc.md
+          - Hive: catalogs/iceberg/hive.md
+          - REST: catalogs/iceberg/rest.md
+          - Hadoop: catalogs/iceberg/hadoop.md
+      - Paimon Catalog:
+          - Overview: catalogs/paimon.md
+          - Kasanari: catalogs/paimon/kasanari.md
+          - JDBC: catalogs/paimon/jdbc.md
+          - Hive: catalogs/paimon/hive.md
+          - Filesystem: catalogs/paimon/filesystem.md
+          - REST: catalogs/paimon/rest.md
+      - Lance Catalog:
+          - Overview: catalogs/lance.md
+          - Kasanari: catalogs/lance/kasanari.md
   - Management API: management/api.md
   - Security:
       - Overview: security/index.md

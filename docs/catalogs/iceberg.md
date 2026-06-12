@@ -1,6 +1,6 @@
 # Iceberg Catalog
 
-Kasanari's Iceberg support is **almost full REST coverage** of Iceberg REST Catalog API with a few intentionally excluded areas.
+Kasanari provides Iceberg catalog APIs on top of `INTERNAL` and `PROXY` catalog modes.
 
 ## Implemented versions
 
@@ -13,29 +13,25 @@ Kasanari's Iceberg support is **almost full REST coverage** of Iceberg REST Cata
 - `http://<host>:<port>/iceberg/v1/{catalogId}/...`
 - `{catalogId}` is the Management API registration ID.
 
-## Modes
+## Implementations
+
+| Implementation | Modes | Support status | Details |
+|---|---|---|---|
+| `kasanari` | `INTERNAL` | Verified | [Iceberg Kasanari](iceberg/kasanari.md) |
+| `jdbc` | `PROXY` | Verified | [Iceberg JDBC](iceberg/jdbc.md) |
+| `hive` | `PROXY` | Verified | [Iceberg Hive](iceberg/hive.md) |
+| `hadoop` | `PROXY` | Verified | [Iceberg Hadoop](iceberg/hadoop.md) |
+| `rest` | `PROXY` | Experimental (not verified in this repo) | [Iceberg REST](iceberg/rest.md) |
+
+Catalogs are registered via `POST /management/v1/catalogs` with:
+
+- `catalogType=ICEBERG`
+- `mode=INTERNAL` or `mode=PROXY`
+- `spec.fileIoProperties` and `spec.catalogProperties`
+
+## Minimal runnable samples
 
 ### INTERNAL
-
-- Factory: `KasanariIcebergCatalogFactory`
-- Adapter: `KasanariIcebergCatalogAdapter`
-- Metadata storage: JDBC repositories in `modules/repository/repository-iceberg`
-
-Use `INTERNAL` for Kasanari-owned catalog metadata and behavior.
-
-### PROXY
-
-- Factory: `ProxyIcebergCatalogFactory`
-- Delegate construction: `CatalogUtil.buildIcebergCatalog(...)`
-- Adapter: `DefaultIcebergCatalogAdapter`
-
-Use `PROXY` when Kasanari should front an existing Iceberg catalog.
-
-## Registration examples
-
-Catalogs are registered with `POST /management/v1/catalogs`.
-
-### INTERNAL example
 
 ```json
 {
@@ -48,23 +44,17 @@ Catalogs are registered with `POST /management/v1/catalogs`.
       "uri": "jdbc:postgresql://localhost:5432/postgres",
       "kasanari.jdbc.user": "postgres",
       "kasanari.jdbc.password": "postgres",
-      "warehouse": "s3a://warehouse",
-      "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
-      "s3.endpoint": "http://localhost:9000",
-      "s3.access-key-id": "admin",
-      "s3.secret-access-key": "password",
-      "s3.path-style-access": "true",
-      "s3.client-factory": "kasanari.catalog.iceberg.s3.NoneRegionS3FileIOAwsClientFactory"
+      "warehouse": "s3a://warehouse"
     }
   }
 }
 ```
 
-### PROXY example
+### PROXY
 
 ```json
 {
-  "catalogId": "iceberg_proxy",
+  "catalogId": "iceberg_proxy_hadoop",
   "catalogType": "ICEBERG",
   "mode": "PROXY",
   "spec": {
@@ -77,56 +67,22 @@ Catalogs are registered with `POST /management/v1/catalogs`.
     },
     "catalogProperties": {
       "catalog-impl": "org.apache.iceberg.hadoop.HadoopCatalog",
-      "warehouse": "s3a://warehouse",
-      "io-impl": "org.apache.iceberg.aws.s3.S3FileIO"
+      "warehouse": "s3a://warehouse"
     }
   }
 }
 ```
 
-## Method implementation status
+## API coverage summary
 
-Status values:
+- `Implemented`: most namespace, table, and view endpoints.
+- `Partial`: a small set of endpoints, including table load optional params and metrics behavior.
+- `Not implemented`: credentials and scan-planning endpoints (`/plan`, `/tasks`), and catalog OAuth token endpoint.
 
-- `Implemented`: endpoint is exposed and handled.
-- `Partial`: endpoint exists but has known limitations.
-- `Not implemented`: endpoint exists in upstream ecosystem but not exposed by Kasanari.
-
-| Method | Path                                                                        | Status          | Notes                                                           |
-|--------|-----------------------------------------------------------------------------|-----------------|-----------------------------------------------------------------|
-| GET    | `/iceberg/v1/config`                                                        | Implemented     | Configuration negotiation endpoint.                             |
-| GET    | `/iceberg/v1/{prefix}/namespaces`                                           | Implemented     |                                                                 |
-| POST   | `/iceberg/v1/{prefix}/namespaces`                                           | Implemented     |                                                                 |
-| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}`                               | Implemented     |                                                                 |
-| HEAD   | `/iceberg/v1/{prefix}/namespaces/{namespace}`                               | Implemented     | Namespace exists check.                                         |
-| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}`                               | Implemented     |                                                                 |
-| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/properties`                    | Implemented     |                                                                 |
-| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables`                        | Implemented     |                                                                 |
-| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables`                        | Implemented     | Create table.                                                   |
-| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/register`                      | Implemented     | Register existing table.                                        |
-| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}`                | Partial         | Some optional request parameters are currently not propagated.  |
-| HEAD   | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}`                | Implemented     | Table exists check.                                             |
-| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}`                | Implemented     | Commit table update.                                            |
-| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}`                | Implemented     | Drop table.                                                     |
-| POST   | `/iceberg/v1/{prefix}/tables/rename`                                        | Implemented     |                                                                 |
-| POST   | `/iceberg/v1/{prefix}/transactions/commit`                                  | Implemented     |                                                                 |
-| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}/views`                         | Implemented     |                                                                 |
-| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/views`                         | Implemented     |                                                                 |
-| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}`                  | Implemented     |                                                                 |
-| HEAD   | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}`                  | Implemented     | View exists check.                                              |
-| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}`                  | Implemented     | Commit view update.                                             |
-| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}/views/{view}`                  | Implemented     |                                                                 |
-| POST   | `/iceberg/v1/{prefix}/views/rename`                                         | Implemented     |                                                                 |
-| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics`        | Partial         | Routed, but current default adapter handling is minimal/no-op.  |
-| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials`    | Not implemented | Explicitly excluded in Kasanari spec.                           |
-| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan`           | Not implemented | Explicitly excluded in Kasanari spec.                           |
-| GET    | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan/{plan-id}` | Not implemented | Explicitly excluded in Kasanari spec.                           |
-| DELETE | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan/{plan-id}` | Not implemented | Explicitly excluded in Kasanari spec.                           |
-| POST   | `/iceberg/v1/{prefix}/namespaces/{namespace}/tables/{table}/tasks`          | Not implemented | Explicitly excluded in Kasanari spec.                           |
-| POST   | `/iceberg/v1/oauth/tokens`                                                  | Not implemented | Token URL exists in security scheme, not routed by catalog API. |
+See details in `spec/iceberg/kasanari-iceberg-catalog-service.yaml`.
 
 ## Important limitations
 
 - Scan planning (`/plan`, `/tasks`) and credentials endpoints are intentionally not exposed.
 - OAuth token issuance endpoint is not implemented in catalog API surface.
-- Catalog adapters are refreshed based on metadata updates (`kasanari.catalog.refresh-interval`).
+- Catalog adapters are refreshed based on metadata updates (`kasanari.catalog.refresh-interval`, default `30s`).
