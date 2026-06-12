@@ -66,16 +66,16 @@ Not applicable for this implementation. Use one of the `PROXY` pages:
 
 ## Additional properties
 
-| config | default value | meaning |
-|---|---|---|
-| `warehouse` | none | Paimon warehouse path. Required. |
-| `uri` | none | JDBC URL for Kasanari metadata repositories. Required. |
-| `kasanari.jdbc.user` | none | JDBC username for metadata DB. Required. |
-| `kasanari.jdbc.password` | none | JDBC password for metadata DB. Required. |
-| `kasanari.catalog.key` | `default` | Logical key used to isolate metadata records in JDBC repositories. |
-| `kasanari.jdbc.connection-pool.initial-size` | `2` | Initial JDBC pool size. |
-| `kasanari.jdbc.connection-pool.min-size` | `1` | Minimum JDBC pool size. |
-| `kasanari.jdbc.connection-pool.max-size` | `5` | Maximum JDBC pool size. |
-| `kasanari.jdbc.connection-pool.max-lifetime.millis` | `0` | Max JDBC connection lifetime in milliseconds (`0` means no lifetime limit). |
-| `fs.s3a.*` (in `fileIoProperties`) | none | Hadoop S3A options used by Paimon FileIO for S3-compatible storage. |
+| config                                              | default value | meaning                                                                     |
+|-----------------------------------------------------|---------------|-----------------------------------------------------------------------------|
+| `warehouse`                                         | none          | Paimon warehouse path. Required.                                            |
+| `uri`                                               | none          | JDBC URL for Kasanari metadata repositories. Required.                      |
+| `kasanari.jdbc.user`                                | none          | JDBC username for metadata DB. Required.                                    |
+| `kasanari.jdbc.password`                            | none          | JDBC password for metadata DB. Required.                                    |
+| `kasanari.catalog.key`                              | `default`     | Logical key used to isolate metadata records in JDBC repositories.          |
+| `kasanari.jdbc.connection-pool.initial-size`        | `2`           | Initial JDBC pool size.                                                     |
+| `kasanari.jdbc.connection-pool.min-size`            | `1`           | Minimum JDBC pool size.                                                     |
+| `kasanari.jdbc.connection-pool.max-size`            | `5`           | Maximum JDBC pool size.                                                     |
+| `kasanari.jdbc.connection-pool.max-lifetime.millis` | `0`           | Max JDBC connection lifetime in milliseconds (`0` means no lifetime limit). |
+| `fs.s3a.*` (in `fileIoProperties`)                  | none          | Hadoop S3A options used by Paimon FileIO for S3-compatible storage.         |
 

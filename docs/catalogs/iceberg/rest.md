@@ -59,16 +59,16 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Iceber
 
 ## Additional properties
 
-| config | default value | meaning |
-|---|---|---|
-| `catalog-impl` | none | Iceberg catalog implementation class. Must be `org.apache.iceberg.rest.RESTCatalog` for this page. |
-| `uri` | none | Base URL of the upstream Iceberg REST catalog service. Required. |
-| `warehouse` | none | Target warehouse or catalog namespace identifier. Required in most deployments. |
-| `credential` | none | OAuth client credentials in `client_id:client_secret` format. |
-| `token` | none | Optional bearer token; alternative to `credential`. |
-| `oauth2-server-uri` | provider-dependent | OAuth token endpoint URI (required when catalog and auth endpoints differ). |
-| `scope` | `catalog` (common default) | Optional OAuth scope value. |
-| `token-exchange-enabled` | `true` (common default) | Enables token exchange flow when supported by client/provider. |
-| `io-impl` | engine default | Optional Iceberg `FileIO` implementation override. |
-| `s3.*` | none | Storage settings needed when tables are backed by S3-compatible object storage. |
+| config                   | default value              | meaning                                                                                            |
+|--------------------------|----------------------------|----------------------------------------------------------------------------------------------------|
+| `catalog-impl`           | none                       | Iceberg catalog implementation class. Must be `org.apache.iceberg.rest.RESTCatalog` for this page. |
+| `uri`                    | none                       | Base URL of the upstream Iceberg REST catalog service. Required.                                   |
+| `warehouse`              | none                       | Target warehouse or catalog namespace identifier. Required in most deployments.                    |
+| `credential`             | none                       | OAuth client credentials in `client_id:client_secret` format.                                      |
+| `token`                  | none                       | Optional bearer token; alternative to `credential`.                                                |
+| `oauth2-server-uri`      | provider-dependent         | OAuth token endpoint URI (required when catalog and auth endpoints differ).                        |
+| `scope`                  | `catalog` (common default) | Optional OAuth scope value.                                                                        |
+| `token-exchange-enabled` | `true` (common default)    | Enables token exchange flow when supported by client/provider.                                     |
+| `io-impl`                | engine default             | Optional Iceberg `FileIO` implementation override.                                                 |
+| `s3.*`                   | none                       | Storage settings needed when tables are backed by S3-compatible object storage.                    |
 

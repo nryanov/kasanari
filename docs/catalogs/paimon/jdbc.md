@@ -60,14 +60,14 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Paimon
 
 ## Additional properties
 
-| config | default value | meaning |
-|---|---|---|
-| `type` | none | Paimon proxy catalog type. Must be `jdbc` for this page. |
-| `warehouse` | none | Paimon warehouse path. Required. |
-| `jdbc-url` | none | JDBC endpoint for external Paimon JDBC catalog metadata. Required. |
-| `jdbc-user` | none | JDBC username. |
-| `jdbc-password` | none | JDBC password. |
-| `jdbc-driver` | JDBC driver default resolution | Explicit JDBC driver class name. |
-| `jdbc-table-prefix` | implementation-specific | Prefix for metadata tables in JDBC backend. |
-| `fs.s3a.*` (in `fileIoProperties`) | none | Hadoop S3A options used by Paimon storage access. |
+| config                             | default value                  | meaning                                                            |
+|------------------------------------|--------------------------------|--------------------------------------------------------------------|
+| `type`                             | none                           | Paimon proxy catalog type. Must be `jdbc` for this page.           |
+| `warehouse`                        | none                           | Paimon warehouse path. Required.                                   |
+| `jdbc-url`                         | none                           | JDBC endpoint for external Paimon JDBC catalog metadata. Required. |
+| `jdbc-user`                        | none                           | JDBC username.                                                     |
+| `jdbc-password`                    | none                           | JDBC password.                                                     |
+| `jdbc-driver`                      | JDBC driver default resolution | Explicit JDBC driver class name.                                   |
+| `jdbc-table-prefix`                | implementation-specific        | Prefix for metadata tables in JDBC backend.                        |
+| `fs.s3a.*` (in `fileIoProperties`) | none                           | Hadoop S3A options used by Paimon storage access.                  |
 

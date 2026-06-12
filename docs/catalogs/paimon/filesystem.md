@@ -73,13 +73,13 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Paimon
 
 ## Additional properties
 
-| config | default value | meaning |
-|---|---|---|
-| `type` | none | Paimon proxy catalog type. Must be `filesystem` for this page. |
-| `warehouse` | none | Filesystem warehouse root path. Required. |
-| `fs.s3a.*` (in `fileIoProperties`) | none | Hadoop S3A options, commonly used with `s3a://` warehouse URIs. |
-| `s3.access-key` | none | Paimon S3 access key (used when configured via catalog properties). |
-| `s3.secret-key` | none | Paimon S3 secret key. |
-| `s3.endpoint` | none | S3 endpoint URL (for example MinIO). |
-| `s3.path.style.access` | none | Enables path-style addressing for S3-compatible storage. |
+| config                             | default value | meaning                                                             |
+|------------------------------------|---------------|---------------------------------------------------------------------|
+| `type`                             | none          | Paimon proxy catalog type. Must be `filesystem` for this page.      |
+| `warehouse`                        | none          | Filesystem warehouse root path. Required.                           |
+| `fs.s3a.*` (in `fileIoProperties`) | none          | Hadoop S3A options, commonly used with `s3a://` warehouse URIs.     |
+| `s3.access-key`                    | none          | Paimon S3 access key (used when configured via catalog properties). |
+| `s3.secret-key`                    | none          | Paimon S3 secret key.                                               |
+| `s3.endpoint`                      | none          | S3 endpoint URL (for example MinIO).                                |
+| `s3.path.style.access`             | none          | Enables path-style addressing for S3-compatible storage.            |
 

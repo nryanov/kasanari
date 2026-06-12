@@ -65,19 +65,19 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Iceber
 
 ## Additional properties
 
-| config | default value | meaning |
-|---|---|---|
-| `catalog-impl` | none | Iceberg catalog implementation class. Must be `org.apache.iceberg.hadoop.HadoopCatalog` for this page. |
-| `warehouse` | none | Warehouse root location. Required. |
-| `io-impl` | engine default | Optional Iceberg `FileIO` implementation override. |
-| `s3.endpoint` | none | S3 endpoint for `S3FileIO`. |
-| `s3.access-key-id` | none | S3 access key for `S3FileIO`. |
-| `s3.secret-access-key` | none | S3 secret key for `S3FileIO`. |
-| `s3.path-style-access` | none | Enables path-style S3 addressing. |
-| `fs.s3a.endpoint` | none | Hadoop S3A endpoint for delegated Hadoop configuration. |
-| `fs.s3a.access.key` | none | Hadoop S3A access key. |
-| `fs.s3a.secret.key` | none | Hadoop S3A secret key. |
-| `fs.s3a.path.style.access` | none | Enables S3A path-style addressing. |
-| `fs.s3a.connection.ssl.enabled` | implementation default | Enables/disables TLS for S3A endpoint. |
-| `fs.s3a.aws.credentials.provider` | implementation default | Optional AWS credentials provider class for S3A. |
+| config                            | default value          | meaning                                                                                                |
+|-----------------------------------|------------------------|--------------------------------------------------------------------------------------------------------|
+| `catalog-impl`                    | none                   | Iceberg catalog implementation class. Must be `org.apache.iceberg.hadoop.HadoopCatalog` for this page. |
+| `warehouse`                       | none                   | Warehouse root location. Required.                                                                     |
+| `io-impl`                         | engine default         | Optional Iceberg `FileIO` implementation override.                                                     |
+| `s3.endpoint`                     | none                   | S3 endpoint for `S3FileIO`.                                                                            |
+| `s3.access-key-id`                | none                   | S3 access key for `S3FileIO`.                                                                          |
+| `s3.secret-access-key`            | none                   | S3 secret key for `S3FileIO`.                                                                          |
+| `s3.path-style-access`            | none                   | Enables path-style S3 addressing.                                                                      |
+| `fs.s3a.endpoint`                 | none                   | Hadoop S3A endpoint for delegated Hadoop configuration.                                                |
+| `fs.s3a.access.key`               | none                   | Hadoop S3A access key.                                                                                 |
+| `fs.s3a.secret.key`               | none                   | Hadoop S3A secret key.                                                                                 |
+| `fs.s3a.path.style.access`        | none                   | Enables S3A path-style addressing.                                                                     |
+| `fs.s3a.connection.ssl.enabled`   | implementation default | Enables/disables TLS for S3A endpoint.                                                                 |
+| `fs.s3a.aws.credentials.provider` | implementation default | Optional AWS credentials provider class for S3A.                                                       |
 

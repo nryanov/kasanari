@@ -103,20 +103,20 @@
 
 ## Additional properties
 
-| config | default value | meaning |
-|---|---|---|
-| `implementation` | none | Required in both modes. `kasanari` for internal metadata catalog, or proxy backend value such as `dir`. |
-| `uri` | none | JDBC URL for internal metadata repositories. Required in internal mode. |
-| `kasanari.jdbc.user` | none | JDBC username for internal mode metadata DB. Required in internal mode. |
-| `kasanari.jdbc.password` | none | JDBC password for internal mode metadata DB. Required in internal mode. |
-| `kasanari.jdbc.connection-pool.initial-size` | `2` | Initial JDBC pool size (internal mode). |
-| `kasanari.jdbc.connection-pool.min-size` | `1` | Minimum JDBC pool size (internal mode). |
-| `kasanari.jdbc.connection-pool.max-size` | `5` | Maximum JDBC pool size (internal mode). |
-| `kasanari.jdbc.connection-pool.max-lifetime.millis` | `0` | Max JDBC connection lifetime in milliseconds (`0` means no lifetime limit). |
-| `lance.warehouse.location` | none | Default warehouse location for internal tables. Required in internal mode. |
-| `lance.storage.*` | none | Internal mode storage options forwarded to Lance dataset operations. |
-| `root` | none | Proxy `dir` backend root location. |
-| `storage.*` | none | Proxy backend storage options for `LanceNamespace.connect(...)`. |
-| `manifest_enabled` | implementation-specific | Proxy `dir` backend setting to control manifests behavior. |
-| `dir_listing_enabled` | implementation-specific | Proxy `dir` backend setting for namespace/table listing behavior. |
+| config                                              | default value           | meaning                                                                                                 |
+|-----------------------------------------------------|-------------------------|---------------------------------------------------------------------------------------------------------|
+| `implementation`                                    | none                    | Required in both modes. `kasanari` for internal metadata catalog, or proxy backend value such as `dir`. |
+| `uri`                                               | none                    | JDBC URL for internal metadata repositories. Required in internal mode.                                 |
+| `kasanari.jdbc.user`                                | none                    | JDBC username for internal mode metadata DB. Required in internal mode.                                 |
+| `kasanari.jdbc.password`                            | none                    | JDBC password for internal mode metadata DB. Required in internal mode.                                 |
+| `kasanari.jdbc.connection-pool.initial-size`        | `2`                     | Initial JDBC pool size (internal mode).                                                                 |
+| `kasanari.jdbc.connection-pool.min-size`            | `1`                     | Minimum JDBC pool size (internal mode).                                                                 |
+| `kasanari.jdbc.connection-pool.max-size`            | `5`                     | Maximum JDBC pool size (internal mode).                                                                 |
+| `kasanari.jdbc.connection-pool.max-lifetime.millis` | `0`                     | Max JDBC connection lifetime in milliseconds (`0` means no lifetime limit).                             |
+| `lance.warehouse.location`                          | none                    | Default warehouse location for internal tables. Required in internal mode.                              |
+| `lance.storage.*`                                   | none                    | Internal mode storage options forwarded to Lance dataset operations.                                    |
+| `root`                                              | none                    | Proxy `dir` backend root location.                                                                      |
+| `storage.*`                                         | none                    | Proxy backend storage options for `LanceNamespace.connect(...)`.                                        |
+| `manifest_enabled`                                  | implementation-specific | Proxy `dir` backend setting to control manifests behavior.                                              |
+| `dir_listing_enabled`                               | implementation-specific | Proxy `dir` backend setting for namespace/table listing behavior.                                       |
 

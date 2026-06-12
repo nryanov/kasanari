@@ -54,10 +54,10 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Paimon
 
 ## Additional properties
 
-| config | default value | meaning |
-|---|---|---|
-| `type` | none | Paimon proxy catalog type. Must be `hive` for this page. |
-| `warehouse` | none | Paimon warehouse path. Required. |
-| `uri` | none | Hive Metastore URI used by Paimon Hive catalog. Required. |
-| `fs.s3a.*` (in `fileIoProperties`) | none | Hadoop S3A options used by Paimon storage access. |
+| config                             | default value | meaning                                                   |
+|------------------------------------|---------------|-----------------------------------------------------------|
+| `type`                             | none          | Paimon proxy catalog type. Must be `hive` for this page.  |
+| `warehouse`                        | none          | Paimon warehouse path. Required.                          |
+| `uri`                              | none          | Hive Metastore URI used by Paimon Hive catalog. Required. |
+| `fs.s3a.*` (in `fileIoProperties`) | none          | Hadoop S3A options used by Paimon storage access.         |
 

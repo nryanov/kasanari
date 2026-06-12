@@ -58,16 +58,16 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Paimon
 
 ## Additional properties
 
-| config | default value | meaning |
-|---|---|---|
-| `type` | provider-dependent | Catalog type selector; this page assumes REST usage. |
-| `metastore` | provider-dependent | REST metastore mode marker (`rest`) used by many Paimon REST setups. |
-| `uri` | none | Base URI of REST catalog server. Required. |
-| `warehouse` | provider-dependent | Catalog instance name or warehouse identifier (provider-specific). |
-| `token.provider` | provider-dependent | Token provider type (`bear`, `dlf`, or provider-specific options). |
-| `token` | none | Bearer token when using bearer-token authentication. |
-| `dlf.access-key-id` | none | DLF auth access key ID (if DLF provider is used). |
-| `dlf.access-key-secret` | none | DLF auth access key secret (if DLF provider is used). |
-| `dlf.security-token` | none | Optional DLF temporary security token. |
-| `s3.*` | none | Optional object storage properties required by your backend. |
+| config                  | default value      | meaning                                                              |
+|-------------------------|--------------------|----------------------------------------------------------------------|
+| `type`                  | provider-dependent | Catalog type selector; this page assumes REST usage.                 |
+| `metastore`             | provider-dependent | REST metastore mode marker (`rest`) used by many Paimon REST setups. |
+| `uri`                   | none               | Base URI of REST catalog server. Required.                           |
+| `warehouse`             | provider-dependent | Catalog instance name or warehouse identifier (provider-specific).   |
+| `token.provider`        | provider-dependent | Token provider type (`bear`, `dlf`, or provider-specific options).   |
+| `token`                 | none               | Bearer token when using bearer-token authentication.                 |
+| `dlf.access-key-id`     | none               | DLF auth access key ID (if DLF provider is used).                    |
+| `dlf.access-key-secret` | none               | DLF auth access key secret (if DLF provider is used).                |
+| `dlf.security-token`    | none               | Optional DLF temporary security token.                               |
+| `s3.*`                  | none               | Optional object storage properties required by your backend.         |
 

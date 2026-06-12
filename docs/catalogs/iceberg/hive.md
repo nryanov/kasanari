@@ -59,15 +59,15 @@ Not applicable for this implementation. For Kasanari-owned metadata, use [Iceber
 
 ## Additional properties
 
-| config | default value | meaning |
-|---|---|---|
-| `catalog-impl` | none | Iceberg catalog implementation class. Must be `org.apache.iceberg.hive.HiveCatalog` for this page. |
-| `uri` | none | Hive Metastore Thrift URI. Required. |
-| `warehouse` | none | Warehouse root location. Required. |
-| `io-impl` | engine default | Optional Iceberg `FileIO` implementation override. |
-| `s3.endpoint` | none | S3 endpoint for `S3FileIO`. |
-| `s3.access-key-id` | none | S3 access key for `S3FileIO`. |
-| `s3.secret-access-key` | none | S3 secret key for `S3FileIO`. |
-| `s3.path-style-access` | none | Enables path-style S3 addressing. |
-| `fs.s3a.*` (in `fileIoProperties`) | none | Hadoop S3A settings passed into delegated catalog setup. |
+| config                             | default value  | meaning                                                                                            |
+|------------------------------------|----------------|----------------------------------------------------------------------------------------------------|
+| `catalog-impl`                     | none           | Iceberg catalog implementation class. Must be `org.apache.iceberg.hive.HiveCatalog` for this page. |
+| `uri`                              | none           | Hive Metastore Thrift URI. Required.                                                               |
+| `warehouse`                        | none           | Warehouse root location. Required.                                                                 |
+| `io-impl`                          | engine default | Optional Iceberg `FileIO` implementation override.                                                 |
+| `s3.endpoint`                      | none           | S3 endpoint for `S3FileIO`.                                                                        |
+| `s3.access-key-id`                 | none           | S3 access key for `S3FileIO`.                                                                      |
+| `s3.secret-access-key`             | none           | S3 secret key for `S3FileIO`.                                                                      |
+| `s3.path-style-access`             | none           | Enables path-style S3 addressing.                                                                  |
+| `fs.s3a.*` (in `fileIoProperties`) | none           | Hadoop S3A settings passed into delegated catalog setup.                                           |
 
