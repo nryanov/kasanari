@@ -17,25 +17,6 @@ Both layers are pluggable via SPI and configured independently.
 - Authentication: `none`, `ldap`, `oidc`
 - Authorization: `allow-all`, `casbin`
 
-## Request flow
-
-```mermaid
-flowchart LR
-  request[IncomingRequest] --> authn[AuthenticationProvider]
-  authn --> principal[ResolvedPrincipal]
-  principal --> authz[AuthorizationProvider]
-  authz --> decision[AllowOrDeny]
-  decision --> handler[CatalogOrManagementHandler]
-```
-
-## Public endpoints
-
-When authentication is enabled, these paths remain public:
-
-- `/q/health`
-- `/q/openapi`
-- `/docs`
-
 ## Where to go next
 
 - Authentication setup and provider details: `security/authentication.md`

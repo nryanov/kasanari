@@ -1,10 +1,12 @@
 # RBAC Roles and Permissions
 
-Kasanari RBAC is available when:
+Kasanari RBAC is available when `casbin` authorization is used:
 
 ```properties
 kasanari.authorization.type=casbin
 ```
+
+Another way to use it is to implement custom authorization logic via SPI `AuthorizationProvider`. 
 
 Role bindings are stored and managed through Management API:
 
@@ -16,19 +18,19 @@ Bindings are scoped by `catalogType` (`ICEBERG`, `PAIMON`, `LANCE`).
 
 ## Default Casbin roles
 
-| Catalog type | Admin role | Editor role | Viewer role |
-|---|---|---|---|
-| ICEBERG | `IcebergCatalogAdmin` | `IcebergCatalogEditor` | `IcebergCatalogViewer` |
-| PAIMON | `PaimonCatalogAdmin` | `PaimonCatalogEditor` | `PaimonCatalogViewer` |
-| LANCE | `LanceCatalogAdmin` | `LanceCatalogEditor` | `LanceCatalogViewer` |
+| Catalog type | Admin role            | Editor role            | Viewer role            |
+|--------------|-----------------------|------------------------|------------------------|
+| ICEBERG      | `IcebergCatalogAdmin` | `IcebergCatalogEditor` | `IcebergCatalogViewer` |
+| PAIMON       | `PaimonCatalogAdmin`  | `PaimonCatalogEditor`  | `PaimonCatalogViewer`  |
+| LANCE        | `LanceCatalogAdmin`   | `LanceCatalogEditor`   | `LanceCatalogViewer`   |
 
 ## Role behavior
 
-| Role level | Permissions behavior |
-|---|---|
-| `*CatalogAdmin` | All permissions with catalog prefix (`Iceberg*`, `Paimon*`, `Lance*`) plus `RoleSelect`, `RoleAdd`, `RoleRemove`. |
-| `*CatalogEditor` | Mutation + read for catalog objects (engine-specific wildcard policy set). |
-| `*CatalogViewer` | Read-only pattern (`*List`, `*Get`, `*Exists`) for that catalog prefix. |
+| Role level       | Permissions behavior                                                                                              |
+|------------------|-------------------------------------------------------------------------------------------------------------------|
+| `*CatalogAdmin`  | All permissions with catalog prefix (`Iceberg*`, `Paimon*`, `Lance*`) plus `RoleSelect`, `RoleAdd`, `RoleRemove`. |
+| `*CatalogEditor` | Mutation + read for catalog objects (engine-specific wildcard policy set).                                        |
+| `*CatalogViewer` | Read-only pattern (`*List`, `*Get`, `*Exists`) for that catalog prefix.                                           |
 
 ## Available permissions
 

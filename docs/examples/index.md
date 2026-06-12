@@ -13,11 +13,11 @@ QUARKUS_JIB_PLATFORMS=linux/amd64 ./scripts/build-container-images.sh
 
 ## Catalog examples
 
-| Example path                      | Catalog/mode                                                                | What it demonstrates                                 |
-|-----------------------------------|-----------------------------------------------------------------------------|------------------------------------------------------|
-| `examples/trino`                  | Iceberg `INTERNAL`                                                          | Trino query engine against Iceberg REST via Kasanari |
-| `examples/starrocks`              | Iceberg `INTERNAL`                                                          | StarRocks integration with Iceberg REST via Kasanari |
-| `examples/spark`                  | Iceberg `INTERNAL` + Iceberg `PROXY` + Paimon `INTERNAL` + Lance `INTERNAL` | Notebook-driven integration and API registration     |
+| Engine / Client | Example path                      | Catalog/mode                                                                | What it demonstrates                                 |
+|-----------------|-----------------------------------|-----------------------------------------------------------------------------|------------------------------------------------------|
+| Trino           | `examples/trino`                  | Iceberg `INTERNAL`                                                          | Trino query engine against Iceberg REST via Kasanari |
+| Starrocks       | `examples/starrocks`              | Iceberg `INTERNAL`                                                          | StarRocks integration with Iceberg REST via Kasanari |
+| Spark           | `examples/spark`                  | Iceberg `INTERNAL` + Iceberg `PROXY` + Paimon `INTERNAL` + Lance `INTERNAL` | Notebook-driven integration and API registration     |
 
 ## Authentication examples
 

@@ -16,7 +16,6 @@ nav:
       - Iceberg Catalog: catalogs/iceberg.md
       - Paimon Catalog: catalogs/paimon.md
       - Lance Catalog: catalogs/lance.md
-  - Integrations: integrations/index.md
   - Management API: management/api.md
   - Security:
       - Overview: security/index.md
