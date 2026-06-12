@@ -17,7 +17,7 @@ dependencies {
 val rootDir = rootProject.layout.projectDirectory
 val specsDir = rootDir.dir("spec")
 val paimonSpecDir = specsDir.dir("paimon")
-val templatesDir = paimonSpecDir.dir("server-templates")
+val templatesDir = specsDir.dir("server-templates")
 val generatedDir = layout.buildDirectory.dir("generated")
 val generatedOpenApiSrcDir = layout.buildDirectory.dir("generated/src/main/java")
 val paimonOpenApiMappings = mutableMapOf(

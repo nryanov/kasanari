@@ -18,7 +18,7 @@ dependencies {
 val rootDir = rootProject.layout.projectDirectory
 val specsDir = rootDir.dir("spec")
 val icebergSpecDir = specsDir.dir("iceberg")
-val templatesDir = icebergSpecDir.dir("server-templates")
+val templatesDir = specsDir.dir("server-templates")
 val generatedDir = layout.buildDirectory.dir("generated")
 val generatedOpenApiSrcDir = layout.buildDirectory.dir("generated/src/main/java")
 

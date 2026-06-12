@@ -13,7 +13,7 @@ dependencies {
 val rootDir = rootProject.layout.projectDirectory
 val specsDir = rootDir.dir("spec")
 val managementSpecDir = specsDir.dir("management")
-val templatesDir = managementSpecDir.dir("server-templates")
+val templatesDir = specsDir.dir("server-templates")
 val generatedDir = layout.buildDirectory.dir("generated")
 val generatedOpenApiSrcDir = layout.buildDirectory.dir("generated/src/main/java")
 
