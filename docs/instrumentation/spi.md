@@ -1,6 +1,10 @@
 # Instrumentation Capabilities via SPI
 
-Kasanari exposes instrumentation hooks for catalog requests through SPI.
+Kasanari exposes instrumentation hooks for catalog requests through SPI. Implementing custom listener multiple goals can be achieved, for example:
+- Custom metrics
+- Audit
+- Additional integrations with other external services (e.g. OpenMetadata / DataHub)
+- Emitting events -> trigger updates of related entities
 
 ## SPI contract
 
@@ -18,17 +22,10 @@ Each listener defines:
   - on error
   - on access denied
 
-Supported engine contexts:
-
-- `IcebergCatalogRequestContext`
-- `PaimonCatalogRequestContext`
-- `LanceCatalogRequestContext`
-
 ## Runtime loading model
 
 - Listeners are loaded via Java `ServiceLoader`.
 - Enabled listeners come from `kasanari.instrumentation.listeners`.
-- Default enabled value: `audit,logging`.
 - Listener types are case-insensitive and deduplicated.
 
 ## Built-in listeners
@@ -45,7 +42,7 @@ Supported engine contexts:
 
 ## Configuration
 
-Enable default listeners:
+Enable multiple listeners:
 
 ```properties
 kasanari.instrumentation.listeners=audit,logging
@@ -66,19 +63,12 @@ kasanari.instrumentation.listeners=
 ## Building a custom listener
 
 1. Implement `CatalogRequestListener`.
-2. Provide stable `type()` value (for example `metrics`).
+2. Provide stable `type()` value (for example `customlistener`).
 3. Register implementation in:
    - `META-INF/services/kasanari.instrumentation.spi.CatalogRequestListener`
 4. Put listener artifact on application classpath.
 5. Enable it:
 
 ```properties
-kasanari.instrumentation.listeners=audit,metrics
+kasanari.instrumentation.listeners=customlistener
 ```
-
-## Practical use cases
-
-- Security auditing of who attempted which catalog operation
-- Request latency logging per engine and operation
-- Metrics export to external monitoring systems
-- Denied-access telemetry for RBAC policy tuning
