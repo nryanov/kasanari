@@ -9,7 +9,7 @@ Metrics stay on Micrometer/Prometheus (`/q/metrics`). This example configures **
 - Docker and Docker Compose plugin
 - `curl`
 
-Build the local Kasanari image from repository root (or set `KASANARI_IMAGE` to your own tag):
+Build the local Kasanari image from repository root (or set `KASANARI_IMAGE` to your own tag). Rebuild after changing observability defaults in the server:
 
 ```shell
 ./scripts/build-container-images.sh
@@ -45,9 +45,15 @@ KASANARI_IMAGE=local/kasanari:latest docker compose up -d
 ## Generate traces
 
 ```shell
-curl -s http://localhost:9090/q/health
+curl -s http://localhost:9090/q/health/ready
 curl -s http://localhost:9090/q/metrics -o /dev/null -w "%{http_code}\n"
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:9090/management/v1/catalogs
+```
+
+Check Agroal pool metrics:
+
+```shell
+curl -s http://localhost:9090/q/metrics | grep agroal_
 ```
 
 ## View traces

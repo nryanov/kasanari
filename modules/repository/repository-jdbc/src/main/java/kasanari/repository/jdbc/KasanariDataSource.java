@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.function.Function;
 
-public class KasanariDataSource implements kasanari.repository.core.DataSource {
+public class KasanariDataSource implements AutoCloseable {
     private final DataSource pool;
     private final Jdbi jdbi;
 
@@ -37,7 +37,6 @@ public class KasanariDataSource implements kasanari.repository.core.DataSource {
 
         var agroalConfiguration = new AgroalDataSourceConfigurationSupplier();
         agroalConfiguration.connectionPoolConfiguration(agroalConnectionPoolConfiguration);
-        agroalConfiguration.metricsEnabled(false);
 
         this.pool = new DataSource(agroalConfiguration.get());
         this.jdbi = Jdbi.create(pool);

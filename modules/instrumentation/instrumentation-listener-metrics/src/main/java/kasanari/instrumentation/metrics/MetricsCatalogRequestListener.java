@@ -22,7 +22,7 @@ public class MetricsCatalogRequestListener implements CatalogRequestListener {
 
     private static final String TAG_CATALOG_TYPE = "catalog";
     private static final String TAG_OPERATION = "operation";
-    private static final String TAG_CATALOG_NAME = "catalogName";
+    private static final String TAG_CATALOG_NAME = "catalog_name";
     private static final String TAG_SUBJECT = "subject";
     private static final String TAG_OUTCOME = "outcome";
 

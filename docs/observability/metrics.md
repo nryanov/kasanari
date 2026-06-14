@@ -26,16 +26,14 @@ These binders are enabled in the default server configuration or available as op
 | `quarkus.micrometer.binder.system`                      | No       | `true`  | CPU and load metrics                       |
 | `quarkus.micrometer.export.prometheus.default-registry` | No       | `true`  | Use the default registry for scrape output |
 
-JDBC connection pools created by Kasanari (`KasanariDataSource`) publish Agroal pool metrics when Micrometer is on the classpath.
-
 ## Catalog request metrics
 
 The server always records catalog operation metrics (not configurable via `kasanari.instrumentation.listeners`):
 
-| Metric                              | Type    | Tags                                                  |
-|-------------------------------------|---------|-------------------------------------------------------|
-| `kasanari.catalog.request.total`    | Counter | `engine`, `operation`, `catalog`, `subject`, `outcome` |
-| `kasanari.catalog.request.duration` | Timer   | `engine`, `operation`, `catalog`, `subject`, `outcome` |
+| Metric                              | Type    | Tags                                                         |
+|-------------------------------------|---------|--------------------------------------------------------------|
+| `kasanari.catalog.request.total`    | Counter | `catalog`, `operation`, `catalog_name`, `subject`, `outcome` |
+| `kasanari.catalog.request.duration` | Timer   | `catalog`, `operation`, `catalog_name`, `subject`, `outcome` |
 
 Tag values:
 

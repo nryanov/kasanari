@@ -54,7 +54,7 @@ services:
         -Dkasanari.management.metadata.jdbc-properties."kasanari.jdbc.password"=postgres
         -Dkasanari.management.metadata.jdbc-properties."uri"=jdbc:postgresql://catalog-storage:5432/postgres
         -Dkasanari.authentication.type=none
-        -Dquarkus.otel.traces.enabled=true
+        -Dquarkus.otel.sdk.disabled=false
         -Dquarkus.otel.exporter.otlp.endpoint=http://jaeger:4317
         -Dquarkus.otel.service.name=kasanari
         -Dquarkus.otel.metrics.enabled=false

@@ -4,19 +4,22 @@ Kasanari uses the Quarkus OpenTelemetry extension for **distributed tracing only
 
 ## Enable tracing
 
-Set an OTLP collector endpoint and enable traces:
+Tracing instrumentation is enabled in the default server build. Export stays off until you configure an OTLP endpoint and enable the SDK at runtime:
 
 ```properties
-quarkus.otel.traces.enabled=true
+quarkus.otel.sdk.disabled=false
 quarkus.otel.exporter.otlp.endpoint=http://localhost:4317
 quarkus.otel.service.name=kasanari
 ```
 
-| Property                              | Required                   | Default    | Description                      |
-|---------------------------------------|----------------------------|------------|----------------------------------|
-| `quarkus.otel.traces.enabled`         | No                         | `false`    | Master switch for trace export   |
-| `quarkus.otel.exporter.otlp.endpoint` | Yes (when tracing enabled) | —          | OTLP gRPC endpoint (host:port)   |
-| `quarkus.otel.service.name`           | No                         | `kasanari` | Logical service name in trace UI |
+| Property                              | Required                   | Default    | Description                                           |
+|---------------------------------------|----------------------------|------------|-------------------------------------------------------|
+| `quarkus.otel.traces.enabled`         | No                         | `true`     | Build-time switch for tracing instrumentation         |
+| `quarkus.otel.sdk.disabled`           | No                         | `true`     | Runtime switch; set to `false` to export traces         |
+| `quarkus.otel.exporter.otlp.endpoint` | Yes (when exporting)       | —          | OTLP gRPC endpoint (host:port)                        |
+| `quarkus.otel.service.name`           | No                         | `kasanari` | Logical service name in trace UI                      |
+
+`quarkus.otel.traces.enabled` is fixed at build time. Use `quarkus.otel.sdk.disabled=false` plus an OTLP endpoint to turn export on at runtime without rebuilding.
 
 ### Disabled by default (keep metrics on Micrometer)
 
@@ -34,7 +37,7 @@ quarkus.otel.service.name=kasanari
 | `quarkus.otel.traces.sampler`        | Sampling strategy (for example `traceidratio`)                        |
 | `quarkus.otel.traces.sampler.arg`    | Sampler argument (for example `0.1` for 10% sampling)                 |
 
-Environment variable equivalents use the `QUARKUS_OTEL_*` prefix (for example `QUARKUS_OTEL_TRACES_ENABLED=true`).
+Environment variable equivalents use the `QUARKUS_OTEL_*` prefix (for example `QUARKUS_OTEL_SDK_DISABLED=false`).
 
 ## Runnable example: Jaeger
 

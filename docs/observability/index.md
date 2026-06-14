@@ -18,13 +18,14 @@ Catalog request metrics are recorded automatically when the server includes the 
 
 See [Metrics](metrics.md) for platform binders, catalog request metric names, and optional tuning.
 
-### Tracing (disabled until configured)
+### Tracing (export disabled until configured)
 
-| Property                              | Required                   | Default    | Description             |
-|---------------------------------------|----------------------------|------------|-------------------------|
-| `quarkus.otel.traces.enabled`         | No                         | `false`    | Enable trace export     |
-| `quarkus.otel.exporter.otlp.endpoint` | Yes (when tracing enabled) | —          | OTLP gRPC collector URL |
-| `quarkus.otel.service.name`           | No                         | `kasanari` | Service name in traces  |
+| Property                              | Required             | Default    | Description                              |
+|---------------------------------------|----------------------|------------|------------------------------------------|
+| `quarkus.otel.traces.enabled`         | No                   | `true`     | Build-time tracing instrumentation       |
+| `quarkus.otel.sdk.disabled`           | No                   | `true`     | Runtime export switch (`false` to export) |
+| `quarkus.otel.exporter.otlp.endpoint` | Yes (when exporting) | —          | OTLP gRPC collector URL                  |
+| `quarkus.otel.service.name`           | No                   | `kasanari` | Service name in traces                   |
 
 OpenTelemetry **metrics and logs export are disabled** in the default configuration. All numeric metrics use Micrometer/Prometheus.
 
