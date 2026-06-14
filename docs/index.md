@@ -25,4 +25,5 @@ It is also possible to set multiple INTERNAL/PROXY catalog of the same type but 
 - Review catalog support boundaries: `catalogs/iceberg.md`, `catalogs/paimon.md`, `catalogs/lance.md`
 - Explore client integrations: `integrations/index.md`
 - Configure auth/authz and RBAC: `security/index.md`
+- Configure metrics and tracing: `observability/index.md`
 - Browse runnable examples: `examples/index.md`

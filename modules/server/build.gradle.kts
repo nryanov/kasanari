@@ -12,11 +12,15 @@ dependencies {
     implementation("io.quarkus:quarkus-container-image-jib")
     implementation("io.quarkus:quarkus-security")
     implementation("io.quarkus:quarkus-logging-json")
+    implementation("io.quarkus:quarkus-micrometer")
+    implementation("io.quarkus:quarkus-micrometer-registry-prometheus")
+    implementation("io.quarkus:quarkus-opentelemetry")
 
     // instrumentation
     implementation(project(":modules:instrumentation:instrumentation-listener-runtime"))
     implementation(project(":modules:instrumentation:instrumentation-listener-audit"))
     implementation(project(":modules:instrumentation:instrumentation-listener-logging"))
+    implementation(project(":modules:instrumentation:instrumentation-listener-metrics"))
 
     // auth
     implementation(project(":modules:authentication:authentication-runtime"))

@@ -37,4 +37,8 @@ nav:
       - Authorization Providers: security/authorization.md
       - RBAC Roles and Permissions: security/rbac.md
   - Instrumentation via SPI: instrumentation/spi.md
+  - Observability:
+      - Overview: observability/index.md
+      - Metrics: observability/metrics.md
+      - Tracing: observability/tracing.md
   - Examples: examples/index.md

@@ -33,3 +33,9 @@ QUARKUS_JIB_PLATFORMS=linux/amd64 ./scripts/build-container-images.sh
 | Example path                    | Provider   | Notes                                    |
 |---------------------------------|------------|------------------------------------------|
 | `examples/authorization/custom` | custom SPI | Subject allow-list authorization example |
+
+## Observability examples
+
+| Example path                     | Backend       | Notes                                             |
+|----------------------------------|---------------|---------------------------------------------------|
+| `examples/observability/tracing` | Jaeger (OTLP) | Enable OTLP tracing; metrics remain on Prometheus |

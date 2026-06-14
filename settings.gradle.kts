@@ -50,6 +50,7 @@ include(
     "modules:instrumentation:instrumentation-listener-runtime",
     "modules:instrumentation:instrumentation-listener-audit",
     "modules:instrumentation:instrumentation-listener-logging",
+    "modules:instrumentation:instrumentation-listener-metrics",
     // authorization
     "modules:authorization",
     "modules:authorization:authorization-spi",
@@ -129,6 +130,7 @@ findProject(":modules:instrumentation:instrumentation-listener-spi")?.name = "in
 findProject(":modules:instrumentation:instrumentation-listener-runtime")?.name = "instrumentation-listener-runtime"
 findProject(":modules:instrumentation:instrumentation-listener-audit")?.name = "instrumentation-listener-audit"
 findProject(":modules:instrumentation:instrumentation-listener-logging")?.name = "instrumentation-listener-logging"
+findProject(":modules:instrumentation:instrumentation-listener-metrics")?.name = "instrumentation-listener-metrics"
 
 findProject(":modules:authentication")?.name = "authentication"
 findProject(":modules:authentication:authentication-spi")?.name = "authentication-spi"

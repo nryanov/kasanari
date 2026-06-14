@@ -18,34 +18,51 @@ public final class CatalogRequestListenerRegistry {
     private CatalogRequestListenerRegistry() {
     }
 
-    public static List<CatalogRequestListener> load(InstrumentationConfiguration configuration) {
+    public static List<CatalogRequestListener> assembleListeners(
+            InstrumentationConfiguration configuration,
+            List<CatalogRequestListener> internalListeners
+    ) {
         var enabledTypes = parseEnabledTypes(configuration.listeners());
+        // add internal CDI listeners
+        internalListeners.forEach(it -> enabledTypes.add(it.type()));
+
         var configProperties = readConfigProperties();
         var listeners = new ArrayList<CatalogRequestListener>();
+
+        // SPI listeners
         for (var listener : ServiceLoader.load(CatalogRequestListener.class)) {
             registerListener(listener, enabledTypes, configProperties, listeners);
         }
-        return List.copyOf(listeners);
+
+        // internal CDI listeners
+        for (var listener : internalListeners) {
+            registerListener(listener, enabledTypes, configProperties, listeners);
+        }
+
+        return listeners;
     }
 
-    public static void registerListener(
+    private static void registerListener(
             CatalogRequestListener listener,
             Set<String> enabledTypes,
             Map<String, String> configProperties,
             List<CatalogRequestListener> listeners
     ) {
         var type = listener.type().trim().toLowerCase(Locale.ROOT);
+
         if (!enabledTypes.contains(type)) {
             return;
         }
+
         if (listeners.stream().anyMatch(existing -> existing.type().equalsIgnoreCase(type))) {
             throw new IllegalStateException("Duplicate catalog request listener type registered: " + type);
         }
+
         listener.initialize(new ConfigCatalogRequestListenerContext(type, configProperties));
         listeners.add(listener);
     }
 
-    static Set<String> parseEnabledTypes(String listeners) {
+    private static Set<String> parseEnabledTypes(String listeners) {
         if (listeners == null || listeners.isBlank()) {
             return Set.of();
         }
@@ -56,7 +73,7 @@ public final class CatalogRequestListenerRegistry {
                 .collect(Collectors.toCollection(HashSet::new));
     }
 
-    static Map<String, String> readConfigProperties() {
+    private static Map<String, String> readConfigProperties() {
         var properties = new HashMap<String, String>();
         for (var propertyName : ConfigProvider.getConfig().getPropertyNames()) {
             if (propertyName.startsWith("kasanari.instrumentation.")) {

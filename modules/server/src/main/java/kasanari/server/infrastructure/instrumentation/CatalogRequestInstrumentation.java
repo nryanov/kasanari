@@ -1,12 +1,17 @@
-package kasanari.instrumentation.runtime;
+package kasanari.server.infrastructure.instrumentation;
 
 import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
-import kasanari.instrumentation.spi.CatalogRequestListener;
+import kasanari.instrumentation.metrics.MetricsCatalogRequestListener;
+import kasanari.instrumentation.runtime.CatalogRequestListenerRegistry;
+import kasanari.instrumentation.runtime.IcebergCatalogRequestPipeline;
+import kasanari.instrumentation.runtime.InstrumentationConfiguration;
+import kasanari.instrumentation.runtime.LanceCatalogRequestPipeline;
+import kasanari.instrumentation.runtime.PaimonCatalogRequestPipeline;
 
-import java.util.ArrayList;
+import java.util.List;
+import java.util.List;
 
 @Startup
 @ApplicationScoped
@@ -18,14 +23,9 @@ public class CatalogRequestInstrumentation {
     @Inject
     public CatalogRequestInstrumentation(
             InstrumentationConfiguration configuration,
-            Instance<CatalogRequestListener> cdiListeners
+            MetricsCatalogRequestListener metricsListener
     ) {
-        var enabledTypes = CatalogRequestListenerRegistry.parseEnabledTypes(configuration.listeners());
-        var configProperties = CatalogRequestListenerRegistry.readConfigProperties();
-        var listeners = new ArrayList<>(CatalogRequestListenerRegistry.load(configuration));
-        cdiListeners.forEach(listener ->
-                CatalogRequestListenerRegistry.registerListener(listener, enabledTypes, configProperties, listeners)
-        );
+        var listeners = CatalogRequestListenerRegistry.assembleListeners(configuration, List.of(metricsListener));
         this.icebergPipeline = new IcebergCatalogRequestPipeline(listeners);
         this.paimonPipeline = new PaimonCatalogRequestPipeline(listeners);
         this.lancePipeline = new LanceCatalogRequestPipeline(listeners);
