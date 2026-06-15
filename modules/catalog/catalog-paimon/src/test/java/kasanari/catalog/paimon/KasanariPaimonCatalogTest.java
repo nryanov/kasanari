@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Timeout;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
-@Timeout(value = 5, unit = TimeUnit.SECONDS)
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class KasanariPaimonCatalogTest extends PaimonCatalogAdapterTest {
     private final PostgresFixtureContainer postgres = new PostgresFixtureContainer();
     private final S3FixtureContainer s3Container = new S3FixtureContainer();

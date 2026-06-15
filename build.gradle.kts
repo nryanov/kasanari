@@ -51,6 +51,11 @@ subprojects {
             }
         }
 
+        testLogging {
+            events("passed", "skipped", "failed", "standardOut", "standardError")
+            showStandardStreams = true
+        }
+
         jvmArgs(
             "--add-opens", "java.base/java.io=ALL-UNNAMED",
             "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED",
