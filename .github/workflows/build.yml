@@ -9,6 +9,8 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
+  checks: write
 
 jobs:
   gradle:
@@ -29,3 +31,20 @@ jobs:
       - name: Test
         #        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: ./gradlew test -PexcludeTags=external --no-daemon
+
+      - name: Convert JUnit XML to CTRF
+        if: always()
+        run: npx junit-to-ctrf "**/build/test-results/test/*.xml" -o ctrf/ctrf-report.json -t gradle
+
+      - name: Publish test report
+        if: always()
+        uses: ctrf-io/github-test-reporter@v1
+        with:
+          report-path: './ctrf/ctrf-report.json'
+          github-report: true
+          pull-request-report: true
+          failed-report: true
+          annotate: true
+          upload-artifact: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
