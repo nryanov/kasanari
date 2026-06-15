@@ -1,10 +1,20 @@
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
+import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 
 plugins {
     id("java")
+    id("com.vanniktech.maven.publish") version "0.36.0" apply false
 }
+
+private val publishableModulePaths = setOf(
+    ":modules:core",
+    ":modules:authentication:authentication-spi",
+    ":modules:authorization:authorization-spi",
+    ":modules:instrumentation:instrumentation-listener-spi",
+)
 
 group = "com.nryanov.kasanari"
 version = providers.gradleProperty("releaseVersion").orElse("0.1.0").get()
@@ -59,5 +69,58 @@ subprojects {
             "--add-opens", "java.base/sun.security.action=ALL-UNNAMED",
             "-Djava.security.manager=allow"
         )
+    }
+
+    if (path in publishableModulePaths) {
+        apply(plugin = "com.vanniktech.maven.publish")
+
+        plugins.withId("org.kordamp.gradle.jandex") {
+            tasks.named("javadoc") {
+                dependsOn(tasks.named("jandex"))
+            }
+        }
+
+        extensions.configure<MavenPublishBaseExtension> {
+            publishToMavenCentral(automaticRelease = true)
+            signAllPublications()
+
+            coordinates(
+                project.group.toString(),
+                project.name,
+                project.version.toString(),
+            )
+
+            pom {
+                name.set(project.name)
+
+                description.set(
+                    "SPI module for kasanari: ${project.name}",
+                )
+
+                url.set("https://github.com/nryanov/kasanari")
+
+                licenses {
+                    license {
+                        name.set("Apache License, Version 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                        distribution.set("repo")
+                    }
+                }
+
+                developers {
+                    developer {
+                        id.set("nryanov")
+                        name.set("Nikita Ryanov")
+                        url.set("https://github.com/nryanov")
+                    }
+                }
+
+                scm {
+                    url.set("https://github.com/nryanov/kasanari")
+                    connection.set("scm:git:git://github.com/nryanov/kasanari.git")
+                    developerConnection.set("scm:git:ssh://git@github.com/nryanov/kasanari.git")
+                }
+            }
+        }
     }
 }
