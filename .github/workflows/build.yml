@@ -69,4 +69,4 @@ jobs:
 
       - name: Test
         #        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: ./gradlew test --exclude-tags "slow" --no-daemon
+        run: ./gradlew test -PexcludeTags=slow --no-daemon

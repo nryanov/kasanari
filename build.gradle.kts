@@ -44,7 +44,13 @@ subprojects {
     }
 
     tasks.withType<Test>().configureEach {
-        useJUnitPlatform()
+        useJUnitPlatform {
+            if (project.hasProperty("excludeTags")) {
+                val tags = project.property("excludeTags").toString().split(",")
+                excludeTags(*tags.toTypedArray())
+            }
+        }
+
         jvmArgs(
             "--add-opens", "java.base/java.io=ALL-UNNAMED",
             "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED",
