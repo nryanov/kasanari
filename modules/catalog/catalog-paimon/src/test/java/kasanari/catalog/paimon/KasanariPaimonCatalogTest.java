@@ -3,9 +3,12 @@ package kasanari.catalog.paimon;
 import kasanari.fixtures.postgres.PostgresFixtureContainer;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
+@Timeout(value = 5, unit = TimeUnit.SECONDS)
 public class KasanariPaimonCatalogTest extends PaimonCatalogAdapterTest {
     private final PostgresFixtureContainer postgres = new PostgresFixtureContainer();
     private final S3FixtureContainer s3Container = new S3FixtureContainer();

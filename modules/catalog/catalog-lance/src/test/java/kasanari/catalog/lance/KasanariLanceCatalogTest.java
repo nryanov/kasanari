@@ -5,10 +5,13 @@ import kasanari.fixtures.postgres.PostgresHelper;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 import kasanari.repository.jdbc.KasanariDataSourceConfiguration;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+@Timeout(value = 5, unit = TimeUnit.SECONDS)
 public class KasanariLanceCatalogTest extends LanceCatalogAdapterTest {
     private final PostgresFixtureContainer postgres = new PostgresFixtureContainer();
     private final S3FixtureContainer s3Container = new S3FixtureContainer();

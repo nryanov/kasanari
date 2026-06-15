@@ -1,10 +1,13 @@
 package kasanari.catalog.paimon;
 
+import kasanari.fixtures.TestTags;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
+import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
 
+@Tag(TestTags.EXTERNAL)
 // explicit S3 instead of S3A scheme
 public class S3FileSystemPaimonCatalogTest extends PaimonCatalogAdapterTest {
     private final S3FixtureContainer s3Container = new S3FixtureContainer();
