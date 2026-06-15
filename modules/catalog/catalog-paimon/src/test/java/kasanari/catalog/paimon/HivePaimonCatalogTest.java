@@ -4,10 +4,13 @@ import kasanari.fixtures.hive.HiveFixtureContainer;
 import kasanari.fixtures.postgres.PostgresFixtureContainer;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
+import org.junit.jupiter.api.Tag;
 import org.testcontainers.containers.Network;
+import kasanari.fixtures.TestTags;
 
 import java.util.HashMap;
 
+@Tag(TestTags.SLOW)
 public class HivePaimonCatalogTest extends PaimonCatalogAdapterTest {
     private final Network network = Network.newNetwork();
     private final HiveFixtureContainer hive = new HiveFixtureContainer(network);

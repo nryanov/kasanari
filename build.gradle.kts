@@ -45,7 +45,6 @@ subprojects {
 
     tasks.withType<Test>().configureEach {
         useJUnitPlatform()
-        systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
         jvmArgs(
             "--add-opens", "java.base/java.io=ALL-UNNAMED",
             "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED",

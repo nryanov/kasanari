@@ -9,13 +9,16 @@ import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.hive.HiveCatalog;
+import org.junit.jupiter.api.Tag;
 import org.testcontainers.containers.Network;
+import kasanari.fixtures.TestTags;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assumptions.*;
 
+@Tag(TestTags.SLOW)
 public class HiveIcebergCatalogTest extends IcebergCatalogAdapterTest {
     private final Network network = Network.newNetwork();
     private final HiveFixtureContainer hive = new HiveFixtureContainer(network);
