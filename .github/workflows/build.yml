@@ -10,6 +10,13 @@ on:
 permissions:
   contents: read
 
+env:
+  TESTCONTAINER_IMAGES: |
+    postgres:17
+    ghcr.io/projectnessie/nessie:0.104.3
+    nryanov/tools-hive:sha-0c88087d07bb7adcc9ecc7475c653f96bb5de833
+    minio/minio:RELEASE.2025-02-28T09-55-16Z
+
 jobs:
   gradle:
     runs-on: ubuntu-latest
@@ -20,13 +27,44 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-          cache: gradle
 
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
 
       - name: Assemble
         if: github.event_name != 'workflow_dispatch'
         run: ./gradlew assemble --no-daemon
+
+      - name: Cache Docker images
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        id: docker-cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/docker-images
+          key: docker-v1-${{ hashFiles('modules/fixtures/**/src/testFixtures/**/*.java') }}
+          restore-keys: |
+            docker-v1-
+
+      - name: Load Docker images
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        run: |
+          if [ -d /tmp/docker-images ]; then
+            for archive in /tmp/docker-images/*.tar; do
+              [ -f "$archive" ] && docker load -i "$archive"
+            done
+          fi
+
+      - name: Pull Docker images
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && steps.docker-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/docker-images
+          while IFS= read -r image; do
+            [ -z "$image" ] && continue
+            docker pull "$image"
+            filename="$(echo "$image" | tr '/:' '__').tar"
+            docker save -o "/tmp/docker-images/${filename}" "$image"
+          done <<< "$TESTCONTAINER_IMAGES"
 
       - name: Test
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
