@@ -2,9 +2,8 @@ name: Build
 
 on:
   push:
-    branches: [master]
-  pull_request:
-    branches: [master]
+    branches: [master, main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,3 +24,6 @@ jobs:
 
       - name: Assemble
         run: ./gradlew assemble --no-daemon
+
+      - name: Test
+        run: ./gradlew test --no-daemon
