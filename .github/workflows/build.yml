@@ -13,13 +13,12 @@ permissions:
 env:
   TESTCONTAINER_IMAGES: |
     postgres:17
-    ghcr.io/projectnessie/nessie:0.104.3
-    nryanov/tools-hive:sha-0c88087d07bb7adcc9ecc7475c653f96bb5de833
     minio/minio:RELEASE.2025-02-28T09-55-16Z
 
 jobs:
   gradle:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
