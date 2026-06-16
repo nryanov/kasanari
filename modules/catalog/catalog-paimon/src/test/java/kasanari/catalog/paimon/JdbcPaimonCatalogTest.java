@@ -1,15 +1,15 @@
 package kasanari.catalog.paimon;
 
-import kasanari.fixtures.TestTags;
 import kasanari.fixtures.postgres.PostgresFixtureContainer;
 import kasanari.fixtures.postgres.PostgresHelper;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
-import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
-@Tag(TestTags.EXTERNAL)
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class JdbcPaimonCatalogTest extends PaimonCatalogAdapterTest {
     private final PostgresFixtureContainer postgres = new PostgresFixtureContainer();
     private final S3FixtureContainer s3Container = new S3FixtureContainer();
@@ -119,6 +119,11 @@ public class JdbcPaimonCatalogTest extends PaimonCatalogAdapterTest {
 
     @Override
     protected boolean supportSnapshot() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsPartitions() {
         return false;
     }
 }

@@ -29,8 +29,7 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/master' }}
 
       - name: Test
-        #        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: ./gradlew test -PexcludeTags=external --no-daemon
+        run: ./gradlew test -PexcludeTags=slow --no-daemon
 
       - name: Convert JUnit XML to CTRF
         if: always()

@@ -19,7 +19,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Tag(TestTags.EXTERNAL)
+@Tag(TestTags.SLOW)
 public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
     private final NessieFixtureContainer nessie = new NessieFixtureContainer();
     private final S3FixtureContainer s3Container = new S3FixtureContainer();
