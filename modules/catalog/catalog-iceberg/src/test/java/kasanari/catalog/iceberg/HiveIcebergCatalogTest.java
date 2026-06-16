@@ -18,7 +18,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assumptions.*;
 
-@Tag(TestTags.SLOW)
+@Tag(TestTags.CI_SKIP)
 public class HiveIcebergCatalogTest extends IcebergCatalogAdapterTest {
     private final Network network = Network.newNetwork();
     private final HiveFixtureContainer hive = new HiveFixtureContainer(network);

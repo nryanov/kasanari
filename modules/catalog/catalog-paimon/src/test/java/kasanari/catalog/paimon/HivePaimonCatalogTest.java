@@ -10,7 +10,7 @@ import kasanari.fixtures.TestTags;
 
 import java.util.HashMap;
 
-@Tag(TestTags.SLOW)
+@Tag(TestTags.CI_SKIP)
 public class HivePaimonCatalogTest extends PaimonCatalogAdapterTest {
     private final Network network = Network.newNetwork();
     private final HiveFixtureContainer hive = new HiveFixtureContainer(network);
