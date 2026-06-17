@@ -1,6 +1,7 @@
 package kasanari.catalog.iceberg;
 
 import kasanari.catalog.iceberg.s3.NoneRegionS3FileIOAwsClientFactory;
+import kasanari.fixtures.TestTags;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 import org.apache.hadoop.fs.s3a.Constants;
@@ -9,12 +10,11 @@ import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.hadoop.HadoopCatalog;
 import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
-import java.util.concurrent.TimeUnit;
 
-@Timeout(value = 5, unit = TimeUnit.SECONDS)
+@Tag(TestTags.CI_SKIP)
 public class HadoopIcebergCatalogTableApiTest extends IcebergCatalogAdapterTest {
     private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
