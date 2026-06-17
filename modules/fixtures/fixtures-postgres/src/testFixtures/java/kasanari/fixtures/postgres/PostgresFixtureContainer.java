@@ -1,6 +1,5 @@
 package kasanari.fixtures.postgres;
 
-import com.github.dockerjava.api.model.HealthCheck;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;

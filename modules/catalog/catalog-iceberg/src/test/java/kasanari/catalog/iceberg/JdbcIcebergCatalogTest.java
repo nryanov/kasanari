@@ -1,5 +1,6 @@
 package kasanari.catalog.iceberg;
 
+import kasanari.fixtures.TestTags;
 import kasanari.fixtures.postgres.PostgresFixtureContainer;
 import kasanari.fixtures.postgres.PostgresHelper;
 import kasanari.catalog.iceberg.s3.NoneRegionS3FileIOAwsClientFactory;
@@ -7,13 +8,14 @@ import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
-import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.jdbc.JdbcCatalog;
+import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Tag(TestTags.CI_SKIP)
 public class JdbcIcebergCatalogTest extends IcebergCatalogAdapterTest {
     private final PostgresFixtureContainer postgres = new PostgresFixtureContainer();
     private final S3FixtureContainer s3Container = new S3FixtureContainer();

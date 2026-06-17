@@ -1,17 +1,21 @@
-name: Build
+name: Build & Test
 
 on:
   push:
     branches: [master]
   pull_request:
     branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
+  pull-requests: write
+  checks: write
 
 jobs:
   gradle:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -19,9 +23,27 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-          cache: gradle
 
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
 
-      - name: Assemble
-        run: ./gradlew assemble --no-daemon
+      - name: Test
+        run: ./gradlew test -PexcludeTags=ci-skip --no-daemon
+
+      - name: Convert JUnit XML to CTRF
+        if: always()
+        run: npx junit-to-ctrf "**/build/test-results/test/*.xml" -o ctrf/ctrf-report.json -t gradle
+
+      - name: Publish test report
+        if: always()
+        uses: ctrf-io/github-test-reporter@v1
+        with:
+          report-path: './ctrf/ctrf-report.json'
+          github-report: true
+          pull-request-report: true
+          failed-report: true
+          annotate: true
+          upload-artifact: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

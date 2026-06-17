@@ -9,6 +9,8 @@ import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.nessie.NessieCatalog;
+import org.junit.jupiter.api.Tag;
+import kasanari.fixtures.TestTags;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,6 +19,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Tag(TestTags.CI_SKIP)
 public class NessieIcebergCatalogTest extends IcebergCatalogAdapterTest {
     private final NessieFixtureContainer nessie = new NessieFixtureContainer();
     private final S3FixtureContainer s3Container = new S3FixtureContainer();

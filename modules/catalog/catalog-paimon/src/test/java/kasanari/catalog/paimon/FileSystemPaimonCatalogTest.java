@@ -1,10 +1,13 @@
 package kasanari.catalog.paimon;
 
+import kasanari.fixtures.TestTags;
 import kasanari.fixtures.s3.S3FixtureContainer;
 import kasanari.fixtures.s3.S3Helper;
+import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
 
+@Tag(TestTags.CI_SKIP)
 public class FileSystemPaimonCatalogTest extends PaimonCatalogAdapterTest {
     private final S3FixtureContainer s3Container = new S3FixtureContainer();
     private S3Helper s3Helper;
@@ -103,6 +106,11 @@ public class FileSystemPaimonCatalogTest extends PaimonCatalogAdapterTest {
 
     @Override
     protected boolean supportSnapshot() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportsPartitions() {
         return false;
     }
 }

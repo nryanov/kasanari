@@ -44,8 +44,18 @@ subprojects {
     }
 
     tasks.withType<Test>().configureEach {
-        useJUnitPlatform()
-        systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
+        useJUnitPlatform {
+            if (project.hasProperty("excludeTags")) {
+                val tags = project.property("excludeTags").toString().split(",")
+                excludeTags(*tags.toTypedArray())
+            }
+        }
+
+        testLogging {
+            events("passed", "skipped", "failed")
+            showStandardStreams = true
+        }
+
         jvmArgs(
             "--add-opens", "java.base/java.io=ALL-UNNAMED",
             "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED",
