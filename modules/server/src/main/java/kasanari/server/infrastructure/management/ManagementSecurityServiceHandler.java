@@ -4,19 +4,19 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.authorization.runtime.AuthorizationService;
+import kasanari.authorization.spi.AuthorizationResource;
 import kasanari.authorization.spi.Permission;
 import kasanari.authorization.spi.RoleBinding;
 import kasanari.catalog.management.api.ManagementRestSecurityService;
-import kasanari.catalog.management.dto.CatalogTypeDto;
 import kasanari.catalog.management.dto.DeleteRolesRequestDto;
 import kasanari.catalog.management.dto.GetRolesResponseDto;
 import kasanari.catalog.management.dto.UpdateRolesRequestDto;
 import kasanari.core.model.CatalogType;
 import kasanari.server.infrastructure.http.ApiFallbacks;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class ManagementSecurityServiceHandler implements ManagementRestSecurityService {
@@ -53,22 +53,25 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
     }
 
     @Override
-    public Response getRoles(String subject, CatalogTypeDto catalogType, SecurityContext securityContext) {
+    public Response getRoles(String subject, String resourcePrefix, SecurityContext securityContext) {
         var visibleDomains = getReadableDomains(securityContext);
 
         if (visibleDomains.isEmpty()) {
             return ApiFallbacks.error(Response.Status.FORBIDDEN, "Missing permission to read role bindings");
         }
 
-        if (catalogType != null && !visibleDomains.contains(RoleBindingMapper.toDomain(catalogType))) {
-            return ApiFallbacks.error(Response.Status.FORBIDDEN, "Missing permission to read role bindings");
+        if (resourcePrefix != null && !resourcePrefix.isBlank()) {
+            var prefixDomain = parseDomainPrefix(resourcePrefix);
+            if (prefixDomain.isPresent() && !visibleDomains.contains(prefixDomain.get())) {
+                return ApiFallbacks.error(Response.Status.FORBIDDEN, "Missing permission to read role bindings");
+            }
         }
 
         var roleBindings = authorizationService.roleBindingsOrThrow();
-        var bindings = roleBindings.list(subject, catalogType == null ? null : RoleBindingMapper.toDomain(catalogType));
+        var bindings = roleBindings.list(subject, normalizeResourcePrefix(resourcePrefix));
 
         var filtered = bindings.stream()
-                .filter(binding -> visibleDomains.contains(binding.catalogType()))
+                .filter(binding -> visibleDomains.contains(AuthorizationResource.parse(binding.resource()).catalogType()))
                 .map(RoleBindingMapper::toApi)
                 .toList();
 
@@ -107,7 +110,7 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
     }
 
     private Set<CatalogType> getReadableDomains(SecurityContext securityContext) {
-        var result = new java.util.HashSet<CatalogType>();
+        var result = new HashSet<CatalogType>();
         for (var type : CatalogType.values()) {
             if (authorizationService.isAuthorized(securityContext, type, Permission.RoleSelect)) {
                 result.add(type);
@@ -117,6 +120,31 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
     }
 
     private Set<CatalogType> distinctTypes(List<RoleBinding> bindings) {
-        return bindings.stream().map(RoleBinding::catalogType).collect(Collectors.toSet());
+        var result = new HashSet<CatalogType>();
+        for (var binding : bindings) {
+            result.add(AuthorizationResource.parse(binding.resource()).catalogType());
+        }
+        return result;
+    }
+
+    private static java.util.Optional<CatalogType> parseDomainPrefix(String resourcePrefix) {
+        var normalized = normalizeResourcePrefix(resourcePrefix);
+        if (normalized == null) {
+            return java.util.Optional.empty();
+        }
+        var slash = normalized.indexOf('/');
+        var domain = slash < 0 ? normalized : normalized.substring(0, slash);
+        try {
+            return java.util.Optional.of(CatalogType.fromValue(domain));
+        } catch (IllegalArgumentException e) {
+            return java.util.Optional.empty();
+        }
+    }
+
+    private static String normalizeResourcePrefix(String resourcePrefix) {
+        if (resourcePrefix == null || resourcePrefix.isBlank()) {
+            return null;
+        }
+        return resourcePrefix.endsWith("/") ? resourcePrefix : resourcePrefix + "/";
     }
 }

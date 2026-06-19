@@ -137,10 +137,12 @@ paths:
           schema:
             type: string
         - in: query
-          name: catalogType
+          name: resourcePrefix
           required: false
           schema:
-            $ref: "#/components/schemas/CatalogType"
+            type: string
+          description: >-
+            Filter bindings by resource prefix (for example ICEBERG/ or ICEBERG/warehouse/).
       responses:
         "200":
           description: OK
@@ -311,19 +313,21 @@ components:
       type: object
       required:
         - subject
-        - catalogType
         - role
+        - resource
       properties:
         subject:
           type: string
-        catalogType:
-          $ref: "#/components/schemas/CatalogType"
         role:
           type: string
           description: >-
-            Role name assigned to the subject for the catalog type. Valid values depend on
+            Role name assigned to the subject for the resource scope. Valid values depend on
             the active authorization provider (Casbin defaults include IcebergCatalogAdmin,
             IcebergCatalogEditor, IcebergCatalogViewer, and analogous Paimon/Lance roles).
+        resource:
+          type: string
+          description: >-
+            Fully qualified resource scope pattern (for example ICEBERG/warehouse/analytics/*).
     GetRolesResponse:
       type: object
       required:

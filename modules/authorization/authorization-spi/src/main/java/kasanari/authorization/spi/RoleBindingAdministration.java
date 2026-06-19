@@ -1,11 +1,9 @@
 package kasanari.authorization.spi;
 
-import kasanari.core.model.CatalogType;
-
 import java.util.List;
 
 public interface RoleBindingAdministration {
-    List<RoleBinding> list(String subject, CatalogType catalogType);
+    List<RoleBinding> list(String subject, String resourcePrefix);
 
     void upsert(List<RoleBinding> bindings);
 

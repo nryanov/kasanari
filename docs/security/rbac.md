@@ -14,7 +14,20 @@ Role bindings are stored and managed through Management API:
 - `PUT /management/v1/security/roles`
 - `DELETE /management/v1/security/roles`
 
-Bindings are scoped by `catalogType` (`ICEBERG`, `PAIMON`, `LANCE`).
+Bindings are scoped by fully qualified resource patterns. The catalog engine (`ICEBERG`, `PAIMON`, `LANCE`) is the first path segment.
+
+## Resource path format
+
+| Level | Path pattern | Example |
+|-------|--------------|---------|
+| Catalog | `{type}/{catalogName}/*` | `ICEBERG/warehouse/*` |
+| Namespace | `{type}/{catalogName}/{namespace}/*` | `PAIMON/events/ns1/*` |
+| Table/View | `{type}/{catalogName}/{namespace}/{name}` | `LANCE/lake/ns1/users` |
+
+- Segment delimiter: `/`
+- Iceberg multi-level namespaces stay dot-encoded in one segment (for example `ns1.ns2`)
+- Wildcard suffix `/*` denotes this level and descendants
+- Paimon databases map to the `namespace` segment in resource paths
 
 ## Default Casbin roles
 
@@ -134,19 +147,22 @@ All permissions are defined in `kasanari.authorization.spi.Permission`.
   "bindings": [
     {
       "subject": "alice",
-      "catalogType": "ICEBERG",
-      "role": "IcebergCatalogViewer"
+      "role": "IcebergCatalogViewer",
+      "resource": "ICEBERG/warehouse/analytics/*"
     },
     {
       "subject": "platform-admin",
-      "catalogType": "PAIMON",
-      "role": "PaimonCatalogAdmin"
+      "role": "PaimonCatalogAdmin",
+      "resource": "PAIMON/events/*"
     }
   ]
 }
 ```
 
+List bindings with optional `resourcePrefix` query parameter (for example `ICEBERG/` or `ICEBERG/warehouse/`).
+
 ## Notes
 
-- Role bindings are currently scoped by `catalogType` (not by individual `catalogId`).
+- Role bindings require an explicit `resource` scope pattern.
 - Superusers configured in `kasanari.authorization.casbin.superuser-subjects` bypass checks.
+- Namespace-scoped bindings inherit access to tables and views under that namespace.

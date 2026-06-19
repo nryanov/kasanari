@@ -9,7 +9,7 @@ import kasanari.repository.jdbc.KasanariDataSource;
 import kasanari.repository.management.security.postgres.JdbcManagementSecurityQueries;
 import kasanari.repository.management.security.postgres.JdbcRoleBindingRepository;
 import org.casbin.jcasbin.main.Enforcer;
-import org.casbin.jcasbin.model.Model;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,9 +43,8 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
         var dataSource = new KasanariDataSource(resolveJdbcProperties(context));
         var txManager = new JdbcTransactionManager(dataSource);
         var roleBindingRepository = new JdbcRoleBindingRepository();
-        enforcer = createEnforcer();
+        enforcer = CasbinEnforcerFactory.createEnforcer();
         initSchema(txManager);
-        CasbinPolicyBootstrap.initRolePermissions(enforcer);
         roleBindingAdministration = new CasbinRoleBindingAdministration(txManager, roleBindingRepository, enforcer);
         roleBindingAdministration.reloadPolicies();
     }
@@ -57,7 +56,7 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
         }
         return enforcer.enforce(
                 request.subject(),
-                request.domain().toString(),
+                request.resource(),
                 request.permission().wireName()
         );
     }
@@ -71,29 +70,6 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
         txManager.inTransaction(tx -> tx.createUpdate(JdbcManagementSecurityQueries.CREATE_ROLE_BINDINGS_DDL).execute());
     }
 
-    private static Enforcer createEnforcer() {
-        var modelText = """
-                [request_definition]
-                r = sub, dom, perm
-
-                [policy_definition]
-                p = role, dom, perm
-
-                [role_definition]
-                g = _, _, _
-
-                [policy_effect]
-                e = some(where (p.eft == allow))
-
-                [matchers]
-                m = g(r.sub, p.role, r.dom) && r.dom == p.dom && globMatch(r.perm, p.perm)
-                """;
-
-        var model = new Model();
-        model.loadModelFromText(modelText);
-        return new Enforcer(model);
-    }
-
     private static Map<String, String> resolveJdbcProperties(AuthorizationProviderContext context) {
         var uri = context.getOptional("jdbc.uri");
         var user = context.getOptional("jdbc.user");
@@ -101,7 +77,7 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
 
         if (uri.isEmpty() || user.isEmpty() || password.isEmpty()) {
             throw new IllegalStateException(
-                    "Casbin authorization requires JDBC properties: jdbc,uri, jdbc.user, jdbc.password via kasanari.authorization.casbin.*");
+                    "Casbin authorization requires JDBC properties: jdbc.uri, jdbc.user, jdbc.password via kasanari.authorization.casbin.*");
         }
 
         var properties = new HashMap<String, String>();

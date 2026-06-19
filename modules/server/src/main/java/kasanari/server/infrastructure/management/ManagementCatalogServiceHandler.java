@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.authorization.runtime.AuthorizationService;
+import kasanari.authorization.spi.AuthorizationResource;
 import kasanari.authorization.spi.Permission;
 import kasanari.catalog.management.api.ManagementRestCatalogsService;
 import kasanari.catalog.management.dto.CatalogPublicInfoDto;
@@ -30,7 +31,8 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     @Override
     public Response createCatalog(CreateCatalogRequestDto createCatalogRequest, SecurityContext securityContext) {
         var domainType = CatalogSpecMapper.toDomain(createCatalogRequest.getCatalogType());
-        var denied = authorizationService.denyUnless(securityContext, domainType, Permission.catalogCreate(domainType));
+        var resource = AuthorizationResource.catalog(domainType, createCatalogRequest.getCatalogId()).path();
+        var denied = authorizationService.denyUnless(securityContext, resource, Permission.catalogCreate(domainType));
         if (denied.isPresent()) {
             return denied.get();
         }
@@ -55,7 +57,8 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     @Override
     public Response deleteCatalog(CatalogTypeDto catalogType, String name, SecurityContext securityContext) {
         var domainType = CatalogSpecMapper.toDomain(catalogType);
-        var denied = authorizationService.denyUnless(securityContext, domainType, Permission.catalogDelete(domainType));
+        var resource = AuthorizationResource.catalog(domainType, name).path();
+        var denied = authorizationService.denyUnless(securityContext, resource, Permission.catalogDelete(domainType));
         if (denied.isPresent()) {
             return denied.get();
         }
@@ -72,7 +75,8 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     @Override
     public Response getCatalog(CatalogTypeDto catalogType, String name, SecurityContext securityContext) {
         var domainType = CatalogSpecMapper.toDomain(catalogType);
-        var denied = authorizationService.denyUnless(securityContext, domainType, Permission.catalogGet(domainType));
+        var resource = AuthorizationResource.catalog(domainType, name).path();
+        var denied = authorizationService.denyUnless(securityContext, resource, Permission.catalogGet(domainType));
         if (denied.isPresent()) {
             return denied.get();
         }
@@ -89,7 +93,8 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     @Override
     public Response updateCatalog(CatalogTypeDto catalogType, String catalogId, UpdateCatalogRequestDto updateCatalogRequest, SecurityContext securityContext) {
         var domainType = CatalogSpecMapper.toDomain(catalogType);
-        var denied = authorizationService.denyUnless(securityContext, domainType, Permission.catalogUpdate(domainType));
+        var resource = AuthorizationResource.catalog(domainType, catalogId).path();
+        var denied = authorizationService.denyUnless(securityContext, resource, Permission.catalogUpdate(domainType));
         if (denied.isPresent()) {
             return denied.get();
         }

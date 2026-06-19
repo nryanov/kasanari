@@ -2,82 +2,109 @@ package kasanari.authorization.casbin;
 
 import kasanari.authorization.spi.Permission;
 import kasanari.core.model.CatalogType;
-import org.casbin.jcasbin.main.Enforcer;
 
 import java.util.List;
+import java.util.Map;
 
 final class CasbinPolicyBootstrap {
+    private static final Map<String, List<String>> ROLE_PERMISSIONS = Map.ofEntries(
+            Map.entry(CasbinRoles.ICEBERG_CATALOG_ADMIN, icebergAdminPermissions()),
+            Map.entry(CasbinRoles.ICEBERG_CATALOG_EDITOR, icebergEditorPermissions()),
+            Map.entry(CasbinRoles.ICEBERG_CATALOG_VIEWER, icebergViewerPermissions()),
+            Map.entry(CasbinRoles.PAIMON_CATALOG_ADMIN, paimonAdminPermissions()),
+            Map.entry(CasbinRoles.PAIMON_CATALOG_EDITOR, paimonEditorPermissions()),
+            Map.entry(CasbinRoles.PAIMON_CATALOG_VIEWER, paimonViewerPermissions()),
+            Map.entry(CasbinRoles.LANCE_CATALOG_ADMIN, lanceAdminPermissions()),
+            Map.entry(CasbinRoles.LANCE_CATALOG_EDITOR, lanceEditorPermissions()),
+            Map.entry(CasbinRoles.LANCE_CATALOG_VIEWER, lanceViewerPermissions())
+    );
+
     private CasbinPolicyBootstrap() {
     }
 
-    static void initRolePermissions(Enforcer enforcer) {
-        for (var domain : CatalogType.values()) {
-            var prefix = switch (domain) {
-                case ICEBERG -> "Iceberg";
-                case PAIMON -> "Paimon";
-                case LANCE -> "Lance";
-            };
-            var adminRole = switch (domain) {
-                case ICEBERG -> CasbinRoles.ICEBERG_CATALOG_ADMIN;
-                case PAIMON -> CasbinRoles.PAIMON_CATALOG_ADMIN;
-                case LANCE -> CasbinRoles.LANCE_CATALOG_ADMIN;
-            };
-            var editorRole = switch (domain) {
-                case ICEBERG -> CasbinRoles.ICEBERG_CATALOG_EDITOR;
-                case PAIMON -> CasbinRoles.PAIMON_CATALOG_EDITOR;
-                case LANCE -> CasbinRoles.LANCE_CATALOG_EDITOR;
-            };
-            var viewerRole = switch (domain) {
-                case ICEBERG -> CasbinRoles.ICEBERG_CATALOG_VIEWER;
-                case PAIMON -> CasbinRoles.PAIMON_CATALOG_VIEWER;
-                case LANCE -> CasbinRoles.LANCE_CATALOG_VIEWER;
-            };
-            var domainName = domain.toString();
-
-            enforcer.addPolicy(adminRole, domainName, prefix + "*");
-            enforcer.addPolicy(adminRole, domainName, Permission.RoleSelect.wireName());
-            enforcer.addPolicy(adminRole, domainName, Permission.RoleAdd.wireName());
-            enforcer.addPolicy(adminRole, domainName, Permission.RoleRemove.wireName());
-
-            for (var permission : editorPermissions(prefix, domain)) {
-                enforcer.addPolicy(editorRole, domainName, permission);
-            }
-
-            enforcer.addPolicy(viewerRole, domainName, prefix + "*List");
-            enforcer.addPolicy(viewerRole, domainName, prefix + "*Get");
-            enforcer.addPolicy(viewerRole, domainName, prefix + "*Exists");
+    static List<String> permissionPatternsForRole(String role) {
+        var patterns = ROLE_PERMISSIONS.get(role);
+        if (patterns == null) {
+            return List.of();
         }
+        return patterns;
     }
 
-    private static List<String> editorPermissions(String prefix, CatalogType domain) {
-        if (domain == CatalogType.ICEBERG) {
-            return List.of(
-                    Permission.IcebergTableList.wireName(),
-                    Permission.IcebergTableCreate.wireName(),
-                    Permission.IcebergTableGet.wireName(),
-                    Permission.IcebergTableDrop.wireName(),
-                    Permission.IcebergTableAlter.wireName(),
-                    "IcebergNamespace*",
-                    "IcebergView*",
-                    Permission.IcebergTransactionCommit.wireName(),
-                    Permission.IcebergMetricsReport.wireName()
-            );
-        }
-        if (domain == CatalogType.PAIMON) {
-            return List.of(
-                    prefix + "Database*",
-                    prefix + "Table*",
-                    prefix + "View*",
-                    prefix + "Function*",
-                    prefix + "Branch*",
-                    prefix + "Partition*",
-                    prefix + "Tag*",
-                    Permission.PaimonConfigGet.wireName()
-            );
-        }
+    private static List<String> icebergAdminPermissions() {
         return List.of(
-                prefix + "Namespace*",
-                prefix + "Table*"
+                "Iceberg*",
+                Permission.RoleSelect.wireName(),
+                Permission.RoleAdd.wireName(),
+                Permission.RoleRemove.wireName()
         );
+    }
+
+    private static List<String> icebergEditorPermissions() {
+        return List.of(
+                Permission.IcebergTableList.wireName(),
+                Permission.IcebergTableCreate.wireName(),
+                Permission.IcebergTableGet.wireName(),
+                Permission.IcebergTableDrop.wireName(),
+                Permission.IcebergTableAlter.wireName(),
+                "IcebergNamespace*",
+                "IcebergView*",
+                Permission.IcebergTransactionCommit.wireName(),
+                Permission.IcebergMetricsReport.wireName()
+        );
+    }
+
+    private static List<String> icebergViewerPermissions() {
+        return List.of("Iceberg*List", "Iceberg*Get", "Iceberg*Exists");
+    }
+
+    private static List<String> paimonAdminPermissions() {
+        return List.of(
+                "Paimon*",
+                Permission.RoleSelect.wireName(),
+                Permission.RoleAdd.wireName(),
+                Permission.RoleRemove.wireName()
+        );
+    }
+
+    private static List<String> paimonEditorPermissions() {
+        return List.of(
+                "PaimonDatabase*",
+                "PaimonTable*",
+                "PaimonView*",
+                "PaimonFunction*",
+                "PaimonBranch*",
+                "PaimonPartition*",
+                "PaimonTag*",
+                Permission.PaimonConfigGet.wireName()
+        );
+    }
+
+    private static List<String> paimonViewerPermissions() {
+        return List.of("Paimon*List", "Paimon*Get", "Paimon*Exists");
+    }
+
+    private static List<String> lanceAdminPermissions() {
+        return List.of(
+                "Lance*",
+                Permission.RoleSelect.wireName(),
+                Permission.RoleAdd.wireName(),
+                Permission.RoleRemove.wireName()
+        );
+    }
+
+    private static List<String> lanceEditorPermissions() {
+        return List.of("LanceNamespace*", "LanceTable*");
+    }
+
+    private static List<String> lanceViewerPermissions() {
+        return List.of("Lance*List", "Lance*Get", "Lance*Exists");
+    }
+
+    static String catalogTypePrefix(CatalogType catalogType) {
+        return switch (catalogType) {
+            case ICEBERG -> "Iceberg";
+            case PAIMON -> "Paimon";
+            case LANCE -> "Lance";
+        };
     }
 }

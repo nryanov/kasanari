@@ -3,7 +3,6 @@ package kasanari.authorization.casbin;
 import kasanari.authorization.spi.RoleBinding;
 import kasanari.authorization.spi.RoleBindingAdministration;
 import kasanari.repository.core.TransactionManager;
-import kasanari.core.model.CatalogType;
 import kasanari.repository.management.security.RoleBindingRepository;
 import kasanari.repository.management.security.model.StoredRoleBinding;
 import org.casbin.jcasbin.main.Enforcer;
@@ -27,8 +26,8 @@ final class CasbinRoleBindingAdministration implements RoleBindingAdministration
     }
 
     @Override
-    public List<RoleBinding> list(String subject, CatalogType catalogType) {
-        return txManager.inTransactionR(tx -> roleBindingRepository.list(tx, subject, catalogType)).stream()
+    public List<RoleBinding> list(String subject, String resourcePrefix) {
+        return txManager.inTransactionR(tx -> roleBindingRepository.list(tx, subject, resourcePrefix)).stream()
                 .map(CasbinRoleBindingAdministration::toSpi)
                 .toList();
     }
@@ -45,24 +44,17 @@ final class CasbinRoleBindingAdministration implements RoleBindingAdministration
 
     @Override
     public void reloadPolicies() {
-        var groupingPolicies = enforcer.getGroupingPolicy();
-        for (var policy : groupingPolicies) {
-            enforcer.removeGroupingPolicy(policy);
-        }
-
         var storedBindings = txManager.inTransactionR(tx -> roleBindingRepository.list(tx, null, null));
-        for (var binding : storedBindings) {
-            enforcer.addGroupingPolicy(binding.subject(), binding.role(), binding.catalogType().toString());
-        }
+        CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, storedBindings);
     }
 
     private static RoleBinding toSpi(StoredRoleBinding binding) {
-        return new RoleBinding(binding.subject(), binding.catalogType(), binding.role());
+        return new RoleBinding(binding.subject(), binding.role(), binding.resource());
     }
 
     private static List<StoredRoleBinding> toStored(List<RoleBinding> bindings) {
         return bindings.stream()
-                .map(binding -> new StoredRoleBinding(binding.subject(), binding.catalogType(), binding.role()))
+                .map(binding -> new StoredRoleBinding(binding.subject(), binding.role(), binding.resource()))
                 .toList();
     }
 }

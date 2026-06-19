@@ -1,13 +1,15 @@
 package kasanari.authorization.spi;
 
-import kasanari.core.model.CatalogType;
-
 public record AuthorizationRequest(
         String subject,
-        CatalogType domain,
+        String resource,
         Permission permission
 ) {
-    public AuthorizationRequest(String subject, CatalogType domain, String permissionName) {
-        this(subject, domain, Permission.fromName(permissionName));
+    public AuthorizationRequest(String subject, String resource, String permissionName) {
+        this(subject, resource, Permission.fromName(permissionName));
+    }
+
+    public AuthorizationRequest {
+        AuthorizationResource.parse(resource);
     }
 }

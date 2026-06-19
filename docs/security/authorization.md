@@ -61,12 +61,12 @@ Binding model:
 ```json
 {
   "subject": "alice",
-  "catalogType": "ICEBERG",
-  "role": "IcebergCatalogViewer"
+  "role": "IcebergCatalogViewer",
+  "resource": "ICEBERG/warehouse/analytics/*"
 }
 ```
 
-`catalogType` scope is one of: `ICEBERG`, `PAIMON`, `LANCE`.
+`resource` is a fully qualified scope pattern. The catalog engine is the first segment (`ICEBERG`, `PAIMON`, or `LANCE`).
 
 ## HTTP outcomes
 
