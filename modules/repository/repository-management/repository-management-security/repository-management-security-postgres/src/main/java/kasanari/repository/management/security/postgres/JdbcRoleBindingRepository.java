@@ -17,8 +17,8 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
 
         return query.map((rs, ctx) -> new StoredRoleBinding(
                 rs.getString("subject"),
-                rs.getString("role_name"),
-                rs.getString("resource")
+                rs.getString("resource"),
+                rs.getString("role")
         )).list();
     }
 
@@ -28,13 +28,16 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
             return;
         }
 
+        var batch = tx.prepareBatch(JdbcManagementSecurityQueries.UPSERT_ROLE_BINDING);
+
         for (var binding : bindings) {
-            var upsert = tx.createUpdate(JdbcManagementSecurityQueries.UPSERT_ROLE_BINDING);
-            upsert.bind(0, binding.subject());
-            upsert.bind(1, binding.role());
-            upsert.bind(2, binding.resource());
-            upsert.execute();
+            batch.bind(0, binding.subject());
+            batch.bind(1, binding.resource());
+            batch.bind(2, binding.role());
+            batch.add();
         }
+
+        batch.execute();
     }
 
     @Override
@@ -46,8 +49,8 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
         for (var binding : bindings) {
             var delete = tx.createUpdate(JdbcManagementSecurityQueries.DELETE_ROLE_BINDING);
             delete.bind(0, binding.subject());
-            delete.bind(1, binding.role());
-            delete.bind(2, binding.resource());
+            delete.bind(1, binding.resource());
+            delete.bind(2, binding.role());
             delete.execute();
         }
     }

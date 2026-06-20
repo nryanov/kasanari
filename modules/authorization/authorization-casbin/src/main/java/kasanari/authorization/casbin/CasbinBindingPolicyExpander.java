@@ -10,10 +10,7 @@ final class CasbinBindingPolicyExpander {
     }
 
     static void reloadBindingPolicies(Enforcer enforcer, List<StoredRoleBinding> bindings) {
-        var policies = enforcer.getPolicy();
-        for (var policy : policies) {
-            enforcer.removePolicy(policy);
-        }
+        enforcer.clearPolicy();
 
         for (var binding : bindings) {
             for (var permissionPattern : CasbinPolicyBootstrap.permissionPatternsForRole(binding.role())) {
