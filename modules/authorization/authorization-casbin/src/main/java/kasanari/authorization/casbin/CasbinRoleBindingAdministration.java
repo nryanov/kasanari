@@ -49,12 +49,12 @@ final class CasbinRoleBindingAdministration implements RoleBindingAdministration
     }
 
     private static RoleBinding toSpi(StoredRoleBinding binding) {
-        return new RoleBinding(binding.subject(), binding.role(), binding.resource());
+        return new RoleBinding(binding.subject(), binding.resource(), binding.role());
     }
 
     private static List<StoredRoleBinding> toStored(List<RoleBinding> bindings) {
         return bindings.stream()
-                .map(binding -> new StoredRoleBinding(binding.subject(), binding.role(), binding.resource()))
+                .map(binding -> new StoredRoleBinding(binding.subject(), binding.resource(), binding.role()))
                 .toList();
     }
 }

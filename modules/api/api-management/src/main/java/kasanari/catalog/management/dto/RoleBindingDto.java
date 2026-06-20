@@ -2,8 +2,8 @@ package kasanari.catalog.management.dto;
 
 public class RoleBindingDto {
     private String subject;
-    private String role;
     private String resource;
+    private String role;
 
     public String getSubject() {
         return subject;

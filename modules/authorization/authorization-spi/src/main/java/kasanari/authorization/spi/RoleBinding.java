@@ -2,8 +2,8 @@ package kasanari.authorization.spi;
 
 public record RoleBinding(
         String subject,
-        String role,
-        String resource
+        String resource,
+        String role
 ) {
     public RoleBinding {
         AuthorizationResource.parse(resource);
