@@ -29,25 +29,25 @@ public final class AuthorizationResourceResolver {
 
         var objectName = firstNonBlank(attrs.get("table"), attrs.get("view"), attrs.get("function"));
         if (objectName != null && namespace != null) {
-            return AuthorizationResource.build(catalogType.name(), catalogName, namespace, objectName);
+            return AuthorizationResource.build(catalogType.resourceEngine(), catalogName, namespace, objectName);
         }
         if (namespace != null) {
-            return AuthorizationResource.build(catalogType.name(), catalogName, namespace);
+            return AuthorizationResource.build(catalogType.resourceEngine(), catalogName, namespace);
         }
-        return AuthorizationResource.build(catalogType.name(), catalogName);
+        return AuthorizationResource.build(catalogType.resourceEngine(), catalogName);
     }
 
     private static String parseIdentifier(CatalogType catalogType, String catalogName, String identifier) {
         if (identifier == null || identifier.isBlank()) {
-            return AuthorizationResource.build(catalogType.name(), catalogName);
+            return AuthorizationResource.build(catalogType.resourceEngine(), catalogName);
         }
         var lastDot = identifier.lastIndexOf('.');
         if (lastDot <= 0 || lastDot == identifier.length() - 1) {
-            return AuthorizationResource.build(catalogType.name(), catalogName);
+            return AuthorizationResource.build(catalogType.resourceEngine(), catalogName);
         }
         var namespace = identifier.substring(0, lastDot);
         var objectName = identifier.substring(lastDot + 1);
-        return AuthorizationResource.build(catalogType.name(), catalogName, namespace, objectName);
+        return AuthorizationResource.build(catalogType.resourceEngine(), catalogName, namespace, objectName);
     }
 
     private static String firstNonBlank(String... values) {

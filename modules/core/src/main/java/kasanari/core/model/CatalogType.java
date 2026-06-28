@@ -1,5 +1,7 @@
 package kasanari.core.model;
 
+import java.util.Locale;
+
 public enum CatalogType {
     ICEBERG("ICEBERG"),
     PAIMON("PAIMON"),
@@ -18,6 +20,10 @@ public enum CatalogType {
             }
         }
         throw new IllegalArgumentException("Unknown catalog type: " + value);
+    }
+
+    public String resourceEngine() {
+        return value.toLowerCase(Locale.ROOT);
     }
 
     @Override

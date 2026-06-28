@@ -142,7 +142,7 @@ paths:
           schema:
             type: string
           description: >-
-            Exact resource scope (for example ICEBERG/warehouse/analytics).
+            Exact resource scope (for example iceberg/warehouse/analytics).
       responses:
         "200":
           description: OK
@@ -325,7 +325,7 @@ components:
         resource:
           type: string
           description: >-
-            Fully qualified resource scope (for example ICEBERG/warehouse/analytics).
+            Fully qualified resource scope (for example iceberg/warehouse/analytics).
     GetRolesResponse:
       type: object
       required:

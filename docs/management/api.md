@@ -33,9 +33,9 @@ Supported operations:
 
 `catalogType` values:
 
-- `ICEBERG`
-- `PAIMON`
-- `LANCE`
+- `iceberg`
+- `paimon`
+- `lance`
 
 `mode` values:
 
@@ -140,20 +140,20 @@ Role binding shape:
 {
   "subject": "alice",
   "role": "IcebergCatalogViewer",
-  "resource": "ICEBERG/warehouse/analytics"
+  "resource": "iceberg/warehouse/analytics"
 }
 ```
 
-Scope is expressed by the `resource` path. No wildcards — use path depth for hierarchy (for example `ICEBERG/warehouse` for catalog-wide access).
+Scope is expressed by the `resource` path. No wildcards — use path depth for hierarchy (for example `iceberg/warehouse` for catalog-wide access).
 
 ## What role binding kinds exist
 
 By resource scope:
 
-- Engine: `ICEBERG`, `PAIMON`, or `LANCE`
-- Catalog: `{type}/{catalogName}` (for example `ICEBERG/warehouse`)
-- Namespace: `{type}/{catalogName}/{namespace}` (for example `PAIMON/events/ns1`)
-- Object: `{type}/{catalogName}/{namespace}/{name}` (for example `LANCE/lake/ns1/users`)
+- Engine: `iceberg`, `paimon`, or `lance`
+- Catalog: `{type}/{catalogName}` (for example `iceberg/warehouse`)
+- Namespace: `{type}/{catalogName}/{namespace}` (for example `paimon/events/ns1`)
+- Object: `{type}/{catalogName}/{namespace}/{name}` (for example `lance/lake/ns1/users`)
 
 By role level (Casbin default roles):
 
@@ -178,9 +178,9 @@ curl -X POST "http://localhost:9090/management/v1/security/roles" \
   -H "Content-Type: application/json" \
   -d '{
     "bindings":[
-      {"subject":"platform-admin","resource":"ICEBERG/warehouse","role":"IcebergCatalogAdmin"},
-      {"subject":"team-a","resource":"PAIMON/events","role":"PaimonCatalogEditor"},
-      {"subject":"analyst","resource":"LANCE/lake","role":"LanceCatalogViewer"}
+      {"subject":"platform-admin","resource":"iceberg/warehouse","role":"IcebergCatalogAdmin"},
+      {"subject":"team-a","resource":"paimon/events","role":"PaimonCatalogEditor"},
+      {"subject":"analyst","resource":"lance/lake","role":"LanceCatalogViewer"}
     ]
   }'
 ```
@@ -193,7 +193,7 @@ curl -X POST "http://localhost:9090/management/v1/security/roles" \
 ## List role bindings
 
 ```bash
-curl "http://localhost:9090/management/v1/security/roles?resource=ICEBERG/warehouse/analytics&subject=alice"
+curl "http://localhost:9090/management/v1/security/roles?resource=iceberg/warehouse/analytics&subject=alice"
 ```
 
 - `resource` query parameter is required (exact match)
@@ -206,7 +206,7 @@ curl -X DELETE "http://localhost:9090/management/v1/security/roles" \
   -H "Content-Type: application/json" \
   -d '{
     "bindings":[
-      {"subject":"analyst","resource":"LANCE/lake","role":"LanceCatalogViewer"}
+      {"subject":"analyst","resource":"lance/lake","role":"LanceCatalogViewer"}
     ]
   }'
 ```

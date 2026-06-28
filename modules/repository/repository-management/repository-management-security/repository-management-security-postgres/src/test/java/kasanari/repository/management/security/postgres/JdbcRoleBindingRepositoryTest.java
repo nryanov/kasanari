@@ -43,7 +43,7 @@ public class JdbcRoleBindingRepositoryTest {
 
     @Test
     void listWhenEmptyReturnsEmptyList() {
-        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "ICEBERG/warehouse"));
+        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "iceberg/warehouse"));
 
         var expected = List.of();
         assertEquals(expected, result);
@@ -51,10 +51,10 @@ public class JdbcRoleBindingRepositoryTest {
 
     @Test
     void addThenListBySubjectAndResourceReturnsBinding() {
-        var binding = new StoredRoleBinding("alice", "ICEBERG/warehouse", "IcebergCatalogAdmin");
+        var binding = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogAdmin");
         txManager.inTransaction(tx -> repository.add(tx, List.of(binding)));
 
-        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "ICEBERG/warehouse"));
+        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "iceberg/warehouse"));
 
         var expected = List.of(binding);
         assertEquals(expected, result);
@@ -62,10 +62,10 @@ public class JdbcRoleBindingRepositoryTest {
 
     @Test
     void addThenListByResourceReturnsAllSubjectsAtResource() {
-        var binding = new StoredRoleBinding("alice", "ICEBERG/warehouse", "IcebergCatalogAdmin");
+        var binding = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogAdmin");
         txManager.inTransaction(tx -> repository.add(tx, List.of(binding)));
 
-        var result = txManager.inTransactionR(tx -> repository.list(tx, null, "ICEBERG/warehouse"));
+        var result = txManager.inTransactionR(tx -> repository.list(tx, null, "iceberg/warehouse"));
 
         var expected = List.of(binding);
         assertEquals(expected, result);
@@ -73,8 +73,8 @@ public class JdbcRoleBindingRepositoryTest {
 
     @Test
     void addThenListAllReturnsAllBindings() {
-        var aliceBinding = new StoredRoleBinding("alice", "ICEBERG/warehouse", "IcebergCatalogAdmin");
-        var bobBinding = new StoredRoleBinding("bob", "PAIMON/events", "PaimonCatalogViewer");
+        var aliceBinding = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogAdmin");
+        var bobBinding = new StoredRoleBinding("bob", "paimon/events", "PaimonCatalogViewer");
         txManager.inTransaction(tx -> repository.add(tx, List.of(aliceBinding, bobBinding)));
 
         var result = txManager.inTransactionR(tx -> repository.listAll(tx));
@@ -85,12 +85,12 @@ public class JdbcRoleBindingRepositoryTest {
 
     @Test
     void listFiltersBySubjectAndExactResource() {
-        var matching = new StoredRoleBinding("alice", "ICEBERG/warehouse", "IcebergCatalogAdmin");
-        var otherSubject = new StoredRoleBinding("bob", "ICEBERG/warehouse", "IcebergCatalogAdmin");
-        var otherResource = new StoredRoleBinding("alice", "PAIMON/events", "PaimonCatalogAdmin");
+        var matching = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogAdmin");
+        var otherSubject = new StoredRoleBinding("bob", "iceberg/warehouse", "IcebergCatalogAdmin");
+        var otherResource = new StoredRoleBinding("alice", "paimon/events", "PaimonCatalogAdmin");
         txManager.inTransaction(tx -> repository.add(tx, List.of(matching, otherSubject, otherResource)));
 
-        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "ICEBERG/warehouse"));
+        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "iceberg/warehouse"));
 
         var expected = List.of(matching);
         assertEquals(expected, result);
@@ -98,10 +98,10 @@ public class JdbcRoleBindingRepositoryTest {
 
     @Test
     void listDoesNotMatchResourcePrefix() {
-        var binding = new StoredRoleBinding("alice", "ICEBERG/warehouse", "IcebergCatalogAdmin");
+        var binding = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogAdmin");
         txManager.inTransaction(tx -> repository.add(tx, List.of(binding)));
 
-        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "ICEBERG/warehouse/analytics"));
+        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "iceberg/warehouse/analytics"));
 
         var expected = List.of();
         assertEquals(expected, result);
@@ -109,9 +109,9 @@ public class JdbcRoleBindingRepositoryTest {
 
     @Test
     void addMultipleBindingsThenListAllReturnsSorted() {
-        var charlie = new StoredRoleBinding("charlie", "LANCE/lake", "LanceCatalogEditor");
-        var alice = new StoredRoleBinding("alice", "ICEBERG/warehouse", "IcebergCatalogAdmin");
-        var bob = new StoredRoleBinding("bob", "PAIMON/events", "PaimonCatalogViewer");
+        var charlie = new StoredRoleBinding("charlie", "lance/lake", "LanceCatalogEditor");
+        var alice = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogAdmin");
+        var bob = new StoredRoleBinding("bob", "paimon/events", "PaimonCatalogViewer");
         txManager.inTransaction(tx -> repository.add(tx, List.of(charlie, alice, bob)));
 
         var result = txManager.inTransactionR(tx -> repository.listAll(tx));
@@ -122,14 +122,14 @@ public class JdbcRoleBindingRepositoryTest {
 
     @Test
     void deleteRemovesBinding() {
-        var binding = new StoredRoleBinding("alice", "ICEBERG/warehouse", "IcebergCatalogAdmin");
+        var binding = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogAdmin");
         txManager.inTransaction(tx -> repository.add(tx, List.of(binding)));
-        var beforeDelete = txManager.inTransactionR(tx -> repository.list(tx, "alice", "ICEBERG/warehouse"));
+        var beforeDelete = txManager.inTransactionR(tx -> repository.list(tx, "alice", "iceberg/warehouse"));
         assertEquals(1, beforeDelete.size());
 
         txManager.inTransaction(tx -> repository.delete(tx, List.of(binding)));
 
-        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "ICEBERG/warehouse"));
+        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "iceberg/warehouse"));
 
         var expected = List.of();
         assertEquals(expected, result);
@@ -137,8 +137,8 @@ public class JdbcRoleBindingRepositoryTest {
 
     @Test
     void deleteOnlyRemovesMatchingBindings() {
-        var toDelete = new StoredRoleBinding("alice", "ICEBERG/warehouse", "IcebergCatalogAdmin");
-        var toKeep = new StoredRoleBinding("alice", "ICEBERG/warehouse/analytics", "IcebergCatalogViewer");
+        var toDelete = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogAdmin");
+        var toKeep = new StoredRoleBinding("alice", "iceberg/warehouse/analytics", "IcebergCatalogViewer");
         txManager.inTransaction(tx -> repository.add(tx, List.of(toDelete, toKeep)));
 
         txManager.inTransaction(tx -> repository.delete(tx, List.of(toDelete)));
@@ -161,11 +161,11 @@ public class JdbcRoleBindingRepositoryTest {
 
     @Test
     void deleteEmptyListIsNoOp() {
-        var binding = new StoredRoleBinding("alice", "ICEBERG/warehouse", "IcebergCatalogAdmin");
+        var binding = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogAdmin");
         txManager.inTransaction(tx -> repository.add(tx, List.of(binding)));
         txManager.inTransaction(tx -> repository.delete(tx, List.of()));
 
-        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "ICEBERG/warehouse"));
+        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "iceberg/warehouse"));
 
         var expected = List.of(binding);
         assertEquals(expected, result);
@@ -173,13 +173,13 @@ public class JdbcRoleBindingRepositoryTest {
 
     @Test
     void addDuplicateBindingKeepsSingleRow() {
-        var binding = new StoredRoleBinding("alice", "ICEBERG/warehouse", "IcebergCatalogAdmin");
+        var binding = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogAdmin");
         txManager.inTransaction(tx -> {
             repository.add(tx, List.of(binding));
             repository.add(tx, List.of(binding));
         });
 
-        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "ICEBERG/warehouse"));
+        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "iceberg/warehouse"));
 
         var expected = List.of(binding);
         assertEquals(expected, result);
@@ -187,12 +187,12 @@ public class JdbcRoleBindingRepositoryTest {
 
     @Test
     void sameRoleDifferentResourcesAreDistinctRows() {
-        var catalogScope = new StoredRoleBinding("alice", "ICEBERG/warehouse", "IcebergCatalogEditor");
-        var namespaceScope = new StoredRoleBinding("alice", "ICEBERG/warehouse/analytics", "IcebergCatalogEditor");
+        var catalogScope = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogEditor");
+        var namespaceScope = new StoredRoleBinding("alice", "iceberg/warehouse/analytics", "IcebergCatalogEditor");
         txManager.inTransaction(tx -> repository.add(tx, List.of(catalogScope, namespaceScope)));
 
-        var catalogResult = txManager.inTransactionR(tx -> repository.list(tx, "alice", "ICEBERG/warehouse"));
-        var namespaceResult = txManager.inTransactionR(tx -> repository.list(tx, "alice", "ICEBERG/warehouse/analytics"));
+        var catalogResult = txManager.inTransactionR(tx -> repository.list(tx, "alice", "iceberg/warehouse"));
+        var namespaceResult = txManager.inTransactionR(tx -> repository.list(tx, "alice", "iceberg/warehouse/analytics"));
 
         assertEquals(List.of(catalogScope), catalogResult);
         assertEquals(List.of(namespaceScope), namespaceResult);

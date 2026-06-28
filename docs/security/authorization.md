@@ -62,11 +62,11 @@ Binding model:
 {
   "subject": "alice",
   "role": "IcebergCatalogViewer",
-  "resource": "ICEBERG/warehouse/analytics"
+  "resource": "iceberg/warehouse/analytics"
 }
 ```
 
-`resource` is a fully qualified scope path (no wildcards). The catalog engine is the first segment (`ICEBERG`, `PAIMON`, or `LANCE`). Hierarchy is expressed by path depth; Casbin applies prefix inheritance at enforcement time.
+`resource` is a fully qualified scope path (no wildcards). The catalog engine is the first segment (`iceberg`, `paimon`, or `lance`). Hierarchy is expressed by path depth; Casbin applies prefix inheritance at enforcement time.
 
 ## HTTP outcomes
 

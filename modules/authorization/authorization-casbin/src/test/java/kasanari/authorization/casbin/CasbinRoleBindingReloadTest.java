@@ -11,7 +11,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class CasbinRoleBindingReloadTest {
+public class CasbinRoleBindingReloadTest {
     private Enforcer enforcer;
 
     @BeforeEach
@@ -21,25 +21,25 @@ class CasbinRoleBindingReloadTest {
 
     @Test
     void reloadReplacesExistingPolicies() {
-        enforcer.addPolicy("alice", "ICEBERG/old", Permission.IcebergTableGet.wireName());
+        enforcer.addPolicy("alice", "iceberg/old", Permission.IcebergTableGet.wireName());
 
         CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
-                new StoredRoleBinding("alice", CasbinRoles.ICEBERG_CATALOG_VIEWER, "ICEBERG/new")
+                new StoredRoleBinding("alice", CasbinRoles.ICEBERG_CATALOG_VIEWER, "iceberg/new")
         ));
 
-        assertFalse(enforcer.enforce("alice", "ICEBERG/old/analytics/orders", Permission.IcebergTableGet.wireName()));
-        assertTrue(enforcer.enforce("alice", "ICEBERG/new/analytics/orders", Permission.IcebergTableGet.wireName()));
+        assertFalse(enforcer.enforce("alice", "iceberg/old/analytics/orders", Permission.IcebergTableGet.wireName()));
+        assertTrue(enforcer.enforce("alice", "iceberg/new/analytics/orders", Permission.IcebergTableGet.wireName()));
     }
 
     @Test
     void reloadExpandsEachBindingIntoPermissionPolicies() {
         CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
-                new StoredRoleBinding("alice", CasbinRoles.ICEBERG_CATALOG_VIEWER, "ICEBERG/prod"),
-                new StoredRoleBinding("bob", CasbinRoles.PAIMON_CATALOG_EDITOR, "PAIMON/events")
+                new StoredRoleBinding("alice", CasbinRoles.ICEBERG_CATALOG_VIEWER, "iceberg/prod"),
+                new StoredRoleBinding("bob", CasbinRoles.PAIMON_CATALOG_EDITOR, "paimon/events")
         ));
 
-        assertTrue(enforcer.enforce("alice", "ICEBERG/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
-        assertTrue(enforcer.enforce("bob", "PAIMON/events/ns1/users", Permission.PaimonTableCreate.wireName()));
+        assertTrue(enforcer.enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
+        assertTrue(enforcer.enforce("bob", "paimon/events/ns1/users", Permission.PaimonTableCreate.wireName()));
         assertFalse(enforcer.getPolicy().isEmpty());
     }
 }
