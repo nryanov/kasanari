@@ -30,18 +30,18 @@ final class CasbinPolicyBootstrap {
         return patterns;
     }
 
-    private static List<String> roleAdministrationPermissions() {
+    private static List<String> roleBindingAdministrationPermissions() {
         return List.of(
-                Permission.RoleSelect.wireName(),
-                Permission.RoleAdd.wireName(),
-                Permission.RoleRemove.wireName()
+                Permission.RoleBindingGet.wireName(),
+                Permission.RoleBindingAdd.wireName(),
+                Permission.RoleBindingDelete.wireName()
         );
     }
 
     private static List<String> icebergAdminPermissions() {
         var permissions = new ArrayList<String>();
         permissions.addAll(allIcebergPermissions());
-        permissions.addAll(roleAdministrationPermissions());
+        permissions.addAll(roleBindingAdministrationPermissions());
         return List.copyOf(permissions);
     }
 
@@ -116,7 +116,7 @@ final class CasbinPolicyBootstrap {
     private static List<String> paimonAdminPermissions() {
         var permissions = new ArrayList<String>();
         permissions.addAll(allPaimonPermissions());
-        permissions.addAll(roleAdministrationPermissions());
+        permissions.addAll(roleBindingAdministrationPermissions());
         return List.copyOf(permissions);
     }
 
@@ -220,7 +220,7 @@ final class CasbinPolicyBootstrap {
     private static List<String> lanceAdminPermissions() {
         var permissions = new ArrayList<String>();
         permissions.addAll(allLancePermissions());
-        permissions.addAll(roleAdministrationPermissions());
+        permissions.addAll(roleBindingAdministrationPermissions());
         return List.copyOf(permissions);
     }
 

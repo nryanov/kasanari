@@ -53,7 +53,7 @@ If unset, default superuser subject is `root`.
 Casbin role assignments are managed through:
 
 - `GET /management/v1/security/roles`
-- `PUT /management/v1/security/roles`
+- `POST /management/v1/security/roles`
 - `DELETE /management/v1/security/roles`
 
 Binding model:
@@ -62,11 +62,11 @@ Binding model:
 {
   "subject": "alice",
   "role": "IcebergCatalogViewer",
-  "resource": "ICEBERG/warehouse/analytics/*"
+  "resource": "ICEBERG/warehouse/analytics"
 }
 ```
 
-`resource` is a fully qualified scope pattern. The catalog engine is the first segment (`ICEBERG`, `PAIMON`, or `LANCE`).
+`resource` is a fully qualified scope path (no wildcards). The catalog engine is the first segment (`ICEBERG`, `PAIMON`, or `LANCE`). Hierarchy is expressed by path depth; Casbin applies prefix inheritance at enforcement time.
 
 ## HTTP outcomes
 

@@ -11,23 +11,23 @@ Another way to use it is to implement custom authorization logic via SPI `Author
 Role bindings are stored and managed through Management API:
 
 - `GET /management/v1/security/roles`
-- `PUT /management/v1/security/roles`
+- `POST /management/v1/security/roles`
 - `DELETE /management/v1/security/roles`
 
-Bindings are scoped by fully qualified resource patterns. The catalog engine (`ICEBERG`, `PAIMON`, `LANCE`) is the first path segment.
+Bindings are scoped by fully qualified resource paths. The catalog engine (`ICEBERG`, `PAIMON`, `LANCE`) is the first path segment. **No wildcards** — hierarchy is expressed by path depth only.
 
 ## Resource path format
 
-| Level | Path pattern | Example |
-|-------|--------------|---------|
-| Catalog | `{type}/{catalogName}/*` | `ICEBERG/warehouse/*` |
-| Namespace | `{type}/{catalogName}/{namespace}/*` | `PAIMON/events/ns1/*` |
-| Table/View | `{type}/{catalogName}/{namespace}/{name}` | `LANCE/lake/ns1/users` |
+| Level | Example path | Grants access to |
+|-------|--------------|------------------|
+| Engine | `ICEBERG` | All Iceberg catalogs, namespaces, tables, and views |
+| Catalog | `ICEBERG/warehouse` | Everything under that catalog |
+| Namespace | `PAIMON/events/ns1` | All tables/views in that namespace (Paimon databases use the `namespace` segment) |
+| Table/View | `LANCE/lake/ns1/users` | That object only |
 
 - Segment delimiter: `/`
 - Iceberg multi-level namespaces stay dot-encoded in one segment (for example `ns1.ns2`)
-- Wildcard suffix `/*` denotes this level and descendants
-- Paimon databases map to the `namespace` segment in resource paths
+- No `*` segment and no `/*` suffix — a binding at `ICEBERG/warehouse` applies to `ICEBERG/warehouse/analytics/orders` via prefix inheritance in Casbin
 
 ## Default Casbin roles
 
@@ -41,9 +41,9 @@ Bindings are scoped by fully qualified resource patterns. The catalog engine (`I
 
 | Role level       | Permissions behavior                                                                                              |
 |------------------|-------------------------------------------------------------------------------------------------------------------|
-| `*CatalogAdmin`  | All permissions with catalog prefix (`Iceberg*`, `Paimon*`, `Lance*`) plus `RoleSelect`, `RoleAdd`, `RoleRemove`. |
-| `*CatalogEditor` | Mutation + read for catalog objects (engine-specific wildcard policy set).                                        |
-| `*CatalogViewer` | Read-only pattern (`*List`, `*Get`, `*Exists`) for that catalog prefix.                                           |
+| `*CatalogAdmin`  | All permissions with catalog prefix (`Iceberg*`, `Paimon*`, `Lance*`) plus `RoleBindingGet`, `RoleBindingAdd`, `RoleBindingDelete`. |
+| `*CatalogEditor` | Mutation + read for catalog objects (engine-specific policy set). No role-binding administration.                 |
+| `*CatalogViewer` | Read-only pattern (`*List`, `*Get`, `*Exists`) for that catalog prefix.                                         |
 
 ## Available permissions
 
@@ -136,9 +136,11 @@ All permissions are defined in `kasanari.authorization.spi.Permission`.
 
 ### Role administration permissions
 
-- `RoleSelect`
-- `RoleAdd`
-- `RoleRemove`
+Only `*CatalogAdmin` roles receive these permissions:
+
+- `RoleBindingGet`
+- `RoleBindingAdd`
+- `RoleBindingDelete`
 
 ## Example role binding payload
 
@@ -148,21 +150,22 @@ All permissions are defined in `kasanari.authorization.spi.Permission`.
     {
       "subject": "alice",
       "role": "IcebergCatalogViewer",
-      "resource": "ICEBERG/warehouse/analytics/*"
+      "resource": "ICEBERG/warehouse/analytics"
     },
     {
       "subject": "platform-admin",
       "role": "PaimonCatalogAdmin",
-      "resource": "PAIMON/events/*"
+      "resource": "PAIMON/events"
     }
   ]
 }
 ```
 
-List bindings with optional `resourcePrefix` query parameter (for example `ICEBERG/` or `ICEBERG/warehouse/`).
+List bindings with required `resource` query parameter (exact match) and optional `subject` filter.
 
 ## Notes
 
-- Role bindings require an explicit `resource` scope pattern.
+- Role bindings require an explicit `resource` scope path.
 - Superusers configured in `kasanari.authorization.casbin.superuser-subjects` bypass checks.
-- Namespace-scoped bindings inherit access to tables and views under that namespace.
+- Namespace-scoped bindings inherit access to tables and views under that namespace via prefix matching.
+- Changing a role on the same scope requires delete + add (primary key is `(subject, resource, role)`).

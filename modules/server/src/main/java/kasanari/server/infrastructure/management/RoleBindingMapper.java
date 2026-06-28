@@ -1,6 +1,5 @@
 package kasanari.server.infrastructure.management;
 
-import kasanari.authorization.spi.AuthorizationResource;
 import kasanari.authorization.spi.RoleBinding;
 import kasanari.catalog.management.dto.RoleBindingDto;
 
@@ -36,6 +35,8 @@ public final class RoleBindingMapper {
         if (binding == null || binding.getSubject() == null || binding.getRole() == null || binding.getResource() == null) {
             throw new IllegalArgumentException("Role bindings must include subject, role, and resource");
         }
-        AuthorizationResource.parse(binding.getResource());
+        if (binding.getSubject().isBlank() || binding.getRole().isBlank() || binding.getResource().isBlank()) {
+            throw new IllegalArgumentException("Role bindings must not contain blank fields");
+        }
     }
 }

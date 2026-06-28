@@ -137,12 +137,12 @@ paths:
           schema:
             type: string
         - in: query
-          name: resourcePrefix
-          required: false
+          name: resource
+          required: true
           schema:
             type: string
           description: >-
-            Filter bindings by resource prefix (for example ICEBERG/ or ICEBERG/warehouse/).
+            Exact resource scope (for example ICEBERG/warehouse/analytics).
       responses:
         "200":
           description: OK
@@ -150,26 +150,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetRolesResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "403":
           $ref: "#/components/responses/Forbidden"
-    put:
+    post:
       tags:
         - Security
-      operationId: updateRoles
-      summary: Upsert role bindings
+      operationId: addRoles
+      summary: Add role bindings
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateRolesRequest"
+              $ref: "#/components/schemas/AddRolesRequest"
       responses:
-        "200":
-          description: Updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/GetRolesResponse"
+        "204":
+          description: Added
         "400":
           $ref: "#/components/responses/BadRequest"
         "403":
@@ -327,7 +325,7 @@ components:
         resource:
           type: string
           description: >-
-            Fully qualified resource scope pattern (for example ICEBERG/warehouse/analytics/*).
+            Fully qualified resource scope (for example ICEBERG/warehouse/analytics).
     GetRolesResponse:
       type: object
       required:
@@ -337,7 +335,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RoleBinding"
-    UpdateRolesRequest:
+    AddRolesRequest:
       type: object
       required:
         - bindings

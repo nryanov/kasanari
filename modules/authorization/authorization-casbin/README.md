@@ -24,32 +24,33 @@ kasanari.authorization.casbin.superuser-subjects=root,admin
 
 ## Role bindings
 
-Bindings are `(subject, role, resource)` where `resource` is a fully qualified scope pattern:
+Bindings are `(subject, role, resource)` where `resource` is a fully qualified scope path (no wildcards):
 
-- Catalog: `ICEBERG/warehouse/*`
-- Namespace: `PAIMON/events/ns1/*` (Paimon databases use the `namespace` segment)
-- Leaf object: `LANCE/lake/ns1/users` (exact path without `/*`)
+- Engine: `ICEBERG`
+- Catalog: `ICEBERG/warehouse`
+- Namespace: `PAIMON/events/ns1` (Paimon databases use the `namespace` segment)
+- Leaf object: `LANCE/lake/ns1/users`
 
-Roles are managed via `PUT /management/v1/security/roles`. At reload time each binding is expanded into flat Casbin policies `(subject, resourceScope, permissionPattern)`.
+Roles are managed via `POST /management/v1/security/roles` (insert-only, duplicates ignored) and `DELETE /management/v1/security/roles`. At reload time each binding is expanded into flat Casbin policies `(subject, resourceScope, permissionPattern)`.
 
 ## Default roles
 
 | Role                                       | Scope                                                                 |
 |--------------------------------------------|-----------------------------------------------------------------------|
-| `IcebergCatalogAdmin`                      | All `Iceberg*` permissions plus `RoleSelect`, `RoleAdd`, `RoleRemove` |
+| `IcebergCatalogAdmin`                      | All `Iceberg*` permissions plus `RoleBindingGet`, `RoleBindingAdd`, `RoleBindingDelete` |
 | `IcebergCatalogEditor`                     | Iceberg table/namespace/view mutations and reads                      |
 | `IcebergCatalogViewer`                     | Iceberg `*List`, `*Get`, `*Exists`                                    |
 | `PaimonCatalogAdmin` / `Editor` / `Viewer` | Same pattern with `Paimon*` permissions                               |
 | `LanceCatalogAdmin` / `Editor` / `Viewer`  | Same pattern with `Lance*` permissions                                |
 
-Permission names are defined in `authorization-spi` (`Permission` enum), e.g. `IcebergTableList`, `PaimonDatabaseCreate`, `RoleSelect`.
+Permission names are defined in `authorization-spi` (`Permission` enum), e.g. `IcebergTableList`, `PaimonDatabaseCreate`, `RoleBindingGet`.
 
 ## Casbin model
 
 ```
 r = sub, obj, perm
 p = sub, obj, perm
-m = r.sub == p.sub && keyMatch3(r.obj, p.obj) && globMatch(r.perm, p.perm)
+m = r.sub == p.sub && resourcePrefixMatch(r.obj, p.obj) && globMatch(r.perm, p.perm)
 ```
 
-Inheritance is handled by `keyMatch3`: a binding at `ICEBERG/prod/*` grants access to `ICEBERG/prod/analytics/orders`.
+Inheritance is handled by `resourcePrefixMatch`: a binding at `ICEBERG/prod` grants access to `ICEBERG/prod/analytics/orders`.

@@ -26,15 +26,15 @@ final class CasbinRoleBindingAdministration implements RoleBindingAdministration
     }
 
     @Override
-    public List<RoleBinding> list(String subject, String resourcePrefix) {
-        return txManager.inTransactionR(tx -> roleBindingRepository.list(tx, subject, resourcePrefix)).stream()
+    public List<RoleBinding> list(String subject, String resource) {
+        return txManager.inTransactionR(tx -> roleBindingRepository.list(tx, subject, resource)).stream()
                 .map(CasbinRoleBindingAdministration::toSpi)
                 .toList();
     }
 
     @Override
-    public void upsert(List<RoleBinding> bindings) {
-        txManager.inTransaction(tx -> roleBindingRepository.upsert(tx, toStored(bindings)));
+    public void add(List<RoleBinding> bindings) {
+        txManager.inTransaction(tx -> roleBindingRepository.add(tx, toStored(bindings)));
     }
 
     @Override
@@ -44,7 +44,7 @@ final class CasbinRoleBindingAdministration implements RoleBindingAdministration
 
     @Override
     public void reloadPolicies() {
-        var storedBindings = txManager.inTransactionR(tx -> roleBindingRepository.list(tx, null, null));
+        var storedBindings = txManager.inTransactionR(roleBindingRepository::listAll);
         CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, storedBindings);
     }
 

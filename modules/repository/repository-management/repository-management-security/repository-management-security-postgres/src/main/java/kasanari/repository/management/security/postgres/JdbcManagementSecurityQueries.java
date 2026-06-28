@@ -16,11 +16,10 @@ public final class JdbcManagementSecurityQueries {
             )
             """;
 
-    public static final String UPSERT_ROLE_BINDING = """
+    public static final String INSERT_ROLE_BINDING = """
             INSERT INTO kasanari_role_bindings(subject, resource, role)
             VALUES (?, ?, ?)
-            ON CONFLICT (subject, resource, role) DO UPDATE SET
-            updated_at = CURRENT_TIMESTAMP
+            ON CONFLICT (subject, resource, role) DO NOTHING
             """;
 
     public static final String DELETE_ROLE_BINDING = """
@@ -31,8 +30,14 @@ public final class JdbcManagementSecurityQueries {
     public static final String SELECT_ROLE_BINDINGS = """
             SELECT subject, resource, role
             FROM kasanari_role_bindings
-            WHERE (? IS NULL OR subject = ?)
-            AND (? IS NULL OR resource LIKE ?)
+            WHERE resource = ?
+            AND (? IS NULL OR subject = ?)
+            ORDER BY subject, role, resource
+            """;
+
+    public static final String SELECT_ALL_ROLE_BINDINGS = """
+            SELECT subject, resource, role
+            FROM kasanari_role_bindings
             ORDER BY subject, role, resource
             """;
 }

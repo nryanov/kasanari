@@ -21,10 +21,10 @@ class CasbinRoleBindingReloadTest {
 
     @Test
     void reloadReplacesExistingPolicies() {
-        enforcer.addPolicy("alice", "ICEBERG/old/*", Permission.IcebergTableGet.wireName());
+        enforcer.addPolicy("alice", "ICEBERG/old", Permission.IcebergTableGet.wireName());
 
         CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
-                new StoredRoleBinding("alice", CasbinRoles.ICEBERG_CATALOG_VIEWER, "ICEBERG/new/*")
+                new StoredRoleBinding("alice", CasbinRoles.ICEBERG_CATALOG_VIEWER, "ICEBERG/new")
         ));
 
         assertFalse(enforcer.enforce("alice", "ICEBERG/old/analytics/orders", Permission.IcebergTableGet.wireName()));
@@ -34,8 +34,8 @@ class CasbinRoleBindingReloadTest {
     @Test
     void reloadExpandsEachBindingIntoPermissionPolicies() {
         CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
-                new StoredRoleBinding("alice", CasbinRoles.ICEBERG_CATALOG_VIEWER, "ICEBERG/prod/*"),
-                new StoredRoleBinding("bob", CasbinRoles.PAIMON_CATALOG_EDITOR, "PAIMON/events/*")
+                new StoredRoleBinding("alice", CasbinRoles.ICEBERG_CATALOG_VIEWER, "ICEBERG/prod"),
+                new StoredRoleBinding("bob", CasbinRoles.PAIMON_CATALOG_EDITOR, "PAIMON/events")
         ));
 
         assertTrue(enforcer.enforce("alice", "ICEBERG/prod/analytics/orders", Permission.IcebergTableGet.wireName()));

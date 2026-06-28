@@ -96,10 +96,10 @@ public enum Permission {
     LanceCatalogUpdate,
     LanceCatalogDelete,
 
-    // Role administration
-    RoleSelect,
-    RoleAdd,
-    RoleRemove;
+    // Role binding administration
+    RoleBindingGet,
+    RoleBindingAdd,
+    RoleBindingDelete;
 
     public String wireName() {
         return name();

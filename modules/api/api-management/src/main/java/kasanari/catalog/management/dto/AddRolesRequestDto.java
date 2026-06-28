@@ -3,7 +3,7 @@ package kasanari.catalog.management.dto;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UpdateRolesRequestDto {
+public class AddRolesRequestDto {
     private List<RoleBindingDto> bindings = new ArrayList<>();
 
     public List<RoleBindingDto> getBindings() {

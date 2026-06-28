@@ -8,12 +8,11 @@ import java.util.List;
 
 public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> {
     @Override
-    public List<StoredRoleBinding> list(Handle tx, String subject, String resourcePrefix) {
+    public List<StoredRoleBinding> list(Handle tx, String subject, String resource) {
         var query = tx.createQuery(JdbcManagementSecurityQueries.SELECT_ROLE_BINDINGS);
-        query.bind(0, subject);
+        query.bind(0, resource);
         query.bind(1, subject);
-        query.bind(2, resourcePrefix);
-        query.bind(3, resourcePrefix == null ? null : resourcePrefix + "%");
+        query.bind(2, subject);
 
         return query.map((rs, ctx) -> new StoredRoleBinding(
                 rs.getString("subject"),
@@ -23,21 +22,28 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
     }
 
     @Override
-    public void upsert(Handle tx, List<StoredRoleBinding> bindings) {
+    public List<StoredRoleBinding> listAll(Handle tx) {
+        return tx.createQuery(JdbcManagementSecurityQueries.SELECT_ALL_ROLE_BINDINGS)
+                .map((rs, ctx) -> new StoredRoleBinding(
+                        rs.getString("subject"),
+                        rs.getString("resource"),
+                        rs.getString("role")
+                )).list();
+    }
+
+    @Override
+    public void add(Handle tx, List<StoredRoleBinding> bindings) {
         if (bindings == null || bindings.isEmpty()) {
             return;
         }
 
-        var batch = tx.prepareBatch(JdbcManagementSecurityQueries.UPSERT_ROLE_BINDING);
-
         for (var binding : bindings) {
-            batch.bind(0, binding.subject());
-            batch.bind(1, binding.resource());
-            batch.bind(2, binding.role());
-            batch.add();
+            var insert = tx.createUpdate(JdbcManagementSecurityQueries.INSERT_ROLE_BINDING);
+            insert.bind(0, binding.subject());
+            insert.bind(1, binding.resource());
+            insert.bind(2, binding.role());
+            insert.execute();
         }
-
-        batch.execute();
     }
 
     @Override

@@ -15,7 +15,7 @@ final class CasbinEnforcerFactory {
             e = some(where (p.eft == allow))
 
             [matchers]
-            m = r.sub == p.sub && keyMatch3(r.obj, p.obj) && globMatch(r.perm, p.perm)
+            m = r.sub == p.sub && resourcePrefixMatch(r.obj, p.obj) && globMatch(r.perm, p.perm)
             """;
 
     private CasbinEnforcerFactory() {
@@ -24,6 +24,8 @@ final class CasbinEnforcerFactory {
     static Enforcer createEnforcer() {
         var model = new Model();
         model.loadModelFromText(MODEL_TEXT);
-        return new Enforcer(model);
+        var enforcer = new Enforcer(model);
+        enforcer.addFunction(ResourcePrefixMatchFunction.NAME, new ResourcePrefixMatchFunction());
+        return enforcer;
     }
 }

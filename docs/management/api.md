@@ -130,8 +130,8 @@ Delete:
 
 Supported operations:
 
-- `GET /management/v1/security/roles` - list bindings (`subject`, `catalogType` optional filters)
-- `PUT /management/v1/security/roles` - upsert bindings
+- `GET /management/v1/security/roles` - list bindings at an exact `resource` (required); optional `subject` filter
+- `POST /management/v1/security/roles` - add bindings (insert-only; duplicates ignored)
 - `DELETE /management/v1/security/roles` - delete bindings
 
 Role binding shape:
@@ -139,20 +139,21 @@ Role binding shape:
 ```json
 {
   "subject": "alice",
-  "catalogType": "ICEBERG",
-  "role": "IcebergCatalogViewer"
+  "role": "IcebergCatalogViewer",
+  "resource": "ICEBERG/warehouse/analytics"
 }
 ```
 
-Current model does not include a separate `domain` field; scope is expressed by `catalogType`.
+Scope is expressed by the `resource` path. No wildcards — use path depth for hierarchy (for example `ICEBERG/warehouse` for catalog-wide access).
 
 ## What role binding kinds exist
 
-By scope key:
+By resource scope:
 
-- Subject + `ICEBERG` + role
-- Subject + `PAIMON` + role
-- Subject + `LANCE` + role
+- Engine: `ICEBERG`, `PAIMON`, or `LANCE`
+- Catalog: `{type}/{catalogName}` (for example `ICEBERG/warehouse`)
+- Namespace: `{type}/{catalogName}/{namespace}` (for example `PAIMON/events/ns1`)
+- Object: `{type}/{catalogName}/{namespace}/{name}` (for example `LANCE/lake/ns1/users`)
 
 By role level (Casbin default roles):
 
@@ -166,38 +167,37 @@ Examples:
 - `PaimonCatalogAdmin`, `PaimonCatalogEditor`, `PaimonCatalogViewer`
 - `LanceCatalogAdmin`, `LanceCatalogEditor`, `LanceCatalogViewer`
 
-`*CatalogAdmin` roles include role-management permissions (`RoleSelect`, `RoleAdd`, `RoleRemove`) for the same catalog type.
+`*CatalogAdmin` roles include role-management permissions (`RoleBindingGet`, `RoleBindingAdd`, `RoleBindingDelete`) for the same catalog type.
 
-## Create or update role bindings
+## Add role bindings
 
 ### Request
 
 ```bash
-curl -X PUT "http://localhost:9090/management/v1/security/roles" \
+curl -X POST "http://localhost:9090/management/v1/security/roles" \
   -H "Content-Type: application/json" \
   -d '{
     "bindings":[
-      {"subject":"platform-admin","catalogType":"ICEBERG","role":"IcebergCatalogAdmin"},
-      {"subject":"team-a","catalogType":"PAIMON","role":"PaimonCatalogEditor"},
-      {"subject":"analyst","catalogType":"LANCE","role":"LanceCatalogViewer"}
+      {"subject":"platform-admin","resource":"ICEBERG/warehouse","role":"IcebergCatalogAdmin"},
+      {"subject":"team-a","resource":"PAIMON/events","role":"PaimonCatalogEditor"},
+      {"subject":"analyst","resource":"LANCE/lake","role":"LanceCatalogViewer"}
     ]
   }'
 ```
 
 ### Response
 
-- HTTP `200 OK`
-- Body:
+- HTTP `204 No Content`
+- Duplicate `(subject, resource, role)` tuples in a request or database are silently ignored
 
-```json
-{
-  "bindings": [
-    {"subject":"platform-admin","catalogType":"ICEBERG","role":"IcebergCatalogAdmin"},
-    {"subject":"team-a","catalogType":"PAIMON","role":"PaimonCatalogEditor"},
-    {"subject":"analyst","catalogType":"LANCE","role":"LanceCatalogViewer"}
-  ]
-}
+## List role bindings
+
+```bash
+curl "http://localhost:9090/management/v1/security/roles?resource=ICEBERG/warehouse/analytics&subject=alice"
 ```
+
+- `resource` query parameter is required (exact match)
+- `subject` is optional
 
 ## Delete role bindings
 
@@ -206,7 +206,7 @@ curl -X DELETE "http://localhost:9090/management/v1/security/roles" \
   -H "Content-Type: application/json" \
   -d '{
     "bindings":[
-      {"subject":"analyst","catalogType":"LANCE","role":"LanceCatalogViewer"}
+      {"subject":"analyst","resource":"LANCE/lake","role":"LanceCatalogViewer"}
     ]
   }'
 ```
@@ -232,4 +232,4 @@ Expected response:
 - Catalog not visible immediately after updates:
   - Routers refresh periodically (`kasanari.catalog.refresh-interval`, default `30s`).
 - Role changes not taking effect:
-  - Roles API triggers policy reload after upsert/delete; verify provider is `casbin` when expecting persisted RBAC.
+  - Roles API triggers policy reload after add/delete; verify provider is `casbin` when expecting persisted RBAC.
