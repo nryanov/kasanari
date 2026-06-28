@@ -1,8 +1,8 @@
 package kasanari.authorization.casbin;
 
 import kasanari.authorization.spi.Permission;
-import kasanari.core.model.CatalogType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,13 +30,19 @@ final class CasbinPolicyBootstrap {
         return patterns;
     }
 
-    private static List<String> icebergAdminPermissions() {
+    private static List<String> roleAdministrationPermissions() {
         return List.of(
-                "Iceberg*",
                 Permission.RoleSelect.wireName(),
                 Permission.RoleAdd.wireName(),
                 Permission.RoleRemove.wireName()
         );
+    }
+
+    private static List<String> icebergAdminPermissions() {
+        var permissions = new ArrayList<String>();
+        permissions.addAll(allIcebergPermissions());
+        permissions.addAll(roleAdministrationPermissions());
+        return List.copyOf(permissions);
     }
 
     private static List<String> icebergEditorPermissions() {
@@ -46,65 +52,225 @@ final class CasbinPolicyBootstrap {
                 Permission.IcebergTableGet.wireName(),
                 Permission.IcebergTableDrop.wireName(),
                 Permission.IcebergTableAlter.wireName(),
-                "IcebergNamespace*",
-                "IcebergView*",
+                Permission.IcebergViewList.wireName(),
+                Permission.IcebergViewCreate.wireName(),
+                Permission.IcebergViewGet.wireName(),
+                Permission.IcebergViewDrop.wireName(),
+                Permission.IcebergViewAlter.wireName(),
+                Permission.IcebergViewExists.wireName(),
+                Permission.IcebergNamespaceList.wireName(),
+                Permission.IcebergNamespaceCreate.wireName(),
+                Permission.IcebergNamespaceGet.wireName(),
+                Permission.IcebergNamespaceDrop.wireName(),
+                Permission.IcebergNamespaceAlter.wireName(),
+                Permission.IcebergNamespaceExists.wireName(),
                 Permission.IcebergTransactionCommit.wireName(),
                 Permission.IcebergMetricsReport.wireName()
         );
     }
 
     private static List<String> icebergViewerPermissions() {
-        return List.of("Iceberg*List", "Iceberg*Get", "Iceberg*Exists");
+        return List.of(
+                Permission.IcebergTableList.wireName(),
+                Permission.IcebergTableGet.wireName(),
+                Permission.IcebergTableExists.wireName(),
+                Permission.IcebergViewList.wireName(),
+                Permission.IcebergViewGet.wireName(),
+                Permission.IcebergViewExists.wireName(),
+                Permission.IcebergNamespaceList.wireName(),
+                Permission.IcebergNamespaceGet.wireName(),
+                Permission.IcebergNamespaceExists.wireName(),
+                Permission.IcebergCatalogGet.wireName()
+        );
+    }
+
+    private static List<String> allIcebergPermissions() {
+        return List.of(
+                Permission.IcebergTableList.wireName(),
+                Permission.IcebergTableCreate.wireName(),
+                Permission.IcebergTableGet.wireName(),
+                Permission.IcebergTableDrop.wireName(),
+                Permission.IcebergTableAlter.wireName(),
+                Permission.IcebergTableExists.wireName(),
+                Permission.IcebergViewList.wireName(),
+                Permission.IcebergViewCreate.wireName(),
+                Permission.IcebergViewGet.wireName(),
+                Permission.IcebergViewDrop.wireName(),
+                Permission.IcebergViewAlter.wireName(),
+                Permission.IcebergViewExists.wireName(),
+                Permission.IcebergNamespaceList.wireName(),
+                Permission.IcebergNamespaceCreate.wireName(),
+                Permission.IcebergNamespaceGet.wireName(),
+                Permission.IcebergNamespaceDrop.wireName(),
+                Permission.IcebergNamespaceAlter.wireName(),
+                Permission.IcebergNamespaceExists.wireName(),
+                Permission.IcebergTransactionCommit.wireName(),
+                Permission.IcebergMetricsReport.wireName(),
+                Permission.IcebergCatalogCreate.wireName(),
+                Permission.IcebergCatalogGet.wireName(),
+                Permission.IcebergCatalogUpdate.wireName(),
+                Permission.IcebergCatalogDelete.wireName()
+        );
     }
 
     private static List<String> paimonAdminPermissions() {
-        return List.of(
-                "Paimon*",
-                Permission.RoleSelect.wireName(),
-                Permission.RoleAdd.wireName(),
-                Permission.RoleRemove.wireName()
-        );
+        var permissions = new ArrayList<String>();
+        permissions.addAll(allPaimonPermissions());
+        permissions.addAll(roleAdministrationPermissions());
+        return List.copyOf(permissions);
     }
 
     private static List<String> paimonEditorPermissions() {
         return List.of(
-                "PaimonDatabase*",
-                "PaimonTable*",
-                "PaimonView*",
-                "PaimonFunction*",
-                "PaimonBranch*",
-                "PaimonPartition*",
-                "PaimonTag*",
+                Permission.PaimonDatabaseList.wireName(),
+                Permission.PaimonDatabaseCreate.wireName(),
+                Permission.PaimonDatabaseGet.wireName(),
+                Permission.PaimonDatabaseDrop.wireName(),
+                Permission.PaimonDatabaseAlter.wireName(),
+                Permission.PaimonTableList.wireName(),
+                Permission.PaimonTableCreate.wireName(),
+                Permission.PaimonTableGet.wireName(),
+                Permission.PaimonTableDrop.wireName(),
+                Permission.PaimonTableAlter.wireName(),
+                Permission.PaimonTableExists.wireName(),
+                Permission.PaimonViewList.wireName(),
+                Permission.PaimonViewCreate.wireName(),
+                Permission.PaimonViewGet.wireName(),
+                Permission.PaimonViewDrop.wireName(),
+                Permission.PaimonViewAlter.wireName(),
+                Permission.PaimonFunctionList.wireName(),
+                Permission.PaimonFunctionCreate.wireName(),
+                Permission.PaimonFunctionGet.wireName(),
+                Permission.PaimonFunctionDrop.wireName(),
+                Permission.PaimonFunctionAlter.wireName(),
+                Permission.PaimonBranchList.wireName(),
+                Permission.PaimonBranchCreate.wireName(),
+                Permission.PaimonBranchDrop.wireName(),
+                Permission.PaimonBranchAlter.wireName(),
+                Permission.PaimonPartitionList.wireName(),
+                Permission.PaimonPartitionAlter.wireName(),
+                Permission.PaimonTagList.wireName(),
+                Permission.PaimonTagCreate.wireName(),
+                Permission.PaimonTagGet.wireName(),
+                Permission.PaimonTagDrop.wireName(),
                 Permission.PaimonConfigGet.wireName()
         );
     }
 
     private static List<String> paimonViewerPermissions() {
-        return List.of("Paimon*List", "Paimon*Get", "Paimon*Exists");
-    }
-
-    private static List<String> lanceAdminPermissions() {
         return List.of(
-                "Lance*",
-                Permission.RoleSelect.wireName(),
-                Permission.RoleAdd.wireName(),
-                Permission.RoleRemove.wireName()
+                Permission.PaimonDatabaseList.wireName(),
+                Permission.PaimonTableList.wireName(),
+                Permission.PaimonViewList.wireName(),
+                Permission.PaimonFunctionList.wireName(),
+                Permission.PaimonBranchList.wireName(),
+                Permission.PaimonPartitionList.wireName(),
+                Permission.PaimonTagList.wireName(),
+                Permission.PaimonDatabaseGet.wireName(),
+                Permission.PaimonTableGet.wireName(),
+                Permission.PaimonViewGet.wireName(),
+                Permission.PaimonFunctionGet.wireName(),
+                Permission.PaimonConfigGet.wireName(),
+                Permission.PaimonTagGet.wireName(),
+                Permission.PaimonTableExists.wireName()
         );
     }
 
+    private static List<String> allPaimonPermissions() {
+        return List.of(
+                Permission.PaimonDatabaseList.wireName(),
+                Permission.PaimonDatabaseCreate.wireName(),
+                Permission.PaimonDatabaseGet.wireName(),
+                Permission.PaimonDatabaseDrop.wireName(),
+                Permission.PaimonDatabaseAlter.wireName(),
+                Permission.PaimonTableList.wireName(),
+                Permission.PaimonTableCreate.wireName(),
+                Permission.PaimonTableGet.wireName(),
+                Permission.PaimonTableDrop.wireName(),
+                Permission.PaimonTableAlter.wireName(),
+                Permission.PaimonTableExists.wireName(),
+                Permission.PaimonViewList.wireName(),
+                Permission.PaimonViewCreate.wireName(),
+                Permission.PaimonViewGet.wireName(),
+                Permission.PaimonViewDrop.wireName(),
+                Permission.PaimonViewAlter.wireName(),
+                Permission.PaimonFunctionList.wireName(),
+                Permission.PaimonFunctionCreate.wireName(),
+                Permission.PaimonFunctionGet.wireName(),
+                Permission.PaimonFunctionDrop.wireName(),
+                Permission.PaimonFunctionAlter.wireName(),
+                Permission.PaimonBranchList.wireName(),
+                Permission.PaimonBranchCreate.wireName(),
+                Permission.PaimonBranchDrop.wireName(),
+                Permission.PaimonBranchAlter.wireName(),
+                Permission.PaimonPartitionList.wireName(),
+                Permission.PaimonPartitionAlter.wireName(),
+                Permission.PaimonTagList.wireName(),
+                Permission.PaimonTagCreate.wireName(),
+                Permission.PaimonTagGet.wireName(),
+                Permission.PaimonTagDrop.wireName(),
+                Permission.PaimonConfigGet.wireName(),
+                Permission.PaimonCatalogCreate.wireName(),
+                Permission.PaimonCatalogGet.wireName(),
+                Permission.PaimonCatalogUpdate.wireName(),
+                Permission.PaimonCatalogDelete.wireName()
+        );
+    }
+
+    private static List<String> lanceAdminPermissions() {
+        var permissions = new ArrayList<String>();
+        permissions.addAll(allLancePermissions());
+        permissions.addAll(roleAdministrationPermissions());
+        return List.copyOf(permissions);
+    }
+
     private static List<String> lanceEditorPermissions() {
-        return List.of("LanceNamespace*", "LanceTable*");
+        return List.of(
+                Permission.LanceNamespaceList.wireName(),
+                Permission.LanceNamespaceCreate.wireName(),
+                Permission.LanceNamespaceGet.wireName(),
+                Permission.LanceNamespaceDrop.wireName(),
+                Permission.LanceNamespaceAlter.wireName(),
+                Permission.LanceNamespaceExists.wireName(),
+                Permission.LanceTableList.wireName(),
+                Permission.LanceTableCreate.wireName(),
+                Permission.LanceTableGet.wireName(),
+                Permission.LanceTableDrop.wireName(),
+                Permission.LanceTableAlter.wireName(),
+                Permission.LanceTableExists.wireName()
+        );
     }
 
     private static List<String> lanceViewerPermissions() {
-        return List.of("Lance*List", "Lance*Get", "Lance*Exists");
+        return List.of(
+                Permission.LanceNamespaceList.wireName(),
+                Permission.LanceTableList.wireName(),
+                Permission.LanceNamespaceGet.wireName(),
+                Permission.LanceTableGet.wireName(),
+                Permission.LanceCatalogGet.wireName(),
+                Permission.LanceNamespaceExists.wireName(),
+                Permission.LanceTableExists.wireName()
+        );
     }
 
-    static String catalogTypePrefix(CatalogType catalogType) {
-        return switch (catalogType) {
-            case ICEBERG -> "Iceberg";
-            case PAIMON -> "Paimon";
-            case LANCE -> "Lance";
-        };
+    private static List<String> allLancePermissions() {
+        return List.of(
+                Permission.LanceNamespaceList.wireName(),
+                Permission.LanceNamespaceCreate.wireName(),
+                Permission.LanceNamespaceGet.wireName(),
+                Permission.LanceNamespaceDrop.wireName(),
+                Permission.LanceNamespaceAlter.wireName(),
+                Permission.LanceNamespaceExists.wireName(),
+                Permission.LanceTableList.wireName(),
+                Permission.LanceTableCreate.wireName(),
+                Permission.LanceTableGet.wireName(),
+                Permission.LanceTableDrop.wireName(),
+                Permission.LanceTableAlter.wireName(),
+                Permission.LanceTableExists.wireName(),
+                Permission.LanceCatalogCreate.wireName(),
+                Permission.LanceCatalogGet.wireName(),
+                Permission.LanceCatalogUpdate.wireName(),
+                Permission.LanceCatalogDelete.wireName()
+        );
     }
 }

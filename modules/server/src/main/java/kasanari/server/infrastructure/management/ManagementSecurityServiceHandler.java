@@ -118,33 +118,4 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
         }
         return result;
     }
-
-    private Set<CatalogType> distinctTypes(List<RoleBinding> bindings) {
-        var result = new HashSet<CatalogType>();
-        for (var binding : bindings) {
-            result.add(AuthorizationResource.parse(binding.resource()).catalogType());
-        }
-        return result;
-    }
-
-    private static java.util.Optional<CatalogType> parseDomainPrefix(String resourcePrefix) {
-        var normalized = normalizeResourcePrefix(resourcePrefix);
-        if (normalized == null) {
-            return java.util.Optional.empty();
-        }
-        var slash = normalized.indexOf('/');
-        var domain = slash < 0 ? normalized : normalized.substring(0, slash);
-        try {
-            return java.util.Optional.of(CatalogType.fromValue(domain));
-        } catch (IllegalArgumentException e) {
-            return java.util.Optional.empty();
-        }
-    }
-
-    private static String normalizeResourcePrefix(String resourcePrefix) {
-        if (resourcePrefix == null || resourcePrefix.isBlank()) {
-            return null;
-        }
-        return resourcePrefix.endsWith("/") ? resourcePrefix : resourcePrefix + "/";
-    }
 }

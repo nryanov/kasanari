@@ -105,10 +105,6 @@ public enum Permission {
         return name();
     }
 
-    public static Permission fromName(String name) {
-        return valueOf(name);
-    }
-
     public static Permission catalogCreate(kasanari.core.model.CatalogType type) {
         return switch (type) {
             case ICEBERG -> IcebergCatalogCreate;

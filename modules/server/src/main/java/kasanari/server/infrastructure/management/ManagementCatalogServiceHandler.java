@@ -31,7 +31,7 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     @Override
     public Response createCatalog(CreateCatalogRequestDto createCatalogRequest, SecurityContext securityContext) {
         var domainType = CatalogSpecMapper.toDomain(createCatalogRequest.getCatalogType());
-        var resource = AuthorizationResource.catalog(domainType, createCatalogRequest.getCatalogId()).path();
+        var resource = AuthorizationResource.build(domainType.name(), createCatalogRequest.getCatalogId());
         var denied = authorizationService.denyUnless(securityContext, resource, Permission.catalogCreate(domainType));
         if (denied.isPresent()) {
             return denied.get();
@@ -57,7 +57,7 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     @Override
     public Response deleteCatalog(CatalogTypeDto catalogType, String name, SecurityContext securityContext) {
         var domainType = CatalogSpecMapper.toDomain(catalogType);
-        var resource = AuthorizationResource.catalog(domainType, name).path();
+        var resource = AuthorizationResource.build(domainType.name(), name);
         var denied = authorizationService.denyUnless(securityContext, resource, Permission.catalogDelete(domainType));
         if (denied.isPresent()) {
             return denied.get();
@@ -75,7 +75,7 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     @Override
     public Response getCatalog(CatalogTypeDto catalogType, String name, SecurityContext securityContext) {
         var domainType = CatalogSpecMapper.toDomain(catalogType);
-        var resource = AuthorizationResource.catalog(domainType, name).path();
+        var resource = AuthorizationResource.build(domainType.name(), name);
         var denied = authorizationService.denyUnless(securityContext, resource, Permission.catalogGet(domainType));
         if (denied.isPresent()) {
             return denied.get();
@@ -93,7 +93,7 @@ public class ManagementCatalogServiceHandler implements ManagementRestCatalogsSe
     @Override
     public Response updateCatalog(CatalogTypeDto catalogType, String catalogId, UpdateCatalogRequestDto updateCatalogRequest, SecurityContext securityContext) {
         var domainType = CatalogSpecMapper.toDomain(catalogType);
-        var resource = AuthorizationResource.catalog(domainType, catalogId).path();
+        var resource = AuthorizationResource.build(domainType.name(), catalogId);
         var denied = authorizationService.denyUnless(securityContext, resource, Permission.catalogUpdate(domainType));
         if (denied.isPresent()) {
             return denied.get();

@@ -5,10 +5,8 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import kasanari.authorization.spi.AuthorizationRequest;
-import kasanari.authorization.spi.AuthorizationResource;
 import kasanari.authorization.spi.Permission;
 import kasanari.authorization.spi.RoleBindingAdministration;
-import kasanari.core.model.CatalogType;
 
 import java.util.Optional;
 
@@ -28,20 +26,8 @@ public class AuthorizationService {
         return securityContext.getUserPrincipal().getName();
     }
 
-    public boolean isAuthorized(String subject, String resource, Permission permission) {
-        return registry.activeProvider().isAuthorized(new AuthorizationRequest(subject, resource, permission));
-    }
-
     public boolean isAuthorized(SecurityContext securityContext, String resource, Permission permission) {
-        return isAuthorized(subject(securityContext), resource, permission);
-    }
-
-    public boolean isAuthorized(SecurityContext securityContext, CatalogType domain, Permission permission) {
-        return isAuthorized(
-                subject(securityContext),
-                AuthorizationResource.catalog(domain, "*").path(),
-                permission
-        );
+        return registry.activeProvider().isAuthorized(new AuthorizationRequest(subject(securityContext), resource, permission));
     }
 
     public Optional<Response> denyUnless(SecurityContext securityContext, String resource, Permission permission) {
@@ -53,10 +39,6 @@ public class AuthorizationService {
                         "message",
                         "Missing permission: " + permission.wireName() + " on " + resource))
                 .build());
-    }
-
-    public Optional<Response> denyUnless(SecurityContext securityContext, CatalogType domain, Permission permission) {
-        return denyUnless(securityContext, AuthorizationResource.catalog(domain, "*").path(), permission);
     }
 
     public RoleBindingAdministration roleBindingsOrThrow() {
