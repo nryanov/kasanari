@@ -5,7 +5,6 @@ import org.casbin.jcasbin.main.Enforcer;
 
 import java.util.List;
 
-// TODO: review
 final class CasbinBindingPolicyExpander {
     private CasbinBindingPolicyExpander() {
     }

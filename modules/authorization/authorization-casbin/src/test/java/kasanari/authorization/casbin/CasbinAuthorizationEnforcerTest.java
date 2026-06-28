@@ -11,12 +11,44 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class CasbinAuthorizationEnforcerTest {
+class CasbinAuthorizationEnforcerTest {
     private Enforcer enforcer;
 
     @BeforeEach
     void setUp() {
         enforcer = CasbinEnforcerFactory.createEnforcer();
+    }
+
+    @Test
+    void catalogScopeInheritsNamespaceAndTableAccess() {
+        enforcer.addPolicy("alice", "iceberg/prod", Permission.IcebergTableGet.wireName());
+
+        assertTrue(enforcer.enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
+        assertFalse(enforcer.enforce("alice", "iceberg/other/analytics/orders", Permission.IcebergTableGet.wireName()));
+    }
+
+    @Test
+    void namespaceScopeInheritsTableAccess() {
+        enforcer.addPolicy("alice", "iceberg/prod/analytics", Permission.IcebergTableGet.wireName());
+
+        assertTrue(enforcer.enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
+        assertFalse(enforcer.enforce("alice", "iceberg/prod/other/orders", Permission.IcebergTableGet.wireName()));
+    }
+
+    @Test
+    void engineScopeInheritsAllCatalogPaths() {
+        enforcer.addPolicy("alice", "iceberg", Permission.IcebergTableGet.wireName());
+
+        assertTrue(enforcer.enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
+        assertFalse(enforcer.enforce("alice", "paimon/events/users", Permission.PaimonTableGet.wireName()));
+    }
+
+    @Test
+    void permissionPatternUsesGlobMatch() {
+        enforcer.addPolicy("alice", "iceberg/prod", "Iceberg*Get");
+
+        assertTrue(enforcer.enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
+        assertFalse(enforcer.enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableCreate.wireName()));
     }
 
     @Test
@@ -70,5 +102,29 @@ public class CasbinAuthorizationEnforcerTest {
         ));
 
         assertFalse(enforcer.enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
+    }
+
+    @Test
+    void reloadReplacesExistingPolicies() {
+        enforcer.addPolicy("alice", "iceberg/old", Permission.IcebergTableGet.wireName());
+
+        CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
+                new StoredRoleBinding("alice", "iceberg/new", CasbinRoles.ICEBERG_CATALOG_VIEWER)
+        ));
+
+        assertFalse(enforcer.enforce("alice", "iceberg/old/analytics/orders", Permission.IcebergTableGet.wireName()));
+        assertTrue(enforcer.enforce("alice", "iceberg/new/analytics/orders", Permission.IcebergTableGet.wireName()));
+    }
+
+    @Test
+    void reloadExpandsEachBindingIntoPermissionPolicies() {
+        CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
+                new StoredRoleBinding("alice", "iceberg/prod", CasbinRoles.ICEBERG_CATALOG_VIEWER),
+                new StoredRoleBinding("bob", "paimon/events", CasbinRoles.PAIMON_CATALOG_EDITOR)
+        ));
+
+        assertTrue(enforcer.enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
+        assertTrue(enforcer.enforce("bob", "paimon/events/ns1/users", Permission.PaimonTableCreate.wireName()));
+        assertFalse(enforcer.getPolicy().isEmpty());
     }
 }

@@ -13,6 +13,7 @@ import kasanari.catalog.management.dto.GetRolesResponseDto;
 import kasanari.server.infrastructure.http.ApiFallbacks;
 
 import java.util.List;
+import java.util.Optional;
 
 @ApplicationScoped
 public class ManagementSecurityServiceHandler implements ManagementRestSecurityService {
@@ -55,16 +56,13 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
             return ApiFallbacks.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
 
-        for (var binding : bindings) {
-            var denied = authorizationService.denyUnless(securityContext, binding.resource(), Permission.RoleBindingAdd);
-            if (denied.isPresent()) {
-                return denied.get();
-            }
+        var denied = denyUnlessHasPermission(securityContext, bindings, Permission.RoleBindingAdd);
+        if (denied.isPresent()) {
+            return denied.get();
         }
 
         var roleBindings = authorizationService.roleBindingsOrThrow();
         roleBindings.add(bindings);
-        roleBindings.reloadPolicies();
 
         return Response.status(Response.Status.NO_CONTENT).build();
     }
@@ -82,17 +80,25 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
             return ApiFallbacks.error(Response.Status.BAD_REQUEST, e.getMessage());
         }
 
-        for (var binding : bindings) {
-            var denied = authorizationService.denyUnless(securityContext, binding.resource(), Permission.RoleBindingDelete);
-            if (denied.isPresent()) {
-                return denied.get();
-            }
+        var denied = denyUnlessHasPermission(securityContext, bindings, Permission.RoleBindingDelete);
+        if (denied.isPresent()) {
+            return denied.get();
         }
 
         var roleBindings = authorizationService.roleBindingsOrThrow();
         roleBindings.delete(bindings);
-        roleBindings.reloadPolicies();
 
         return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
+    private Optional<Response> denyUnlessHasPermission(SecurityContext securityContext, List<RoleBinding> bindings, Permission permission) {
+        for (var binding : bindings) {
+            var denied = authorizationService.denyUnless(securityContext, binding.resource(), permission);
+            if (denied.isPresent()) {
+                return denied;
+            }
+        }
+
+        return Optional.empty();
     }
 }
