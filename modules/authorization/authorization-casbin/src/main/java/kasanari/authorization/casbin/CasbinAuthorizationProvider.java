@@ -17,11 +17,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public final class CasbinAuthorizationProvider implements AuthorizationProvider {
     private final Set<String> superuserSubjects = new HashSet<>();
-    private Enforcer enforcer;
+    private CasbinPolicyHolder policyHolder;
+    private CasbinPolicyReloader policyReloader;
     private CasbinRoleBindingAdministration roleBindingAdministration;
+    private ScheduledExecutorService refreshExecutor;
 
     @Override
     public String type() {
@@ -43,10 +48,18 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
         var dataSource = new KasanariDataSource(resolveJdbcProperties(context));
         var txManager = new JdbcTransactionManager(dataSource);
         var roleBindingRepository = new JdbcRoleBindingRepository();
-        enforcer = CasbinEnforcerFactory.createEnforcer();
         initSchema(txManager);
-        roleBindingAdministration = new CasbinRoleBindingAdministration(txManager, roleBindingRepository, enforcer);
-        roleBindingAdministration.reloadPolicies();
+
+        policyHolder = new CasbinPolicyHolder();
+        policyReloader = new CasbinPolicyReloader(txManager, roleBindingRepository, policyHolder);
+        roleBindingAdministration = new CasbinRoleBindingAdministration(
+                txManager,
+                roleBindingRepository,
+                policyReloader
+        );
+
+        policyReloader.reloadIfChanged();
+        startRefreshScheduler(context, dataSource);
     }
 
     @Override
@@ -54,6 +67,12 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
         if (superuserSubjects.contains(request.subject().toLowerCase(Locale.ROOT))) {
             return true;
         }
+
+        Enforcer enforcer = policyHolder.current();
+        if (enforcer == null) {
+            return false;
+        }
+
         return enforcer.enforce(
                 request.subject(),
                 request.resource(),
@@ -66,8 +85,35 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
         return Optional.of(roleBindingAdministration);
     }
 
+    private void startRefreshScheduler(AuthorizationProviderContext context, KasanariDataSource dataSource) {
+        var refreshInterval = CasbinRefreshInterval.parse(context.getOptional("refresh-interval").orElse(null));
+        refreshExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            var thread = new Thread(r, "casbin-policy-refresh");
+            thread.setDaemon(true);
+            return thread;
+        });
+        refreshExecutor.scheduleWithFixedDelay(
+                policyReloader::reloadIfChanged,
+                refreshInterval.toSeconds(),
+                refreshInterval.toSeconds(),
+                TimeUnit.SECONDS
+        );
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown(dataSource), "casbin-policy-shutdown"));
+    }
+
+    private void shutdown(KasanariDataSource dataSource) {
+        if (refreshExecutor != null) {
+            refreshExecutor.shutdown();
+        }
+        dataSource.close();
+    }
+
     private static void initSchema(kasanari.repository.core.TransactionManager<org.jdbi.v3.core.Handle> txManager) {
-        txManager.inTransaction(tx -> tx.createUpdate(JdbcManagementSecurityQueries.CREATE_ROLE_BINDINGS_DDL).execute());
+        txManager.inTransaction(tx -> {
+            tx.createUpdate(JdbcManagementSecurityQueries.CREATE_ROLE_BINDINGS_DDL).execute();
+            tx.createUpdate(JdbcManagementSecurityQueries.CREATE_ROLE_BINDING_REVISION_DDL).execute();
+            tx.createUpdate(JdbcManagementSecurityQueries.INSERT_ROLE_BINDING_REVISION).execute();
+        });
     }
 
     private static Map<String, String> resolveJdbcProperties(AuthorizationProviderContext context) {

@@ -68,6 +68,8 @@ Binding model:
 
 `resource` is a fully qualified scope path (no wildcards). The catalog engine is the first segment (`iceberg`, `paimon`, or `lance`). Hierarchy is expressed by path depth; Casbin applies prefix inheritance at enforcement time.
 
+Role binding changes are persisted immediately but take effect on each server instance within `kasanari.authorization.casbin.refresh-interval` (default `5m`).
+
 ## HTTP outcomes
 
 - `401 Unauthorized`: authentication failed or missing.

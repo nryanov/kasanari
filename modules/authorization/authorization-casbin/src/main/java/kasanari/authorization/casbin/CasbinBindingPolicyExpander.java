@@ -9,13 +9,17 @@ final class CasbinBindingPolicyExpander {
     private CasbinBindingPolicyExpander() {
     }
 
-    static void reloadBindingPolicies(Enforcer enforcer, List<StoredRoleBinding> bindings) {
-        enforcer.clearPolicy();
+    static Enforcer buildEnforcer(List<StoredRoleBinding> bindings) {
+        var enforcer = CasbinEnforcerFactory.createEnforcer();
+        if (bindings == null || bindings.isEmpty()) {
+            return enforcer;
+        }
 
         for (var binding : bindings) {
             for (var permissionPattern : CasbinPolicyBootstrap.permissionPatternsForRole(binding.role())) {
                 enforcer.addPolicy(binding.subject(), binding.resource(), permissionPattern);
             }
         }
+        return enforcer;
     }
 }

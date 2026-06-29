@@ -197,4 +197,37 @@ public class JdbcRoleBindingRepositoryTest {
         assertEquals(List.of(catalogScope), catalogResult);
         assertEquals(List.of(namespaceScope), namespaceResult);
     }
+
+    @Test
+    void currentRevisionReturnsZeroWhenEmpty() {
+        var revision = txManager.inTransactionR(repository::currentRevision);
+
+        assertEquals(0L, revision);
+    }
+
+    @Test
+    void bumpRevisionIncrementsRevision() {
+        txManager.inTransaction(repository::bumpRevision);
+
+        var revision = txManager.inTransactionR(repository::currentRevision);
+
+        assertEquals(1L, revision);
+    }
+
+    @Test
+    void addAndDeleteWithBumpRevisionInSameTransaction() {
+        var binding = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogAdmin");
+        txManager.inTransaction(tx -> {
+            repository.add(tx, List.of(binding));
+            repository.bumpRevision(tx);
+        });
+        txManager.inTransaction(tx -> {
+            repository.delete(tx, List.of(binding));
+            repository.bumpRevision(tx);
+        });
+
+        var revision = txManager.inTransactionR(repository::currentRevision);
+
+        assertEquals(2L, revision);
+    }
 }

@@ -10,4 +10,5 @@ dependencies {
     api(project(":modules:repository:repository-management:repository-management-security:repository-management-security-postgres"))
 
     testImplementation(testFixtures(project(":modules:fixtures:fixtures-common")))
+    testImplementation(testFixtures(project(":modules:fixtures:fixtures-postgres")))
 }

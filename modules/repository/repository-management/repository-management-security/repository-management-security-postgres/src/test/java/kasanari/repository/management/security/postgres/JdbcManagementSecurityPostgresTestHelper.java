@@ -31,12 +31,17 @@ public final class JdbcManagementSecurityPostgresTestHelper {
     }
 
     public void initializeSchema() {
-        transactionManager.inTransaction(tx ->
-                tx.createUpdate(JdbcManagementSecurityQueries.CREATE_ROLE_BINDINGS_DDL).execute());
+        transactionManager.inTransaction(tx -> {
+            tx.createUpdate(JdbcManagementSecurityQueries.CREATE_ROLE_BINDINGS_DDL).execute();
+            tx.createUpdate(JdbcManagementSecurityQueries.CREATE_ROLE_BINDING_REVISION_DDL).execute();
+            tx.createUpdate(JdbcManagementSecurityQueries.INSERT_ROLE_BINDING_REVISION).execute();
+        });
     }
 
     public void truncateAll() {
         postgresHelper.truncateTable("kasanari_role_bindings");
+        transactionManager.inTransaction(tx ->
+                tx.createUpdate(JdbcManagementSecurityQueries.RESET_ROLE_BINDING_REVISION).execute());
     }
 
     public void close() {

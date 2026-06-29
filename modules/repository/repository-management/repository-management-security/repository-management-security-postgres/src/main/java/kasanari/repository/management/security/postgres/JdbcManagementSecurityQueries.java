@@ -16,6 +16,38 @@ public final class JdbcManagementSecurityQueries {
             )
             """;
 
+    public static final String CREATE_ROLE_BINDING_REVISION_DDL = """
+            CREATE TABLE IF NOT EXISTS kasanari_role_binding_revision
+            (
+                id       INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+                revision BIGINT NOT NULL DEFAULT 0
+            )
+            """;
+
+    public static final String INSERT_ROLE_BINDING_REVISION = """
+            INSERT INTO kasanari_role_binding_revision (id, revision)
+            VALUES (1, 0)
+            ON CONFLICT (id) DO NOTHING
+            """;
+
+    public static final String SELECT_ROLE_BINDING_REVISION = """
+            SELECT revision
+            FROM kasanari_role_binding_revision
+            WHERE id = 1
+            """;
+
+    public static final String BUMP_ROLE_BINDING_REVISION = """
+            UPDATE kasanari_role_binding_revision
+            SET revision = revision + 1
+            WHERE id = 1
+            """;
+
+    public static final String RESET_ROLE_BINDING_REVISION = """
+            UPDATE kasanari_role_binding_revision
+            SET revision = 0
+            WHERE id = 1
+            """;
+
     public static final String INSERT_ROLE_BINDING = """
             INSERT INTO kasanari_role_bindings(subject, resource, role)
             VALUES (?, ?, ?)

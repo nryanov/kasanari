@@ -232,4 +232,4 @@ Expected response:
 - Catalog not visible immediately after updates:
   - Routers refresh periodically (`kasanari.catalog.refresh-interval`, default `30s`).
 - Role changes not taking effect:
-  - Roles API triggers policy reload after add/delete; verify provider is `casbin` when expecting persisted RBAC.
+  - With `casbin`, all instances reload policies on `kasanari.authorization.casbin.refresh-interval` when the DB revision changes (typically within 5 minutes).

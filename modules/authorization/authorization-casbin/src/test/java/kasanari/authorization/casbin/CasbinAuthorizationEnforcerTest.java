@@ -53,7 +53,7 @@ class CasbinAuthorizationEnforcerTest {
 
     @Test
     void viewerRoleExpansionAllowsReadOnlyOperations() {
-        CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
+        enforcer = CasbinBindingPolicyExpander.buildEnforcer(List.of(
                 new StoredRoleBinding("alice", "iceberg/prod", CasbinRoles.ICEBERG_CATALOG_VIEWER)
         ));
 
@@ -64,7 +64,7 @@ class CasbinAuthorizationEnforcerTest {
 
     @Test
     void editorRoleExpansionAllowsMutations() {
-        CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
+        enforcer = CasbinBindingPolicyExpander.buildEnforcer(List.of(
                 new StoredRoleBinding("alice", "paimon/events", CasbinRoles.PAIMON_CATALOG_EDITOR)
         ));
 
@@ -74,7 +74,7 @@ class CasbinAuthorizationEnforcerTest {
 
     @Test
     void adminRoleExpansionIncludesRoleBindingAdministration() {
-        CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
+        enforcer = CasbinBindingPolicyExpander.buildEnforcer(List.of(
                 new StoredRoleBinding("root", "lance/lake", CasbinRoles.LANCE_CATALOG_ADMIN)
         ));
 
@@ -86,7 +86,7 @@ class CasbinAuthorizationEnforcerTest {
 
     @Test
     void editorRoleExpansionDoesNotIncludeRoleBindingAdministration() {
-        CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
+        enforcer = CasbinBindingPolicyExpander.buildEnforcer(List.of(
                 new StoredRoleBinding("alice", "iceberg/prod", CasbinRoles.ICEBERG_CATALOG_EDITOR)
         ));
 
@@ -97,7 +97,7 @@ class CasbinAuthorizationEnforcerTest {
 
     @Test
     void unknownRoleProducesNoPolicies() {
-        CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
+        enforcer = CasbinBindingPolicyExpander.buildEnforcer(List.of(
                 new StoredRoleBinding("alice", "iceberg/prod", "UnknownRole")
         ));
 
@@ -105,20 +105,22 @@ class CasbinAuthorizationEnforcerTest {
     }
 
     @Test
-    void reloadReplacesExistingPolicies() {
-        enforcer.addPolicy("alice", "iceberg/old", Permission.IcebergTableGet.wireName());
+    void buildEnforcerProducesIndependentSnapshot() {
+        var previous = CasbinBindingPolicyExpander.buildEnforcer(List.of());
+        previous.addPolicy("alice", "iceberg/old", Permission.IcebergTableGet.wireName());
 
-        CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
+        enforcer = CasbinBindingPolicyExpander.buildEnforcer(List.of(
                 new StoredRoleBinding("alice", "iceberg/new", CasbinRoles.ICEBERG_CATALOG_VIEWER)
         ));
 
+        assertTrue(previous.enforce("alice", "iceberg/old/analytics/orders", Permission.IcebergTableGet.wireName()));
         assertFalse(enforcer.enforce("alice", "iceberg/old/analytics/orders", Permission.IcebergTableGet.wireName()));
         assertTrue(enforcer.enforce("alice", "iceberg/new/analytics/orders", Permission.IcebergTableGet.wireName()));
     }
 
     @Test
-    void reloadExpandsEachBindingIntoPermissionPolicies() {
-        CasbinBindingPolicyExpander.reloadBindingPolicies(enforcer, List.of(
+    void buildEnforcerExpandsEachBindingIntoPermissionPolicies() {
+        enforcer = CasbinBindingPolicyExpander.buildEnforcer(List.of(
                 new StoredRoleBinding("alice", "iceberg/prod", CasbinRoles.ICEBERG_CATALOG_VIEWER),
                 new StoredRoleBinding("bob", "paimon/events", CasbinRoles.PAIMON_CATALOG_EDITOR)
         ));
@@ -126,5 +128,22 @@ class CasbinAuthorizationEnforcerTest {
         assertTrue(enforcer.enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
         assertTrue(enforcer.enforce("bob", "paimon/events/ns1/users", Permission.PaimonTableCreate.wireName()));
         assertFalse(enforcer.getPolicy().isEmpty());
+    }
+
+    @Test
+    void policyHolderSwapUpdatesActiveEnforcer() {
+        var holder = new CasbinPolicyHolder();
+        holder.swap(CasbinBindingPolicyExpander.buildEnforcer(List.of(
+                new StoredRoleBinding("alice", "iceberg/prod", CasbinRoles.ICEBERG_CATALOG_VIEWER)
+        )));
+
+        var beforeSwap = holder.current();
+        holder.swap(CasbinBindingPolicyExpander.buildEnforcer(List.of(
+                new StoredRoleBinding("bob", "paimon/events", CasbinRoles.PAIMON_CATALOG_EDITOR)
+        )));
+
+        assertTrue(beforeSwap.enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
+        assertFalse(holder.current().enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
+        assertTrue(holder.current().enforce("bob", "paimon/events/ns1/users", Permission.PaimonTableCreate.wireName()));
     }
 }

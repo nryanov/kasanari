@@ -32,6 +32,18 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
     }
 
     @Override
+    public long currentRevision(Handle tx) {
+        return tx.createQuery(JdbcManagementSecurityQueries.SELECT_ROLE_BINDING_REVISION)
+                .mapTo(long.class)
+                .one();
+    }
+
+    @Override
+    public void bumpRevision(Handle tx) {
+        tx.createUpdate(JdbcManagementSecurityQueries.BUMP_ROLE_BINDING_REVISION).execute();
+    }
+
+    @Override
     public void add(Handle tx, List<StoredRoleBinding> bindings) {
         if (bindings == null || bindings.isEmpty()) {
             return;

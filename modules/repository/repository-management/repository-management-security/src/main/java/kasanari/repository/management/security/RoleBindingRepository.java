@@ -9,6 +9,10 @@ public interface RoleBindingRepository<T> {
 
     List<StoredRoleBinding> listAll(T tx);
 
+    long currentRevision(T tx);
+
+    void bumpRevision(T tx);
+
     void add(T tx, List<StoredRoleBinding> bindings);
 
     void delete(T tx, List<StoredRoleBinding> bindings);
