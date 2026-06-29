@@ -137,10 +137,12 @@ paths:
           schema:
             type: string
         - in: query
-          name: catalogType
-          required: false
+          name: resource
+          required: true
           schema:
-            $ref: "#/components/schemas/CatalogType"
+            type: string
+          description: >-
+            Exact resource scope (for example iceberg/warehouse/analytics).
       responses:
         "200":
           description: OK
@@ -148,26 +150,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetRolesResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "403":
           $ref: "#/components/responses/Forbidden"
-    put:
+    post:
       tags:
         - Security
-      operationId: updateRoles
-      summary: Upsert role bindings
+      operationId: addRoles
+      summary: Add role bindings
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateRolesRequest"
+              $ref: "#/components/schemas/AddRolesRequest"
       responses:
-        "200":
-          description: Updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/GetRolesResponse"
+        "204":
+          description: Added
         "400":
           $ref: "#/components/responses/BadRequest"
         "403":
@@ -311,19 +311,21 @@ components:
       type: object
       required:
         - subject
-        - catalogType
         - role
+        - resource
       properties:
         subject:
           type: string
-        catalogType:
-          $ref: "#/components/schemas/CatalogType"
         role:
           type: string
           description: >-
-            Role name assigned to the subject for the catalog type. Valid values depend on
+            Role name assigned to the subject for the resource scope. Valid values depend on
             the active authorization provider (Casbin defaults include IcebergCatalogAdmin,
             IcebergCatalogEditor, IcebergCatalogViewer, and analogous Paimon/Lance roles).
+        resource:
+          type: string
+          description: >-
+            Fully qualified resource scope (for example iceberg/warehouse/analytics).
     GetRolesResponse:
       type: object
       required:
@@ -333,7 +335,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RoleBinding"
-    UpdateRolesRequest:
+    AddRolesRequest:
       type: object
       required:
         - bindings

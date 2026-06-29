@@ -53,7 +53,7 @@ If unset, default superuser subject is `root`.
 Casbin role assignments are managed through:
 
 - `GET /management/v1/security/roles`
-- `PUT /management/v1/security/roles`
+- `POST /management/v1/security/roles`
 - `DELETE /management/v1/security/roles`
 
 Binding model:
@@ -61,12 +61,14 @@ Binding model:
 ```json
 {
   "subject": "alice",
-  "catalogType": "ICEBERG",
-  "role": "IcebergCatalogViewer"
+  "role": "IcebergCatalogViewer",
+  "resource": "iceberg/warehouse/analytics"
 }
 ```
 
-`catalogType` scope is one of: `ICEBERG`, `PAIMON`, `LANCE`.
+`resource` is a fully qualified scope path (no wildcards). The catalog engine is the first segment (`iceberg`, `paimon`, or `lance`). Hierarchy is expressed by path depth; Casbin applies prefix inheritance at enforcement time.
+
+Role binding changes are persisted immediately but take effect on each server instance within `kasanari.authorization.casbin.refresh-interval` (default `5m`).
 
 ## HTTP outcomes
 

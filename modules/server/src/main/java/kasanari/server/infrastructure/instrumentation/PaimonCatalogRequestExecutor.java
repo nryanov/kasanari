@@ -9,6 +9,7 @@ import kasanari.authorization.spi.Permission;
 import kasanari.core.model.CatalogType;
 import kasanari.instrumentation.spi.paimon.PaimonCatalogOperation;
 import kasanari.instrumentation.spi.paimon.PaimonCatalogRequestContext;
+import kasanari.server.infrastructure.authorization.AuthorizationResourceResolver;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -39,7 +40,8 @@ public class PaimonCatalogRequestExecutor {
     ) {
         var subject = authorizationService.subject(securityContext);
         var ctx = new PaimonCatalogRequestContext(catalogName, operation, subject, attributes);
-        var denied = authorizationService.denyUnless(securityContext, DOMAIN, permission);
+        var resource = AuthorizationResourceResolver.resolve(DOMAIN, catalogName, attributes);
+        var denied = authorizationService.denyUnless(securityContext, resource, permission);
         if (denied.isPresent()) {
             instrumentation.paimonPipeline().notifyDenied(ctx);
             return denied.get();

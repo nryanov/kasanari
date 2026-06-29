@@ -1,7 +1,6 @@
 package kasanari.repository.management.security.postgres;
 
 import kasanari.repository.management.security.RoleBindingRepository;
-import kasanari.core.model.CatalogType;
 import kasanari.repository.management.security.model.StoredRoleBinding;
 import org.jdbi.v3.core.Handle;
 
@@ -9,32 +8,53 @@ import java.util.List;
 
 public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> {
     @Override
-    public List<StoredRoleBinding> list(Handle tx, String subject, CatalogType catalogType) {
+    public List<StoredRoleBinding> list(Handle tx, String subject, String resource) {
         var query = tx.createQuery(JdbcManagementSecurityQueries.SELECT_ROLE_BINDINGS);
-        query.bind(0, subject);
+        query.bind(0, resource);
         query.bind(1, subject);
-        query.bind(2, catalogType == null ? null : catalogType.toString());
-        query.bind(3, catalogType == null ? null : catalogType.toString());
+        query.bind(2, subject);
 
         return query.map((rs, ctx) -> new StoredRoleBinding(
                 rs.getString("subject"),
-                CatalogType.fromValue(rs.getString("catalog_type")),
-                rs.getString("role_name")
+                rs.getString("resource"),
+                rs.getString("role")
         )).list();
     }
 
     @Override
-    public void upsert(Handle tx, List<StoredRoleBinding> bindings) {
+    public List<StoredRoleBinding> listAll(Handle tx) {
+        return tx.createQuery(JdbcManagementSecurityQueries.SELECT_ALL_ROLE_BINDINGS)
+                .map((rs, ctx) -> new StoredRoleBinding(
+                        rs.getString("subject"),
+                        rs.getString("resource"),
+                        rs.getString("role")
+                )).list();
+    }
+
+    @Override
+    public long currentRevision(Handle tx) {
+        return tx.createQuery(JdbcManagementSecurityQueries.SELECT_ROLE_BINDING_REVISION)
+                .mapTo(long.class)
+                .one();
+    }
+
+    @Override
+    public void bumpRevision(Handle tx) {
+        tx.createUpdate(JdbcManagementSecurityQueries.BUMP_ROLE_BINDING_REVISION).execute();
+    }
+
+    @Override
+    public void add(Handle tx, List<StoredRoleBinding> bindings) {
         if (bindings == null || bindings.isEmpty()) {
             return;
         }
 
         for (var binding : bindings) {
-            var upsert = tx.createUpdate(JdbcManagementSecurityQueries.UPSERT_ROLE_BINDING);
-            upsert.bind(0, binding.subject());
-            upsert.bind(1, binding.catalogType().toString());
-            upsert.bind(2, binding.role());
-            upsert.execute();
+            var insert = tx.createUpdate(JdbcManagementSecurityQueries.INSERT_ROLE_BINDING);
+            insert.bind(0, binding.subject());
+            insert.bind(1, binding.resource());
+            insert.bind(2, binding.role());
+            insert.execute();
         }
     }
 
@@ -47,7 +67,7 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
         for (var binding : bindings) {
             var delete = tx.createUpdate(JdbcManagementSecurityQueries.DELETE_ROLE_BINDING);
             delete.bind(0, binding.subject());
-            delete.bind(1, binding.catalogType().toString());
+            delete.bind(1, binding.resource());
             delete.bind(2, binding.role());
             delete.execute();
         }

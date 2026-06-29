@@ -11,10 +11,23 @@ Another way to use it is to implement custom authorization logic via SPI `Author
 Role bindings are stored and managed through Management API:
 
 - `GET /management/v1/security/roles`
-- `PUT /management/v1/security/roles`
+- `POST /management/v1/security/roles`
 - `DELETE /management/v1/security/roles`
 
-Bindings are scoped by `catalogType` (`ICEBERG`, `PAIMON`, `LANCE`).
+Bindings are scoped by fully qualified resource paths. The catalog engine (`iceberg`, `paimon`, `lance`) is the first path segment. **No wildcards** — hierarchy is expressed by path depth only.
+
+## Resource path format
+
+| Level | Example path | Grants access to |
+|-------|--------------|------------------|
+| Engine | `iceberg` | All Iceberg catalogs, namespaces, tables, and views |
+| Catalog | `iceberg/warehouse` | Everything under that catalog |
+| Namespace | `paimon/events/ns1` | All tables/views in that namespace (Paimon databases use the `namespace` segment) |
+| Table/View | `lance/lake/ns1/users` | That object only |
+
+- Segment delimiter: `/`
+- Iceberg multi-level namespaces stay dot-encoded in one segment (for example `ns1.ns2`)
+- No `*` segment and no `/*` suffix — a binding at `iceberg/warehouse` applies to `iceberg/warehouse/analytics/orders` via prefix inheritance in Casbin
 
 ## Default Casbin roles
 
@@ -28,9 +41,9 @@ Bindings are scoped by `catalogType` (`ICEBERG`, `PAIMON`, `LANCE`).
 
 | Role level       | Permissions behavior                                                                                              |
 |------------------|-------------------------------------------------------------------------------------------------------------------|
-| `*CatalogAdmin`  | All permissions with catalog prefix (`Iceberg*`, `Paimon*`, `Lance*`) plus `RoleSelect`, `RoleAdd`, `RoleRemove`. |
-| `*CatalogEditor` | Mutation + read for catalog objects (engine-specific wildcard policy set).                                        |
-| `*CatalogViewer` | Read-only pattern (`*List`, `*Get`, `*Exists`) for that catalog prefix.                                           |
+| `*CatalogAdmin`  | All permissions with catalog prefix (`Iceberg*`, `Paimon*`, `Lance*`) plus `RoleBindingGet`, `RoleBindingAdd`, `RoleBindingDelete`. |
+| `*CatalogEditor` | Mutation + read for catalog objects (engine-specific policy set). No role-binding administration.                 |
+| `*CatalogViewer` | Read-only pattern (`*List`, `*Get`, `*Exists`) for that catalog prefix.                                         |
 
 ## Available permissions
 
@@ -123,9 +136,11 @@ All permissions are defined in `kasanari.authorization.spi.Permission`.
 
 ### Role administration permissions
 
-- `RoleSelect`
-- `RoleAdd`
-- `RoleRemove`
+Only `*CatalogAdmin` roles receive these permissions:
+
+- `RoleBindingGet`
+- `RoleBindingAdd`
+- `RoleBindingDelete`
 
 ## Example role binding payload
 
@@ -134,19 +149,23 @@ All permissions are defined in `kasanari.authorization.spi.Permission`.
   "bindings": [
     {
       "subject": "alice",
-      "catalogType": "ICEBERG",
-      "role": "IcebergCatalogViewer"
+      "role": "IcebergCatalogViewer",
+      "resource": "iceberg/warehouse/analytics"
     },
     {
       "subject": "platform-admin",
-      "catalogType": "PAIMON",
-      "role": "PaimonCatalogAdmin"
+      "role": "PaimonCatalogAdmin",
+      "resource": "paimon/events"
     }
   ]
 }
 ```
 
+List bindings with required `resource` query parameter (exact match) and optional `subject` filter.
+
 ## Notes
 
-- Role bindings are currently scoped by `catalogType` (not by individual `catalogId`).
+- Role bindings require an explicit `resource` scope path.
 - Superusers configured in `kasanari.authorization.casbin.superuser-subjects` bypass checks.
+- Namespace-scoped bindings inherit access to tables and views under that namespace via prefix matching.
+- Changing a role on the same scope requires delete + add (primary key is `(subject, resource, role)`).

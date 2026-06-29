@@ -9,6 +9,7 @@ import kasanari.authorization.spi.Permission;
 import kasanari.core.model.CatalogType;
 import kasanari.instrumentation.spi.iceberg.IcebergCatalogOperation;
 import kasanari.instrumentation.spi.iceberg.IcebergCatalogRequestContext;
+import kasanari.server.infrastructure.authorization.AuthorizationResourceResolver;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -39,7 +40,8 @@ public class IcebergCatalogRequestExecutor {
     ) {
         var subject = authorizationService.subject(securityContext);
         var ctx = new IcebergCatalogRequestContext(catalogName, operation, subject, attributes);
-        var denied = authorizationService.denyUnless(securityContext, DOMAIN, permission);
+        var resource = AuthorizationResourceResolver.resolve(DOMAIN, catalogName, attributes);
+        var denied = authorizationService.denyUnless(securityContext, resource, permission);
         if (denied.isPresent()) {
             instrumentation.icebergPipeline().notifyDenied(ctx);
             return denied.get();
