@@ -21,7 +21,7 @@ final class ResourcePrefixMatchFunction extends CustomFunction {
         return AviatorBoolean.valueOf(matches(requestPath, bindingPath));
     }
 
-    private static boolean matches(String requestPath, String bindingPath) {
+    private boolean matches(String requestPath, String bindingPath) {
         if (requestPath == null || bindingPath == null) {
             return false;
         }

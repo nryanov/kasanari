@@ -21,14 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class CasbinPolicyReloaderTest {
+class CasbinPolicyEngineTest {
     private static final PostgresFixtureContainer POSTGRES = new PostgresFixtureContainer();
 
     private static PostgresHelper postgresHelper;
     private static JdbcTransactionManager txManager;
     private static JdbcRoleBindingRepository repository;
-    private static CasbinPolicyHolder policyHolder;
-    private static CasbinPolicyReloader reloader;
+    private static CasbinPolicyEngine policyEngine;
 
     @BeforeAll
     static void setup() {
@@ -47,8 +46,7 @@ class CasbinPolicyReloaderTest {
             tx.createUpdate(JdbcManagementSecurityQueries.INSERT_ROLE_BINDING_REVISION).execute();
         });
 
-        policyHolder = new CasbinPolicyHolder();
-        reloader = new CasbinPolicyReloader(txManager, repository, policyHolder);
+        policyEngine = new CasbinPolicyEngine(txManager, repository, new CasbinPolicyBootstrap());
     }
 
     @AfterAll
@@ -60,23 +58,23 @@ class CasbinPolicyReloaderTest {
     void beforeEach() {
         postgresHelper.truncateTable("kasanari_role_bindings");
         txManager.inTransaction(tx -> tx.createUpdate(JdbcManagementSecurityQueries.RESET_ROLE_BINDING_REVISION).execute());
-        reloader.reloadIfChanged();
+        policyEngine.reloadIfChanged();
     }
 
     @Test
     void reloadIfChangedSkipsWhenRevisionUnchanged() {
-        reloader.reloadIfChanged();
-        var first = policyHolder.current();
+        policyEngine.reloadIfChanged();
+        var first = policyEngine.current();
 
-        reloader.reloadIfChanged();
+        policyEngine.reloadIfChanged();
 
-        assertSame(first, policyHolder.current());
+        assertSame(first, policyEngine.current());
     }
 
     @Test
     void reloadIfChangedSwapsEnforcerWhenRevisionChanges() {
-        reloader.reloadIfChanged();
-        var before = policyHolder.current();
+        policyEngine.reloadIfChanged();
+        var before = policyEngine.current();
 
         txManager.inTransaction(tx -> {
             repository.add(tx, List.of(
@@ -84,9 +82,9 @@ class CasbinPolicyReloaderTest {
             ));
             repository.bumpRevision(tx);
         });
-        reloader.reloadIfChanged();
+        policyEngine.reloadIfChanged();
 
         assertFalse(before.enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
-        assertTrue(policyHolder.current().enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
+        assertTrue(policyEngine.current().enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
     }
 }

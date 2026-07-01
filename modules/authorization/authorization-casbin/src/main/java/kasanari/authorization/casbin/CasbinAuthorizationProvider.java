@@ -10,6 +10,7 @@ import kasanari.repository.management.security.postgres.JdbcManagementSecurityQu
 import kasanari.repository.management.security.postgres.JdbcRoleBindingRepository;
 import org.casbin.jcasbin.main.Enforcer;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,8 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 public final class CasbinAuthorizationProvider implements AuthorizationProvider {
     private final Set<String> superuserSubjects = new HashSet<>();
-    private CasbinPolicyHolder policyHolder;
-    private CasbinPolicyReloader policyReloader;
+    private CasbinPolicyEngine policyEngine;
     private CasbinRoleBindingAdministration roleBindingAdministration;
     private ScheduledExecutorService refreshExecutor;
 
@@ -50,15 +50,15 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
         var roleBindingRepository = new JdbcRoleBindingRepository();
         initSchema(txManager);
 
-        policyHolder = new CasbinPolicyHolder();
-        policyReloader = new CasbinPolicyReloader(txManager, roleBindingRepository, policyHolder);
+        var policyBootstrap = new CasbinPolicyBootstrap();
+        policyEngine = new CasbinPolicyEngine(txManager, roleBindingRepository, policyBootstrap);
         roleBindingAdministration = new CasbinRoleBindingAdministration(
                 txManager,
                 roleBindingRepository,
-                policyReloader
+                policyEngine
         );
 
-        policyReloader.reloadIfChanged();
+        policyEngine.reloadIfChanged();
         startRefreshScheduler(context, dataSource);
     }
 
@@ -68,7 +68,7 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
             return true;
         }
 
-        Enforcer enforcer = policyHolder.current();
+        Enforcer enforcer = policyEngine.current();
         if (enforcer == null) {
             return false;
         }
@@ -86,18 +86,21 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
     }
 
     private void startRefreshScheduler(AuthorizationProviderContext context, KasanariDataSource dataSource) {
-        var refreshInterval = CasbinRefreshInterval.parse(context.getOptional("refresh-interval").orElse(null));
+        var refreshInterval = parseRefreshInterval(context.getOptional("refresh-interval").orElse(null));
+
         refreshExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
             var thread = new Thread(r, "casbin-policy-refresh");
             thread.setDaemon(true);
             return thread;
         });
+
         refreshExecutor.scheduleWithFixedDelay(
-                policyReloader::reloadIfChanged,
+                policyEngine::reloadIfChanged,
                 refreshInterval.toSeconds(),
                 refreshInterval.toSeconds(),
                 TimeUnit.SECONDS
         );
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown(dataSource), "casbin-policy-shutdown"));
     }
 
@@ -108,7 +111,7 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
         dataSource.close();
     }
 
-    private static void initSchema(kasanari.repository.core.TransactionManager<org.jdbi.v3.core.Handle> txManager) {
+    private void initSchema(kasanari.repository.core.TransactionManager<org.jdbi.v3.core.Handle> txManager) {
         txManager.inTransaction(tx -> {
             tx.createUpdate(JdbcManagementSecurityQueries.CREATE_ROLE_BINDINGS_DDL).execute();
             tx.createUpdate(JdbcManagementSecurityQueries.CREATE_ROLE_BINDING_REVISION_DDL).execute();
@@ -116,7 +119,7 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
         });
     }
 
-    private static Map<String, String> resolveJdbcProperties(AuthorizationProviderContext context) {
+    private Map<String, String> resolveJdbcProperties(AuthorizationProviderContext context) {
         var uri = context.getOptional("jdbc.uri");
         var user = context.getOptional("jdbc.user");
         var password = context.getOptional("jdbc.password");
@@ -132,5 +135,31 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
         properties.put("kasanari.jdbc.password", password.get());
 
         return properties;
+    }
+
+    private Duration parseRefreshInterval(String value) {
+        var defaultInterval = Duration.ofMinutes(5);
+        if (value == null || value.isBlank()) {
+            return defaultInterval;
+        }
+
+        var trimmed = value.trim().toLowerCase(Locale.ROOT);
+        if (trimmed.endsWith("ms")) {
+            return Duration.ofMillis(Long.parseLong(trimmed.substring(0, trimmed.length() - 2)));
+        }
+        if (trimmed.endsWith("s")) {
+            return Duration.ofSeconds(Long.parseLong(trimmed.substring(0, trimmed.length() - 1)));
+        }
+        if (trimmed.endsWith("m")) {
+            return Duration.ofMinutes(Long.parseLong(trimmed.substring(0, trimmed.length() - 1)));
+        }
+        if (trimmed.endsWith("h")) {
+            return Duration.ofHours(Long.parseLong(trimmed.substring(0, trimmed.length() - 1)));
+        }
+        if (trimmed.endsWith("d")) {
+            return Duration.ofDays(Long.parseLong(trimmed.substring(0, trimmed.length() - 1)));
+        }
+
+        return Duration.parse(trimmed);
     }
 }

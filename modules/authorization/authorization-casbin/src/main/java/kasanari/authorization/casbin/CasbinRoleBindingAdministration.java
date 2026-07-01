@@ -12,22 +12,22 @@ import java.util.List;
 final class CasbinRoleBindingAdministration implements RoleBindingAdministration {
     private final TransactionManager<Handle> txManager;
     private final RoleBindingRepository<Handle> roleBindingRepository;
-    private final CasbinPolicyReloader policyReloader;
+    private final CasbinPolicyEngine policyEngine;
 
     CasbinRoleBindingAdministration(
             TransactionManager<Handle> txManager,
             RoleBindingRepository<Handle> roleBindingRepository,
-            CasbinPolicyReloader policyReloader
+            CasbinPolicyEngine policyEngine
     ) {
         this.txManager = txManager;
         this.roleBindingRepository = roleBindingRepository;
-        this.policyReloader = policyReloader;
+        this.policyEngine = policyEngine;
     }
 
     @Override
     public List<RoleBinding> list(String subject, String resource) {
         return txManager.inTransactionR(tx -> roleBindingRepository.list(tx, subject, resource)).stream()
-                .map(CasbinRoleBindingAdministration::toSpi)
+                .map(this::toSpi)
                 .toList();
     }
 
@@ -57,14 +57,14 @@ final class CasbinRoleBindingAdministration implements RoleBindingAdministration
 
     @Override
     public void reloadPolicies() {
-        policyReloader.reloadIfChanged();
+        policyEngine.reloadIfChanged();
     }
 
-    private static RoleBinding toSpi(StoredRoleBinding binding) {
+    private RoleBinding toSpi(StoredRoleBinding binding) {
         return new RoleBinding(binding.subject(), binding.resource(), binding.role());
     }
 
-    private static List<StoredRoleBinding> toStored(List<RoleBinding> bindings) {
+    private List<StoredRoleBinding> toStored(List<RoleBinding> bindings) {
         return bindings.stream()
                 .map(binding -> new StoredRoleBinding(binding.subject(), binding.resource(), binding.role()))
                 .toList();

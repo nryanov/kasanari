@@ -7,30 +7,31 @@ import java.util.List;
 import java.util.Map;
 
 final class CasbinPolicyBootstrap {
-    private static final Map<String, List<String>> ROLE_PERMISSIONS = Map.ofEntries(
-            Map.entry(CasbinRoles.ICEBERG_CATALOG_ADMIN, icebergAdminPermissions()),
-            Map.entry(CasbinRoles.ICEBERG_CATALOG_EDITOR, icebergEditorPermissions()),
-            Map.entry(CasbinRoles.ICEBERG_CATALOG_VIEWER, icebergViewerPermissions()),
-            Map.entry(CasbinRoles.PAIMON_CATALOG_ADMIN, paimonAdminPermissions()),
-            Map.entry(CasbinRoles.PAIMON_CATALOG_EDITOR, paimonEditorPermissions()),
-            Map.entry(CasbinRoles.PAIMON_CATALOG_VIEWER, paimonViewerPermissions()),
-            Map.entry(CasbinRoles.LANCE_CATALOG_ADMIN, lanceAdminPermissions()),
-            Map.entry(CasbinRoles.LANCE_CATALOG_EDITOR, lanceEditorPermissions()),
-            Map.entry(CasbinRoles.LANCE_CATALOG_VIEWER, lanceViewerPermissions())
-    );
+    private final Map<String, List<String>> rolePermissions;
 
-    private CasbinPolicyBootstrap() {
+    CasbinPolicyBootstrap() {
+        rolePermissions = Map.ofEntries(
+                Map.entry(CasbinRoles.ICEBERG_CATALOG_ADMIN, icebergAdminPermissions()),
+                Map.entry(CasbinRoles.ICEBERG_CATALOG_EDITOR, icebergEditorPermissions()),
+                Map.entry(CasbinRoles.ICEBERG_CATALOG_VIEWER, icebergViewerPermissions()),
+                Map.entry(CasbinRoles.PAIMON_CATALOG_ADMIN, paimonAdminPermissions()),
+                Map.entry(CasbinRoles.PAIMON_CATALOG_EDITOR, paimonEditorPermissions()),
+                Map.entry(CasbinRoles.PAIMON_CATALOG_VIEWER, paimonViewerPermissions()),
+                Map.entry(CasbinRoles.LANCE_CATALOG_ADMIN, lanceAdminPermissions()),
+                Map.entry(CasbinRoles.LANCE_CATALOG_EDITOR, lanceEditorPermissions()),
+                Map.entry(CasbinRoles.LANCE_CATALOG_VIEWER, lanceViewerPermissions())
+        );
     }
 
-    static List<String> permissionPatternsForRole(String role) {
-        var patterns = ROLE_PERMISSIONS.get(role);
+    List<String> permissionPatternsForRole(String role) {
+        var patterns = rolePermissions.get(role);
         if (patterns == null) {
             return List.of();
         }
         return patterns;
     }
 
-    private static List<String> roleBindingAdministrationPermissions() {
+    private List<String> roleBindingAdministrationPermissions() {
         return List.of(
                 Permission.RoleBindingGet.wireName(),
                 Permission.RoleBindingAdd.wireName(),
@@ -38,14 +39,14 @@ final class CasbinPolicyBootstrap {
         );
     }
 
-    private static List<String> icebergAdminPermissions() {
+    private List<String> icebergAdminPermissions() {
         var permissions = new ArrayList<String>();
         permissions.addAll(allIcebergPermissions());
         permissions.addAll(roleBindingAdministrationPermissions());
         return List.copyOf(permissions);
     }
 
-    private static List<String> icebergEditorPermissions() {
+    private List<String> icebergEditorPermissions() {
         return List.of(
                 Permission.IcebergTableList.wireName(),
                 Permission.IcebergTableCreate.wireName(),
@@ -69,7 +70,7 @@ final class CasbinPolicyBootstrap {
         );
     }
 
-    private static List<String> icebergViewerPermissions() {
+    private List<String> icebergViewerPermissions() {
         return List.of(
                 Permission.IcebergTableList.wireName(),
                 Permission.IcebergTableGet.wireName(),
@@ -84,7 +85,7 @@ final class CasbinPolicyBootstrap {
         );
     }
 
-    private static List<String> allIcebergPermissions() {
+    private List<String> allIcebergPermissions() {
         return List.of(
                 Permission.IcebergTableList.wireName(),
                 Permission.IcebergTableCreate.wireName(),
@@ -113,14 +114,14 @@ final class CasbinPolicyBootstrap {
         );
     }
 
-    private static List<String> paimonAdminPermissions() {
+    private List<String> paimonAdminPermissions() {
         var permissions = new ArrayList<String>();
         permissions.addAll(allPaimonPermissions());
         permissions.addAll(roleBindingAdministrationPermissions());
         return List.copyOf(permissions);
     }
 
-    private static List<String> paimonEditorPermissions() {
+    private List<String> paimonEditorPermissions() {
         return List.of(
                 Permission.PaimonDatabaseList.wireName(),
                 Permission.PaimonDatabaseCreate.wireName(),
@@ -157,7 +158,7 @@ final class CasbinPolicyBootstrap {
         );
     }
 
-    private static List<String> paimonViewerPermissions() {
+    private List<String> paimonViewerPermissions() {
         return List.of(
                 Permission.PaimonDatabaseList.wireName(),
                 Permission.PaimonTableList.wireName(),
@@ -176,7 +177,7 @@ final class CasbinPolicyBootstrap {
         );
     }
 
-    private static List<String> allPaimonPermissions() {
+    private List<String> allPaimonPermissions() {
         return List.of(
                 Permission.PaimonDatabaseList.wireName(),
                 Permission.PaimonDatabaseCreate.wireName(),
@@ -217,14 +218,14 @@ final class CasbinPolicyBootstrap {
         );
     }
 
-    private static List<String> lanceAdminPermissions() {
+    private List<String> lanceAdminPermissions() {
         var permissions = new ArrayList<String>();
         permissions.addAll(allLancePermissions());
         permissions.addAll(roleBindingAdministrationPermissions());
         return List.copyOf(permissions);
     }
 
-    private static List<String> lanceEditorPermissions() {
+    private List<String> lanceEditorPermissions() {
         return List.of(
                 Permission.LanceNamespaceList.wireName(),
                 Permission.LanceNamespaceCreate.wireName(),
@@ -241,7 +242,7 @@ final class CasbinPolicyBootstrap {
         );
     }
 
-    private static List<String> lanceViewerPermissions() {
+    private List<String> lanceViewerPermissions() {
         return List.of(
                 Permission.LanceNamespaceList.wireName(),
                 Permission.LanceTableList.wireName(),
@@ -253,7 +254,7 @@ final class CasbinPolicyBootstrap {
         );
     }
 
-    private static List<String> allLancePermissions() {
+    private List<String> allLancePermissions() {
         return List.of(
                 Permission.LanceNamespaceList.wireName(),
                 Permission.LanceNamespaceCreate.wireName(),
