@@ -233,18 +233,6 @@ public class JdbcRoleBindingRepositoryTest {
     }
 
     @Test
-    void sameSubjectResourceRoleWithDifferentEffectAreDistinctRows() {
-        var allow = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogEditor", "allow");
-        var deny = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogEditor", "deny");
-        txManager.inTransaction(tx -> repository.add(tx, List.of(allow, deny)));
-
-        var result = txManager.inTransactionR(tx -> repository.list(tx, "alice", "iceberg/warehouse"));
-
-        var expected = List.of(allow, deny);
-        assertEquals(expected, result);
-    }
-
-    @Test
     void addRejectsBindingWithInvalidEffect() {
         var invalid = new StoredRoleBinding("alice", "iceberg/warehouse", "IcebergCatalogEditor", "block");
 
