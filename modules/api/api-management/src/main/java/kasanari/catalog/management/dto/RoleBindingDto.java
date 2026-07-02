@@ -4,6 +4,7 @@ public class RoleBindingDto {
     private String subject;
     private String resource;
     private String role;
+    private String effect;
 
     public String getSubject() {
         return subject;
@@ -27,5 +28,13 @@ public class RoleBindingDto {
 
     public void setResource(String resource) {
         this.resource = resource;
+    }
+
+    public String getEffect() {
+        return effect;
+    }
+
+    public void setEffect(String effect) {
+        this.effect = effect;
     }
 }

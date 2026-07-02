@@ -62,11 +62,12 @@ Binding model:
 {
   "subject": "alice",
   "role": "IcebergCatalogViewer",
-  "resource": "iceberg/warehouse/analytics"
+  "resource": "iceberg/warehouse/analytics",
+  "effect": "allow"
 }
 ```
 
-`resource` is a fully qualified scope path (no wildcards). The catalog engine is the first segment (`iceberg`, `paimon`, or `lance`). Hierarchy is expressed by path depth; Casbin applies prefix inheritance at enforcement time.
+`resource` is a fully qualified scope path (no wildcards). `effect` is required and must be `allow` or `deny`. The catalog engine is the first segment (`iceberg`, `paimon`, or `lance`). Hierarchy is expressed by path depth; Casbin applies prefix inheritance at enforcement time. Matching `deny` policies override matching `allow` policies.
 
 Role binding changes are persisted immediately but take effect on each server instance within `kasanari.authorization.casbin.refresh-interval` (default `5m`).
 

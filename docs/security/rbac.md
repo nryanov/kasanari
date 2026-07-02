@@ -14,7 +14,7 @@ Role bindings are stored and managed through Management API:
 - `POST /management/v1/security/roles`
 - `DELETE /management/v1/security/roles`
 
-Bindings are scoped by fully qualified resource paths. The catalog engine (`iceberg`, `paimon`, `lance`) is the first path segment. **No wildcards** — hierarchy is expressed by path depth only.
+Bindings are scoped by fully qualified resource paths and include an explicit `effect` (`allow` or `deny`). The catalog engine (`iceberg`, `paimon`, `lance`) is the first path segment. **No wildcards** — hierarchy is expressed by path depth only.
 
 ## Resource path format
 
@@ -150,12 +150,14 @@ Only `*CatalogAdmin` roles receive these permissions:
     {
       "subject": "alice",
       "role": "IcebergCatalogViewer",
-      "resource": "iceberg/warehouse/analytics"
+      "resource": "iceberg/warehouse/analytics",
+      "effect": "allow"
     },
     {
       "subject": "platform-admin",
       "role": "PaimonCatalogAdmin",
-      "resource": "paimon/events"
+      "resource": "paimon/events",
+      "effect": "deny"
     }
   ]
 }
@@ -166,6 +168,8 @@ List bindings with required `resource` query parameter (exact match) and optiona
 ## Notes
 
 - Role bindings require an explicit `resource` scope path.
+- Role bindings require an explicit `effect` (`allow` or `deny`).
+- Matching denies override matching allows.
 - Superusers configured in `kasanari.authorization.casbin.superuser-subjects` bypass checks.
 - Namespace-scoped bindings inherit access to tables and views under that namespace via prefix matching.
-- Changing a role on the same scope requires delete + add (primary key is `(subject, resource, role)`).
+- `kasanari_role_bindings` primary key is `(subject, resource, role, effect)`.

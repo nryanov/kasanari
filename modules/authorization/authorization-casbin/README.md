@@ -30,7 +30,10 @@ kasanari.authorization.casbin.refresh-interval=5m
 
 ## Role bindings
 
-Bindings are `(subject, resource, role)` where `resource` is a fully qualified scope path (no wildcards):
+Bindings are `(subject, resource, role, effect)` where:
+
+- `effect` is required and must be `allow` or `deny`
+- `resource` is a fully qualified scope path (no wildcards)
 
 - Engine: `iceberg`
 - Catalog: `iceberg/warehouse`
@@ -38,6 +41,11 @@ Bindings are `(subject, resource, role)` where `resource` is a fully qualified s
 - Leaf object: `lance/lake/ns1/users`
 
 Roles are managed via `POST /management/v1/security/roles` (insert-only, duplicates ignored) and `DELETE /management/v1/security/roles`. Each write bumps a DB revision counter. Every instance reloads policies on `refresh-interval` when the revision changes: a new Casbin enforcer is built and swapped atomically (no empty-policy window during reload).
+
+`deny` bindings are evaluated with higher priority than `allow` bindings for matching requests. This enables exception rules such as:
+
+- `allow` at `iceberg/prod`
+- `deny` at `iceberg/prod/analytics/orders`
 
 ## Default roles
 
@@ -55,7 +63,8 @@ Permission names are defined in `authorization-spi` (`Permission` enum), e.g. `I
 
 ```
 r = sub, obj, perm
-p = sub, obj, perm
+p = sub, obj, perm, eft
+e = some(where (p.eft == allow)) && !some(where (p.eft == deny))
 m = r.sub == p.sub && resourcePrefixMatch(r.obj, p.obj) && globMatch(r.perm, p.perm)
 ```
 

@@ -17,7 +17,8 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
         return query.map((rs, ctx) -> new StoredRoleBinding(
                 rs.getString("subject"),
                 rs.getString("resource"),
-                rs.getString("role")
+                rs.getString("role"),
+                rs.getString("effect")
         )).list();
     }
 
@@ -27,7 +28,8 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
                 .map((rs, ctx) -> new StoredRoleBinding(
                         rs.getString("subject"),
                         rs.getString("resource"),
-                        rs.getString("role")
+                        rs.getString("role"),
+                        rs.getString("effect")
                 )).list();
     }
 
@@ -54,6 +56,7 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
             insert.bind(0, binding.subject());
             insert.bind(1, binding.resource());
             insert.bind(2, binding.role());
+            insert.bind(3, binding.effect());
             insert.execute();
         }
     }
@@ -69,6 +72,7 @@ public class JdbcRoleBindingRepository implements RoleBindingRepository<Handle> 
             delete.bind(0, binding.subject());
             delete.bind(1, binding.resource());
             delete.bind(2, binding.role());
+            delete.bind(3, binding.effect());
             delete.execute();
         }
     }

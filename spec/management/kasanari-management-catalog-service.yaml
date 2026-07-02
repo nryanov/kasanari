@@ -313,6 +313,7 @@ components:
         - subject
         - role
         - resource
+        - effect
       properties:
         subject:
           type: string
@@ -326,6 +327,14 @@ components:
           type: string
           description: >-
             Fully qualified resource scope (for example iceberg/warehouse/analytics).
+        effect:
+          type: string
+          enum:
+            - allow
+            - deny
+          description: >-
+            Policy effect for the expanded permissions. `allow` grants role permissions at the scope,
+            `deny` creates an exception that overrides matching allows.
     GetRolesResponse:
       type: object
       required:

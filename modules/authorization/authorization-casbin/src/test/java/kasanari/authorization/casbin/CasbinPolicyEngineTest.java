@@ -78,7 +78,7 @@ class CasbinPolicyEngineTest {
 
         txManager.inTransaction(tx -> {
             repository.add(tx, List.of(
-                    new StoredRoleBinding("alice", "iceberg/prod", CasbinRoles.ICEBERG_CATALOG_VIEWER)
+                    new StoredRoleBinding("alice", "iceberg/prod", CasbinRoles.ICEBERG_CATALOG_VIEWER, "allow")
             ));
             repository.bumpRevision(tx);
         });
@@ -86,5 +86,21 @@ class CasbinPolicyEngineTest {
 
         assertFalse(before.enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
         assertTrue(policyEngine.current().enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableGet.wireName()));
+    }
+
+    @Test
+    void reloadIfChangedAppliesDenyBindingsFromStorage() {
+        txManager.inTransaction(tx -> {
+            repository.add(tx, List.of(
+                    new StoredRoleBinding("alice", "iceberg/prod", CasbinRoles.ICEBERG_CATALOG_EDITOR, "allow"),
+                    new StoredRoleBinding("alice", "iceberg/prod/analytics/orders", CasbinRoles.ICEBERG_CATALOG_EDITOR, "deny")
+            ));
+            repository.bumpRevision(tx);
+        });
+
+        policyEngine.reloadIfChanged();
+
+        assertTrue(policyEngine.current().enforce("alice", "iceberg/prod/analytics/customers", Permission.IcebergTableDrop.wireName()));
+        assertFalse(policyEngine.current().enforce("alice", "iceberg/prod/analytics/orders", Permission.IcebergTableDrop.wireName()));
     }
 }
