@@ -27,7 +27,7 @@ public final class HeaderTokenAuthProvider implements AuthProvider {
 
     @Override
     public AuthProviderMetadata metadata() {
-        return new AuthProviderMetadata(true, CredentialScheme.NONE, AuthProviderMetadata.DEFAULT_PUBLIC_PATHS);
+        return AuthProviderMetadata.authenticated(CredentialScheme.NONE);
     }
 
     @Override

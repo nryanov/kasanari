@@ -7,5 +7,5 @@ dependencies {
 }
 
 tasks.jar {
-    archiveBaseName.set("authorization-custom-example")
+    archiveFileName.set("authorization-custom-example.jar")
 }

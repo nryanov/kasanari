@@ -9,7 +9,7 @@ This example is **not wired into the server by default**. Build the jar and add 
 From the repository root:
 
 ```shell
-./gradlew -p examples/authentication/custom jar
+./gradlew :examples:authentication:custom:jar
 ```
 
 The jar is written to `examples/authentication/custom/build/libs/auth-custom-example.jar`.
@@ -63,7 +63,7 @@ curl -s -o /dev/null -w "%{http_code}\n" \
   http://localhost:9090/management/v1/catalogs
 ```
 
-Health and Swagger UI stay public: `/q/health`, `/docs`.
+Provider metadata marks `/q/health`, `/q/openapi`, and `/docs` as public paths.
 
 ## Implement your own provider
 
@@ -73,4 +73,4 @@ Health and Swagger UI stay public: `/q/health`, `/docs`.
 4. Package as a jar and add to the server classpath.
 5. Set `kasanari.authentication.type=<your-type>` and restart.
 
-See `src/main/java/kasanari/auth/custom/HeaderTokenAuthProvider.java` in this directory.
+See `src/main/java/kasanari/authentication/custom/HeaderTokenAuthProvider.java` in this directory.

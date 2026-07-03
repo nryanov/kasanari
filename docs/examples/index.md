@@ -34,6 +34,12 @@ QUARKUS_JIB_PLATFORMS=linux/amd64 ./scripts/build-container-images.sh
 |---------------------------------|------------|------------------------------------------|
 | `examples/authorization/custom` | custom SPI | Subject allow-list authorization example |
 
+## Full security example
+
+| Example path                  | Coverage                | Notes                                                               |
+|------------------------------|-------------------------|---------------------------------------------------------------------|
+| `examples/security/custom-spi` | custom auth + custom authz | End-to-end Docker flow: build SPI jars, build image, run DB+Kasanari |
+
 ## Observability examples
 
 | Example path                     | Backend       | Notes                                             |

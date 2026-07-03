@@ -7,7 +7,7 @@ Minimal third-party authorization provider that allows only configured subject n
 From the repository root:
 
 ```shell
-./gradlew -p examples/authorization/custom jar
+./gradlew :examples:authorization:custom:jar
 ```
 
 The jar is written to `examples/authorization/custom/build/libs/authorization-custom-example.jar`.
@@ -20,6 +20,8 @@ Add the jar to the server runtime classpath and configure:
 kasanari.authorization.type=allow-list
 kasanari.authorization.allow-list.allowed-subjects=alice,bob
 ```
+
+This provider intentionally demonstrates the minimal SPI contract and only checks `request.subject()`. It ignores resource and permission fields from `AuthorizationRequest`.
 
 ## Implement your own provider
 

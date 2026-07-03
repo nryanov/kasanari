@@ -4,9 +4,9 @@ plugins {
 
 dependencies {
     implementation(project(":modules:authentication:authentication-spi"))
-    implementation("io.smallrye.reactive:mutiny:2.9.4")
+    implementation(libs.smallrye.mutiny)
 }
 
 tasks.jar {
-    archiveBaseName.set("auth-custom-example")
+    archiveFileName.set("auth-custom-example.jar")
 }
