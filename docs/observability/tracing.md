@@ -41,7 +41,7 @@ Environment variable equivalents use the `QUARKUS_OTEL_*` prefix (for example `Q
 
 ## Runnable example: Jaeger
 
-See [`examples/observability/tracing`](../../examples/observability/tracing/README.md) in the repository:
+See `examples/observability/tracing/README.md` in the repository:
 
 1. Start Jaeger with OTLP enabled via Docker Compose
 2. Enable tracing properties on Kasanari

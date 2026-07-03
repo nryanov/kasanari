@@ -5,7 +5,7 @@ Kasanari exposes operational telemetry through a fixed observability stack:
 - **Metrics** — Micrometer with Prometheus scrape at `/q/metrics`
 - **Tracing** — OpenTelemetry with OTLP export (traces only)
 
-Catalog request metrics are recorded automatically when the server includes the metrics instrumentation module. Audit and logging listeners remain configurable through the [instrumentation SPI](instrumentation/spi.md).
+Catalog request metrics are recorded automatically when the server includes the metrics instrumentation module. Audit and logging listeners remain configurable through the [instrumentation SPI](../instrumentation/spi.md).
 
 ## Quick reference
 
@@ -37,4 +37,4 @@ Catalog metrics are **not** controlled by `kasanari.instrumentation.listeners`. 
 
 - [Metrics](metrics.md) — Prometheus scrape, built-in meters, cardinality guidance
 - [Tracing](tracing.md) — OTLP setup and Jaeger example
-- [Instrumentation SPI](instrumentation/spi.md) — custom audit/logging integrations
+- [Instrumentation SPI](../instrumentation/spi.md) — custom audit/logging integrations
