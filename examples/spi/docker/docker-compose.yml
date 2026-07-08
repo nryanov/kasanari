@@ -14,7 +14,7 @@ services:
       retries: 20
 
   kasanari:
-    image: nryanov/kasanari:v0.1.0
+    image: nryanov/kasanari:latest
     depends_on:
       catalog-storage:
         condition: service_healthy

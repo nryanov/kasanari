@@ -9,12 +9,6 @@ Metrics stay on Micrometer/Prometheus (`/q/metrics`). This example configures **
 - Docker and Docker Compose plugin
 - `curl`
 
-Build the local Kasanari image from repository root (or set `KASANARI_IMAGE` to your own tag). Rebuild after changing observability defaults in the server:
-
-```shell
-./scripts/build-container-images.sh
-```
-
 ## Start services
 
 Starts MinIO (S3), PostgreSQL (management metadata), Jaeger (OTLP collector + UI), and Kasanari:
@@ -36,11 +30,7 @@ Wait a few seconds for MinIO bucket bootstrap (`mc` service), PostgreSQL, and Ka
 | OTLP gRPC          | `http://localhost:4317`                                            | —                           |
 | Prometheus metrics | [http://localhost:9090/q/metrics](http://localhost:9090/q/metrics) | —                           |
 
-Default bucket: `warehouse` (public read). Override the image tag if needed:
-
-```shell
-KASANARI_IMAGE=local/kasanari:latest docker compose up -d
-```
+Default bucket: `warehouse` (public read).
 
 ## Generate traces
 

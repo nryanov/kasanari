@@ -7,12 +7,6 @@ This scaffold runs Kasanari with an Iceberg `INTERNAL` catalog and a StarRocks a
 - Docker and Docker Compose plugin
 - `curl` and `jq`
 
-Build the local Kasanari image from repository root:
-
-```shell
-./scripts/build-container-images.sh
-```
-
 ## Startup
 
 ```shell

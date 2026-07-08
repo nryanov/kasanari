@@ -2,14 +2,9 @@
 
 This page maps runnable examples from the `examples/` directory.
 
-[//]: # (todo: link to the docker image)
-Build Kasanari image once before running containerized examples or download ready-to-use image from docker hub:
+Containerized examples use the published [nryanov/kasanari](https://hub.docker.com/r/nryanov/kasanari) image — run `docker compose up -d` in each example directory.
 
-```shell
-# QUARKUS_JIB_PLATFORMS allows to choose target platform 
-QUARKUS_JIB_PLATFORMS=linux/arm64/v8 ./scripts/build-container-images.sh
-QUARKUS_JIB_PLATFORMS=linux/amd64 ./scripts/build-container-images.sh
-```
+**Contributors:** to build a custom image from source, see [Build from source](https://github.com/nryanov/kasanari#build-from-source) in the repository README (`./scripts/build-container-images.sh`).
 
 ## Catalog examples
 
@@ -21,12 +16,9 @@ QUARKUS_JIB_PLATFORMS=linux/amd64 ./scripts/build-container-images.sh
 
 ## SPI examples
 
-Standalone Gradle project (not part of the main Kasanari build) that demonstrates building custom providers from published Maven artifacts.
-
-| Example path | Coverage | Notes |
-|--------------|----------|-------|
-| `examples/spi` | authentication SPI | Build auth SPI jar from `com.nryanov.kasanari` Maven deps; see `examples/spi/README.md` |
-| `examples/spi/docker` | custom authentication | End-to-end Docker flow with `nryanov/kasanari` image |
+| Example path          | Coverage              |
+|-----------------------|-----------------------|
+| `examples/spi`        | authentication SPI    |
 
 ## Authentication examples (built-in providers)
 

@@ -62,5 +62,3 @@ ORDER BY id;
 
 DROP VIEW IF EXISTS iceberg_trino_internal.demo_lifecycle.events_lifecycle_v;
 DROP TABLE IF EXISTS iceberg_trino_internal.demo_lifecycle.events_lifecycle;
-
-SELECT 1 AS trino_internal_ready;

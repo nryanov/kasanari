@@ -7,12 +7,6 @@ This scaffold uses Trino as the query engine and Kasanari with Iceberg `INTERNAL
 - Docker and Docker Compose plugin
 - `curl` and `jq`
 
-Build the local Kasanari image from repository root:
-
-```shell
-./scripts/build-container-images.sh
-```
-
 ## Startup
 
 ```shell

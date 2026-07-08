@@ -32,7 +32,7 @@ services:
       POSTGRES_DB: postgres
 
   kasanari:
-    image: ${KASANARI_IMAGE:-local/kasanari:0.1.0}
+    image: nryanov/kasanari:latest
     depends_on:
       - catalog-storage
       - minio

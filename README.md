@@ -49,15 +49,16 @@ Proxy backends include JDBC, Hive, Hadoop, filesystem, and REST implementations 
 2. Register Iceberg, Paimon, and Lance catalogs via the Management API.
 3. Point your engine at the REST endpoints (see [Examples](https://nryanov.github.io/kasanari/examples/)).
 
-Or pull a published image from Docker Hub (tags follow release versions, e.g. `v0.1.0`):
+Or pull a published image from [Docker Hub](https://hub.docker.com/r/nryanov/kasanari):
 
 ```shell
-docker run -p 9090:9090 <namespace>/kasanari:v0.1.0
+docker pull nryanov/kasanari:latest
+docker run -p 9090:9090 nryanov/kasanari:latest
 ```
 
 ## Build from source
 
-**Requirements:** JDK 21, Gradle (wrapper included).
+For contributors or when you need a custom image. **Requirements:** JDK 21, Gradle.
 
 ```shell
 # Build a local container image (default tag: local/kasanari:<version>)

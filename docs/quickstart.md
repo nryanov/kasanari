@@ -15,7 +15,7 @@ Baseline stack:
 - `curl` and `jq`
 
 ## Setup
-### 1) Copy docker-compose.yml
+### 1) docker-compose.yml
 ```yaml
 services:
   minio:
@@ -51,7 +51,7 @@ services:
       POSTGRES_DB: postgres
 
   kasanari:
-    image: ${KASANARI_IMAGE:-local/kasanari:0.1.0}
+    image: nryanov/kasanari:latest
     depends_on:
       - catalog-storage
       - minio
@@ -68,6 +68,9 @@ services:
 ```
 
 ### 2) Download required docker images
+
+This pulls the Kasanari image from [Docker Hub](https://hub.docker.com/r/nryanov/kasanari) along with PostgreSQL, MinIO, and other dependencies.
+
 ```shell
 docker compose pull
 ```
@@ -91,12 +94,12 @@ curl -sS -X POST "http://localhost:9090/management/v1/catalogs" \
     "spec": {
       "fileIoProperties": {},
       "catalogProperties": {
-        "uri": "jdbc:postgresql://localhost:5432/postgres",
+        "uri": "jdbc:postgresql://catalog-storage:5432/postgres",
         "kasanari.jdbc.user": "postgres",
         "kasanari.jdbc.password": "postgres",
         "warehouse": "s3a://warehouse",
         "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
-        "s3.endpoint": "http://localhost:9000",
+        "s3.endpoint": "http://minio:9000",
         "s3.access-key-id": "admin",
         "s3.secret-access-key": "password",
         "s3.path-style-access": "true"
