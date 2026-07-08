@@ -78,9 +78,6 @@ include(
     "modules:fixtures:fixtures-nessie",
     "modules:fixtures:fixtures-postgres",
     "modules:fixtures:fixtures-hive",
-    // examples
-    "examples:authentication:custom",
-    "examples:authorization:custom",
 )
 
 findProject(":modules:api")?.name = "api"

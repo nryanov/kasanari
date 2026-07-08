@@ -85,4 +85,4 @@ To implement a custom provider:
 3. Return your custom `type()`.
 4. Configure `kasanari.authorization.type=<your-type>`.
 
-Reference example: `examples/authorization/custom/README.md`.
+Reference example: `examples/spi/README.md` (authentication). For authorization SPI, follow the same ServiceLoader pattern described above.

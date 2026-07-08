@@ -126,4 +126,4 @@ To implement a custom provider:
 3. Return your custom `type()`.
 4. Configure `kasanari.authentication.type=<your-type>`.
 
-Reference example: `examples/authentication/custom/README.md`.
+Reference example: `examples/spi/README.md`.

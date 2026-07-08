@@ -19,26 +19,26 @@ QUARKUS_JIB_PLATFORMS=linux/amd64 ./scripts/build-container-images.sh
 | Starrocks       | `examples/starrocks`              | Iceberg `INTERNAL`                                                          | StarRocks integration with Iceberg REST via Kasanari |
 | Spark           | `examples/spark`                  | Iceberg `INTERNAL` + Iceberg `PROXY` + Paimon `INTERNAL` + Lance `INTERNAL` | Notebook-driven integration and API registration     |
 
-## Authentication examples
+## SPI examples
+
+Standalone Gradle project (not part of the main Kasanari build) that demonstrates building custom providers from published Maven artifacts.
+
+| Example path | Coverage | Notes |
+|--------------|----------|-------|
+| `examples/spi` | authentication SPI | Build auth SPI jar from `com.nryanov.kasanari` Maven deps; see `examples/spi/README.md` |
+| `examples/spi/docker` | custom authentication | End-to-end Docker flow with `nryanov/kasanari` image |
+
+## Authentication examples (built-in providers)
 
 | Example path                     | Provider   | Notes                                 |
 |----------------------------------|------------|---------------------------------------|
 | `examples/authentication/none`   | `none`     | No authentication required            |
 | `examples/authentication/ldap`   | `ldap`     | HTTP Basic against LDAP               |
 | `examples/authentication/oidc`   | `oidc`     | JWT Bearer validation via OIDC issuer |
-| `examples/authentication/custom` | custom SPI | Header-token auth provider example    |
 
-## Authorization examples
+## Authorization examples (built-in providers)
 
-| Example path                    | Provider   | Notes                                    |
-|---------------------------------|------------|------------------------------------------|
-| `examples/authorization/custom` | custom SPI | Subject allow-list authorization example |
-
-## Full security example
-
-| Example path                  | Coverage                | Notes                                                               |
-|------------------------------|-------------------------|---------------------------------------------------------------------|
-| `examples/security/custom-spi` | custom auth + custom authz | End-to-end Docker flow: build SPI jars, build image, run DB+Kasanari |
+Built-in authorization providers ship with the server.
 
 ## Observability examples
 

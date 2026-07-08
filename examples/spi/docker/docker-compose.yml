@@ -14,7 +14,7 @@ services:
       retries: 20
 
   kasanari:
-    image: ${KASANARI_IMAGE:-local/kasanari:0.1.0}
+    image: nryanov/kasanari:v0.1.0
     depends_on:
       catalog-storage:
         condition: service_healthy
@@ -29,9 +29,6 @@ services:
         -Dkasanari.authentication.type=header-token
         -Dkasanari.authentication.header-token.secret=dev-secret
         -Dkasanari.authentication.header-token.header=X-Kasanari-Token
-        -Dkasanari.authorization.type=allow-list
-        -Dkasanari.authorization.allow-list.allowed-subjects=${KASANARI_ALLOWED_SUBJECTS:-header-token-user}
       AWS_REGION: none
     volumes:
-      - ../../authentication/custom/build/libs/auth-custom-example.jar:/opt/kasanari/spi/auth-custom-example.jar:ro
-      - ../../authorization/custom/build/libs/authorization-custom-example.jar:/opt/kasanari/spi/authorization-custom-example.jar:ro
+      - ../authentication/build/libs/auth-custom-example.jar:/opt/kasanari/spi/auth-custom-example.jar:ro

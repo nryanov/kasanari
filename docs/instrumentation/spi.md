@@ -102,4 +102,4 @@ implementation(files("path/to/custom-listener.jar"))
 
 3. **Container image**: copy the jar into `lib/` or add via your image build.
 
-See [Examples](../examples/index.md) for authentication and authorization SPI patterns.
+See [SPI examples](../examples/index.md) (`examples/spi`) for a custom authentication provider example.
