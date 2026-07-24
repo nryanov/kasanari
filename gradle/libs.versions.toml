@@ -20,7 +20,7 @@ jakarta-annotations-api = "3.0.0"
 jdbc-postgresql = "42.7.5"
 smallrye = "2.9.4"
 # test dependencies
-junit = "6.1.1"
+junit = "6.1.2"
 testcontainers = "1.21.0"
 testcontainers-nessie = "0.104.1"
 logback = "1.5.18"
