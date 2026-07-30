@@ -5,7 +5,7 @@ pluginManagement {
         mavenLocal()
     }
     plugins {
-        id("io.quarkus") version "3.31.2"
+        id("io.quarkus") version "3.37.1"
         id("org.kordamp.gradle.jandex") version "2.3.0"
     }
 }
