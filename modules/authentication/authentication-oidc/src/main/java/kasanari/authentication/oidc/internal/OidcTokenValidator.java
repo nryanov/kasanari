@@ -1,21 +1,22 @@
-package kasanari.authentication.oidc;
+package kasanari.authentication.oidc.internal;
 
 import io.quarkus.oidc.common.runtime.OidcCommonUtils;
+import io.quarkus.oidc.common.runtime.OidcWebClient;
 import io.vertx.core.Vertx;
-import io.vertx.mutiny.ext.web.client.WebClient;
+import kasanari.authentication.spi.AuthProviderContext;
+import org.jose4j.jwk.HttpsJwks;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver;
-import org.jose4j.jwk.HttpsJwks;
 
 import java.io.Closeable;
 import java.util.Map;
 import java.util.Optional;
 
-final class OidcTokenValidator implements Closeable {
+public final class OidcTokenValidator implements Closeable {
     private final Vertx vertx;
     private final JwtConsumer jwtConsumer;
     private final String issuerUrl;
@@ -28,22 +29,28 @@ final class OidcTokenValidator implements Closeable {
         this.clientId = clientId;
     }
 
-    static OidcTokenValidator create(String issuerUrl, Optional<String> clientId) {
+    public static OidcTokenValidator create(AuthProviderContext context) {
+        var built = OidcCommonConfigs.from(context);
         var vertx = Vertx.vertx();
         var mutinyVertx = io.vertx.mutiny.core.Vertx.newInstance(vertx);
-        var webClient = WebClient.create(mutinyVertx);
+        var webClient = OidcWebClient.create(
+                built.config(),
+                built.tlsSupport(),
+                mutinyVertx,
+                built.proxyRegistry(),
+                "kasanari-oidc"
+        );
 
         try {
-            var discoveryUrl = trimTrailingSlash(issuerUrl);
             var metadata = OidcCommonUtils.discoverMetadata(
                             webClient,
                             Map.of(),
                             null,
                             Map.of(),
-                            discoveryUrl,
-                            10_000L,
+                            built.issuerUrl(),
+                            built.config().connectionTimeout().toMillis(),
                             mutinyVertx,
-                            false)
+                            built.config().useBlockingDnsLookup())
                     .await()
                     .indefinitely();
 
@@ -58,22 +65,22 @@ final class OidcTokenValidator implements Closeable {
                     .setVerificationKeyResolver(new HttpsJwksVerificationKeyResolver(jwks))
                     .setExpectedIssuer(issuer)
                     .setRequireExpirationTime()
-                    .setAllowedClockSkewInSeconds(30);
+                    .setAllowedClockSkewInSeconds(built.clockSkewSeconds());
 
-            clientId.ifPresent(consumerBuilder::setExpectedAudience);
+            built.clientId().ifPresent(consumerBuilder::setExpectedAudience);
 
             return new OidcTokenValidator(
                     vertx,
                     consumerBuilder.build(),
-                    trimTrailingSlash(issuerUrl),
-                    clientId
+                    built.issuerUrl(),
+                    built.clientId()
             );
         } finally {
             webClient.close();
         }
     }
 
-    Optional<String> validate(String token) {
+    public Optional<String> validate(String token) {
         try {
             JwtClaims claims = jwtConsumer.processToClaims(token);
             if (!issuerMatches(claims)) {

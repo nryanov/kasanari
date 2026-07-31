@@ -87,9 +87,44 @@ kasanari.authentication.oidc.issuer-url=http://localhost:8080/realms/kasanari
 
 ```properties
 kasanari.authentication.oidc.client-id=kasanari-api
+kasanari.authentication.oidc.clock-skew-seconds=30
+
+# Discovery / connection (Quarkus OIDC common defaults when omitted)
+kasanari.authentication.oidc.discovery-path=.well-known/openid-configuration
+kasanari.authentication.oidc.discovery-enabled=true
+kasanari.authentication.oidc.connection-timeout=10s
+kasanari.authentication.oidc.connection-retry-count=3
+kasanari.authentication.oidc.connection-delay=2s
+kasanari.authentication.oidc.follow-redirects=true
+kasanari.authentication.oidc.use-blocking-dns-lookup=false
+kasanari.authentication.oidc.max-pool-size=20
+
+# Proxy (named Quarkus proxy config and/or legacy host proxy)
+kasanari.authentication.oidc.proxy-configuration-name=my-proxy
+kasanari.authentication.oidc.proxy-host=proxy.example.com
+kasanari.authentication.oidc.proxy-port=8080
+kasanari.authentication.oidc.proxy-username=proxy-user
+kasanari.authentication.oidc.proxy-password=proxy-secret
+
+# TLS (named Quarkus TLS config and/or store files)
+kasanari.authentication.oidc.tls-configuration-name=oidc-tls
+kasanari.authentication.oidc.tls-verification=REQUIRED
+kasanari.authentication.oidc.trust-store-file=/path/to/truststore.p12
+kasanari.authentication.oidc.trust-store-password=changeit
+kasanari.authentication.oidc.trust-store-cert-alias=oidc
+kasanari.authentication.oidc.trust-store-file-type=PKCS12
+kasanari.authentication.oidc.key-store-file=/path/to/keystore.p12
+kasanari.authentication.oidc.key-store-password=changeit
+kasanari.authentication.oidc.key-store-file-type=PKCS12
+kasanari.authentication.oidc.key-store-key-alias=client
+kasanari.authentication.oidc.key-store-key-password=changeit
 ```
 
 If `client-id` is set, Kasanari validates audience (`aud`) / authorized party (`azp`) claims.
+
+`connection-timeout` accepts Quarkus-style values such as `10s` / `500ms` or ISO-8601 (`PT10S`).
+
+When `tls-configuration-name` or `proxy-configuration-name` is set, the matching Quarkus registry bean must be available at startup.
 
 ### Verification
 
@@ -116,6 +151,8 @@ Quarkus maps dot-separated properties to uppercase underscore names:
 - `kasanari.authentication.type` -> `KASANARI_AUTHENTICATION_TYPE`
 - `kasanari.authentication.ldap.url` -> `KASANARI_AUTHENTICATION_LDAP_URL`
 - `kasanari.authentication.oidc.issuer-url` -> `KASANARI_AUTHENTICATION_OIDC_ISSUER_URL`
+- `kasanari.authentication.oidc.connection-timeout` -> `KASANARI_AUTHENTICATION_OIDC_CONNECTION_TIMEOUT`
+- `kasanari.authentication.oidc.tls-configuration-name` -> `KASANARI_AUTHENTICATION_OIDC_TLS_CONFIGURATION_NAME`
 
 ## Custom authentication provider SPI
 

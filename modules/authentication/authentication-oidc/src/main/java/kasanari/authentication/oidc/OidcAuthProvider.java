@@ -1,6 +1,7 @@
 package kasanari.authentication.oidc;
 
 import io.smallrye.mutiny.Uni;
+import kasanari.authentication.oidc.internal.OidcTokenValidator;
 import kasanari.authentication.spi.AuthCredentials;
 import kasanari.authentication.spi.AuthPrincipal;
 import kasanari.authentication.spi.AuthProvider;
@@ -21,10 +22,7 @@ public final class OidcAuthProvider implements AuthProvider {
 
     @Override
     public void initialize(AuthProviderContext context) {
-        tokenValidator = OidcTokenValidator.create(
-                context.getRequired("issuer-url"),
-                context.getOptional("client-id")
-        );
+        tokenValidator = OidcTokenValidator.create(context);
     }
 
     @Override
