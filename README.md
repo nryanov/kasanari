@@ -26,8 +26,8 @@ Multiple `INTERNAL` or `PROXY` catalogs of the same type can be registered side 
 
 | Catalog        | Version |
 |----------------|---------|
-| Apache Iceberg | 1.10.1  |
-| Apache Paimon  | 1.4.1   |
+| Apache Iceberg | 1.11.0  |
+| Apache Paimon  | 1.4.2   |
 | Lance          | 0.7.2   |
 
 Proxy backends include JDBC, Hive, Hadoop, filesystem, and REST implementations — see the [catalog docs](https://nryanov.github.io/kasanari/catalogs/iceberg/) for details.

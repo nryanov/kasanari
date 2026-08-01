@@ -14,6 +14,7 @@ import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.rest.requests.CreateViewRequest;
 import org.apache.iceberg.rest.requests.RegisterTableRequest;
+import org.apache.iceberg.rest.requests.RegisterViewRequest;
 import org.apache.iceberg.rest.requests.RenameTableRequest;
 import org.apache.iceberg.rest.requests.ReportMetricsRequest;
 import org.apache.iceberg.rest.requests.UpdateNamespacePropertiesRequest;
@@ -21,6 +22,7 @@ import org.apache.iceberg.rest.requests.UpdateTableRequest;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.UUID;
 
 @ApplicationScoped
 public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiService {
@@ -36,7 +38,12 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response commitTransaction(String catalogName, CommitTransactionRequest rq, SecurityContext securityContext) {
+    public Response commitTransaction(
+            String catalogName,
+            CommitTransactionRequest rq,
+            UUID idempotencyKey,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.COMMIT_TRANSACTION, Permission.IcebergTransactionCommit, Map.of(), () -> {
             icebergCatalogRouter.getOrThrow(catalogName).commitTransaction(rq.tableChanges());
             return Response.status(Response.Status.NO_CONTENT).build();
@@ -44,7 +51,12 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response createNamespace(String catalogName, CreateNamespaceRequest rq, SecurityContext securityContext) {
+    public Response createNamespace(
+            String catalogName,
+            CreateNamespaceRequest rq,
+            UUID idempotencyKey,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.CREATE_NAMESPACE, Permission.IcebergNamespaceCreate, Map.of("namespace", rq.namespace().toString()),
                 () -> {
                     var ns = icebergCatalogRouter.getOrThrow(catalogName).createNamespace(rq.namespace(), rq.properties());
@@ -54,7 +66,14 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response createTable(String catalogName, String namespace, CreateTableRequest rq, String xIcebergAccessDelegation, SecurityContext securityContext) {
+    public Response createTable(
+            String catalogName,
+            String namespace,
+            CreateTableRequest rq,
+            String xIcebergAccessDelegation,
+            UUID idempotencyKey,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.CREATE_TABLE, Permission.IcebergTableCreate, Map.of("namespace", namespace, "table", rq.name()),
                 () -> {
                     var ns = Namespace.of(namespace.split("[.]"));
@@ -76,7 +95,12 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response dropNamespace(String catalogName, String namespace, SecurityContext securityContext) {
+    public Response dropNamespace(
+            String catalogName,
+            String namespace,
+            UUID idempotencyKey,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.DROP_NAMESPACE, Permission.IcebergNamespaceDrop, Map.of("namespace", namespace),
                 () -> {
                     var ns = Namespace.of(namespace.split("[.]"));
@@ -87,7 +111,14 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response dropTable(String catalogName, String namespace, String table, Boolean purgeRequested, SecurityContext securityContext) {
+    public Response dropTable(
+            String catalogName,
+            String namespace,
+            String table,
+            UUID idempotencyKey,
+            Boolean purgeRequested,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.DROP_TABLE, Permission.IcebergTableDrop, Map.of("namespace", namespace, "table", table, "purge", String.valueOf(purgeRequested)),
                 () -> {
                     var ns = Namespace.of(namespace.split("[.]"));
@@ -99,7 +130,13 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response dropView(String catalogName, String namespace, String view, SecurityContext securityContext) {
+    public Response dropView(
+            String catalogName,
+            String namespace,
+            String view,
+            UUID idempotencyKey,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.DROP_VIEW, Permission.IcebergViewDrop, Map.of("namespace", namespace, "view", view),
                 () -> {
                     var ns = Namespace.of(namespace.split("[.]"));
@@ -154,7 +191,16 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response loadTable(String catalogName, String namespace, String table, String xIcebergAccessDelegation, String ifNoneMatch, String snapshots, SecurityContext securityContext) {
+    public Response loadTable(
+            String catalogName,
+            String namespace,
+            String table,
+            String xIcebergAccessDelegation,
+            String ifNoneMatch,
+            String snapshots,
+            String referencedBy,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.LOAD_TABLE, Permission.IcebergTableGet, Map.of("namespace", namespace, "table", table),
                 () -> {
                     var ns = Namespace.of(namespace.split("[.]"));
@@ -166,7 +212,13 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response loadView(String catalogName, String namespace, String view, SecurityContext securityContext) {
+    public Response loadView(
+            String catalogName,
+            String namespace,
+            String view,
+            String referencedBy,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.LOAD_VIEW, Permission.IcebergViewGet, Map.of("namespace", namespace, "view", view),
                 () -> {
                     var ns = Namespace.of(namespace.split("[.]"));
@@ -192,7 +244,14 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response registerTable(String catalogName, String namespace, RegisterTableRequest rq, SecurityContext securityContext) {
+    public Response registerTable(
+            String catalogName,
+            String namespace,
+            RegisterTableRequest rq,
+            String xIcebergAccessDelegation,
+            UUID idempotencyKey,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.REGISTER_TABLE, Permission.IcebergTableAlter, Map.of("namespace", namespace, "table", rq.name()),
                 () -> {
                     var ns = Namespace.of(namespace.split("[.]"));
@@ -204,7 +263,30 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response renameTable(String catalogName, RenameTableRequest rq, SecurityContext securityContext) {
+    public Response registerView(
+            String catalogName,
+            String namespace,
+            RegisterViewRequest rq,
+            UUID idempotencyKey,
+            SecurityContext securityContext
+    ) {
+        return executor.execute(securityContext, catalogName, IcebergCatalogOperation.REGISTER_VIEW, Permission.IcebergViewAlter, Map.of("namespace", namespace, "view", rq.name()),
+                () -> {
+                    var ns = Namespace.of(namespace.split("[.]"));
+                    var identifier = TableIdentifier.of(ns, rq.name());
+                    var result = icebergCatalogRouter.getOrThrow(catalogName).registerView(identifier, rq.metadataLocation());
+                    return Response.status(Response.Status.OK).entity(result).build();
+                }
+        );
+    }
+
+    @Override
+    public Response renameTable(
+            String catalogName,
+            RenameTableRequest rq,
+            UUID idempotencyKey,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.RENAME_TABLE, Permission.IcebergTableAlter, Map.of("from", rq.source().toString(), "to", rq.destination().toString()),
                 () -> {
                     icebergCatalogRouter.getOrThrow(catalogName).renameTable(rq.source(), rq.destination());
@@ -214,7 +296,12 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response renameView(String catalogName, RenameTableRequest rq, SecurityContext securityContext) {
+    public Response renameView(
+            String catalogName,
+            RenameTableRequest rq,
+            UUID idempotencyKey,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.RENAME_VIEW, Permission.IcebergViewAlter, Map.of("from", rq.source().toString(), "to", rq.destination().toString()),
                 () -> {
                     icebergCatalogRouter.getOrThrow(catalogName).renameView(rq.source(), rq.destination());
@@ -224,7 +311,14 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response replaceView(String catalogName, String namespace, String view, UpdateTableRequest rq, SecurityContext securityContext) {
+    public Response replaceView(
+            String catalogName,
+            String namespace,
+            String view,
+            UpdateTableRequest rq,
+            UUID idempotencyKey,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.REPLACE_VIEW, Permission.IcebergViewAlter, Map.of("namespace", namespace, "view", view),
                 () -> {
                     var ns = Namespace.of(namespace.split("[.]"));
@@ -251,7 +345,13 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response updateProperties(String catalogName, String namespace, UpdateNamespacePropertiesRequest rq, SecurityContext securityContext) {
+    public Response updateProperties(
+            String catalogName,
+            String namespace,
+            UpdateNamespacePropertiesRequest rq,
+            UUID idempotencyKey,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.UPDATE_NAMESPACE, Permission.IcebergNamespaceAlter, Map.of("namespace", namespace),
                 () -> {
                     var ns = Namespace.of(namespace.split("[.]"));
@@ -262,7 +362,14 @@ public class IcebergCatalogServiceHandler implements IcebergRestCatalogApiServic
     }
 
     @Override
-    public Response updateTable(String catalogName, String namespace, String table, UpdateTableRequest rq, SecurityContext securityContext) {
+    public Response updateTable(
+            String catalogName,
+            String namespace,
+            String table,
+            UpdateTableRequest rq,
+            UUID idempotencyKey,
+            SecurityContext securityContext
+    ) {
         return executor.execute(securityContext, catalogName, IcebergCatalogOperation.UPDATE_TABLE, Permission.IcebergTableAlter, Map.of("namespace", namespace, "table", table),
                 () -> {
                     var ns = Namespace.of(namespace.split("[.]"));

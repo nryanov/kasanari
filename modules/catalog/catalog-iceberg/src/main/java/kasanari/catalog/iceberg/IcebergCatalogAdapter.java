@@ -51,6 +51,8 @@ public interface IcebergCatalogAdapter {
 
     LoadViewResponse replaceView(TableIdentifier view, UpdateTableRequest rq);
 
+    LoadViewResponse registerView(TableIdentifier view, String location);
+
     boolean tableExists(TableIdentifier table);
 
     void dropTable(TableIdentifier table, boolean purge);

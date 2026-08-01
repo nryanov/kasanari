@@ -16,6 +16,7 @@ public enum IcebergCatalogOperation {
     LOAD_VIEW,
     NAMESPACE_EXISTS,
     REGISTER_TABLE,
+    REGISTER_VIEW,
     RENAME_TABLE,
     RENAME_VIEW,
     REPLACE_VIEW,

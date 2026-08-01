@@ -4,9 +4,9 @@ Kasanari provides Iceberg catalog APIs on top of `INTERNAL` and `PROXY` catalog 
 
 ## Implemented versions
 
-- Runtime library version: Iceberg `1.10.1`
+- Runtime library version: Iceberg `1.11.0`
 - Kasanari API wrapper spec: `spec/iceberg/kasanari-iceberg-catalog-service.yaml`
-- Upstream reference spec: `spec/iceberg/iceberg-openapi-1.10.1.yaml`
+- Upstream reference spec: `spec/iceberg/iceberg-openapi-1.11.0.yaml`
 
 ## Base URL pattern
 
