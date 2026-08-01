@@ -84,6 +84,7 @@ openApiGenerate {
         "CommitTransactionRequest" to "org.apache.iceberg.rest.requests.CommitTransactionRequest",
         "CreateViewRequest" to "org.apache.iceberg.rest.requests.CreateViewRequest",
         "RegisterTableRequest" to "org.apache.iceberg.rest.requests.RegisterTableRequest",
+        "RegisterViewRequest" to "org.apache.iceberg.rest.requests.RegisterViewRequest",
         "IcebergErrorResponse" to "org.apache.iceberg.rest.responses.ErrorResponse",
         "OAuthError" to "org.apache.iceberg.rest.responses.ErrorResponse",
         "CommitViewRequest" to "org.apache.iceberg.rest.requests.UpdateTableRequest",

@@ -108,6 +108,10 @@ public abstract class IcebergCatalogAdapterTest {
         return true;
     }
 
+    public boolean isRegisterViewSupported() {
+        return isViewSupported();
+    }
+
     @AfterAll
     public final void afterAll() {
         close();
@@ -577,6 +581,27 @@ public abstract class IcebergCatalogAdapterTest {
 
         assertTrue(catalog.tableExists(table));
         assertEquals(createdTable.tableMetadata().uuid(), registeredTable.tableMetadata().uuid());
+    }
+
+    @Test
+    public void successfullyRegisterExistingView() {
+        Assumptions.assumeTrue(this::isRegisterViewSupported, "Test skipped: registerView is not supported in this catalog");
+        var namespace = namespaceName();
+        var registeredViewName = uniqueViewName();
+        var view = viewIdentifier(namespace, registeredViewName);
+        var createdView = catalog.createView(
+                namespace,
+                IcebergCatalogCommons.defaultCreateViewRequest(namespace, registeredViewName, entityLocation(view))
+        );
+        var metadataLocation = createdView.metadata().metadataFileLocation();
+
+        catalog.dropView(view);
+        assertFalse(catalog.viewExists(view));
+
+        var registeredView = catalog.registerView(view, metadataLocation);
+
+        assertTrue(catalog.viewExists(view));
+        assertEquals(createdView.metadata().uuid(), registeredView.metadata().uuid());
     }
 
     @Test

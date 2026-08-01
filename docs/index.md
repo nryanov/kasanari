@@ -9,8 +9,8 @@ Kasanari can be used not only as a catalog implementation, but also as a proxy f
 
 ## Implemented catalogs
 
-- Apache Iceberg: `1.10.1`
-- Apache Paimon: `1.4.1`
+- Apache Iceberg: `1.11.0`
+- Apache Paimon: `1.4.2`
 - Lance: `0.7.2`
 
 Each catalog may operate in different mode: 

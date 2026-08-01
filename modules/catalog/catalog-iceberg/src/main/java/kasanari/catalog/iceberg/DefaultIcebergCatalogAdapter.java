@@ -257,6 +257,21 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
     }
 
     @Override
+    public LoadViewResponse registerView(TableIdentifier view, String location) {
+        isViewMethodAllowed("registerView");
+        viewCatalog.registerView(view, location);
+
+        var loadedView = asBaseView(viewCatalog.loadView(view));
+        var metadata = loadedView.operations().current();
+
+        return ImmutableLoadViewResponse
+                .builder()
+                .metadata(metadata)
+                .metadataLocation(location)
+                .build();
+    }
+
+    @Override
     public LoadViewResponse replaceView(TableIdentifier view, UpdateTableRequest rq) {
         isViewMethodAllowed("replaceView");
         var loadedView = asBaseView(viewCatalog.loadView(view));

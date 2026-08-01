@@ -4,9 +4,9 @@ Kasanari exposes Paimon REST APIs in `INTERNAL` and `PROXY` catalog modes.
 
 ## Implemented versions
 
-- Runtime library version: Paimon `1.4.1`
+- Runtime library version: Paimon `1.4.2`
 - Kasanari API wrapper spec: `spec/paimon/kasanari-paimon-catalog-service.yaml`
-- Upstream reference spec: `spec/paimon/paimon-openapi-1.4.1.yaml`
+- Upstream reference spec: `spec/paimon/paimon-openapi-1.4.2.yaml`
 
 ## Base URL pattern
 
