@@ -1,15 +1,14 @@
 package kasanari.catalog.lance;
 
 import kasanari.repository.core.TransactionManager;
+import kasanari.repository.jdbc.BackendFactoryLoader;
 import kasanari.repository.jdbc.JdbcTransactionManager;
 import kasanari.repository.jdbc.KasanariDataSource;
+import kasanari.repository.lance.LanceRepositoryBundleFactory;
 import kasanari.repository.lance.NamespaceRepository;
 import kasanari.repository.lance.TableRepository;
 import kasanari.repository.lance.model.PagedValue;
 import kasanari.repository.lance.model.TableMetadata;
-import kasanari.repository.lance.postgres.JdbcNamespaceRepository;
-import kasanari.repository.lance.postgres.JdbcTableInitializer;
-import kasanari.repository.lance.postgres.JdbcTableRepository;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.jdbi.v3.core.Handle;
@@ -92,10 +91,14 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         this.allocator = allocator;
         this.dataSource = new KasanariDataSource(properties);
         this.transactionManager = new JdbcTransactionManager(dataSource);
-        new JdbcTableInitializer(transactionManager).initialize();
-
-        this.namespaceRepository = new JdbcNamespaceRepository();
-        this.tableRepository = new JdbcTableRepository();
+        var catalogKey = properties.getOrDefault(KasanariLanceProperties.CATALOG_KEY, "");
+        var bundle = BackendFactoryLoader.load(
+                LanceRepositoryBundleFactory.class,
+                dataSource.repositoryBackend()
+        ).create(catalogKey, transactionManager);
+        bundle.schemaInitializer().run();
+        this.namespaceRepository = bundle.namespaceRepository();
+        this.tableRepository = bundle.tableRepository();
 
         this.defaultLocation = properties.get(KasanariLanceProperties.LOCATION);
 

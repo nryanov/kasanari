@@ -55,6 +55,12 @@
 }
 ```
 
+### JDBC backend
+
+Set `kasanari.repository.backend` to `postgres` (default) or `yugabyte`.
+
+On YugabyteDB, Lance INTERNAL rows are isolated by `catalog_key` (the management `catalogId`, injected automatically) and hash-sharded so one catalog stays on one tablet. The Postgres Lance schema has no tenant column (historical oversight); prefer separate JDBC URLs if multiple Lance INTERNAL catalogs share Postgres. See [YugabyteDB backend](../../operations/yugabyte.md).
+
 ## PROXY catalog setup
 
 `implementation=dir` is the common proxy setup used in local examples.

@@ -11,21 +11,15 @@ import kasanari.repository.paimon.BranchRepository;
 import kasanari.repository.paimon.DatabaseRepository;
 import kasanari.repository.paimon.FunctionRepository;
 import kasanari.repository.paimon.PartitionStateRepository;
-import kasanari.repository.paimon.postgres.JdbcBranchRepository;
-import kasanari.repository.paimon.postgres.JdbcDatabaseRepository;
-import kasanari.repository.paimon.postgres.JdbcFunctionRepository;
-import kasanari.repository.paimon.postgres.JdbcPartitionStateRepository;
-import kasanari.repository.paimon.postgres.JdbcTableInitializer;
-import kasanari.repository.paimon.postgres.JdbcTableRepository;
-import kasanari.repository.paimon.postgres.JdbcTagRepository;
-import kasanari.repository.paimon.postgres.JdbcViewRepository;
-import kasanari.repository.paimon.postgres.KasanariCatalogLock;
+import kasanari.repository.paimon.PaimonRepositoryBundleFactory;
 import kasanari.repository.paimon.TableRepository;
 import kasanari.repository.paimon.TagRepository;
 import kasanari.repository.paimon.ViewRepository;
 import kasanari.repository.core.TransactionManager;
+import kasanari.repository.jdbc.BackendFactoryLoader;
 import kasanari.repository.jdbc.JdbcTransactionManager;
 import kasanari.repository.jdbc.KasanariDataSource;
+import org.apache.paimon.catalog.CatalogLock;
 import org.apache.paimon.CoreOptions;
 import org.apache.paimon.PagedList;
 import org.apache.paimon.Snapshot;
@@ -101,6 +95,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     private final TagRepository<Handle> tagRepository;
     private final BranchRepository<Handle> branchRepository;
     private final PartitionStateRepository<Handle> partitionStateRepository;
+    private final java.util.function.Function<Handle, CatalogLock> catalogLockFactory;
 
     private final FileIO fileIO;
     private final String catalogKey;
@@ -112,14 +107,19 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         var options = context.options().toMap();
         this.dataSource = new KasanariDataSource(options);
         this.transactionManager = new JdbcTransactionManager(dataSource);
-        this.databaseRepository = new JdbcDatabaseRepository(catalogKey);
-        this.tableRepository = new JdbcTableRepository(catalogKey);
-        this.viewRepository = new JdbcViewRepository(catalogKey);
-        this.functionRepository = new JdbcFunctionRepository(catalogKey);
-        this.tagRepository = new JdbcTagRepository(catalogKey);
-        this.branchRepository = new JdbcBranchRepository(catalogKey);
-        this.partitionStateRepository = new JdbcPartitionStateRepository(catalogKey);
-        new JdbcTableInitializer(dataSource).initialize();
+        var bundle = BackendFactoryLoader.load(
+                PaimonRepositoryBundleFactory.class,
+                dataSource.repositoryBackend()
+        ).create(catalogKey, dataSource);
+        this.databaseRepository = bundle.databaseRepository();
+        this.tableRepository = bundle.tableRepository();
+        this.viewRepository = bundle.viewRepository();
+        this.functionRepository = bundle.functionRepository();
+        this.tagRepository = bundle.tagRepository();
+        this.branchRepository = bundle.branchRepository();
+        this.partitionStateRepository = bundle.partitionStateRepository();
+        this.catalogLockFactory = bundle.catalogLockFactory();
+        bundle.schemaInitializer().run();
 
         this.fileIO = fileIO;
         this.catalogKey = catalogKey;
@@ -1520,7 +1520,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
                 return callable.call();
             }
 
-            var lock = new KasanariCatalogLock(handle);
+            var lock = catalogLockFactory.apply(handle);
             return Lock.fromCatalog(lock, identifier).runWithLock(callable);
         } catch (Exception e) {
             // todo: log & domain error

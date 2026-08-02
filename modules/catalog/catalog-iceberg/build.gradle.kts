@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":modules:platform:platform-jackson"))
     implementation(project(":modules:repository:repository-jdbc"))
     implementation(project(":modules:repository:repository-iceberg:repository-iceberg-postgres"))
+    implementation(project(":modules:repository:repository-iceberg:repository-iceberg-yugabyte"))
 
     implementation("org.apache.iceberg:iceberg-core")
     implementation("org.apache.iceberg:iceberg-api")

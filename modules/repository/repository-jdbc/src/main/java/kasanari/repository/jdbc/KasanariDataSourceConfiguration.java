@@ -7,6 +7,9 @@ public abstract class KasanariDataSourceConfiguration {
     public static String USER = "kasanari.jdbc.user";
     public static String PASSWORD = "kasanari.jdbc.password";
 
+    /** Repository implementation selector: {@code postgres} (default) or {@code yugabyte}. */
+    public static String REPOSITORY_BACKEND = "kasanari.repository.backend";
+
     public static String CONNECTION_POOL_INITIAL_SIZE = "kasanari.jdbc.connection-pool.initial-size";
     public static int CONNECTION_POOL_INITIAL_SIZE_DEFAULT = 2;
 

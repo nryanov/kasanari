@@ -5,16 +5,13 @@ import kasanari.catalog.iceberg.annotations.VisibleForTesting;
 import kasanari.catalog.iceberg.operations.KasanariTableOperations;
 import kasanari.catalog.iceberg.operations.KasanariViewOperations;
 import kasanari.repository.iceberg.CatalogRepository;
+import kasanari.repository.iceberg.IcebergRepositoryBundleFactory;
+import kasanari.repository.iceberg.IcebergUtils;
 import kasanari.repository.iceberg.NamespaceRepository;
 import kasanari.repository.iceberg.TableRepository;
 import kasanari.repository.iceberg.ViewRepository;
-import kasanari.repository.iceberg.postgres.JdbcCatalogRepository;
-import kasanari.repository.iceberg.postgres.JdbcNamespaceRepository;
-import kasanari.repository.iceberg.postgres.JdbcTableInitializer;
-import kasanari.repository.iceberg.postgres.JdbcTableRepository;
-import kasanari.repository.iceberg.postgres.JdbcViewRepository;
-import kasanari.repository.iceberg.IcebergUtils;
 import kasanari.repository.core.TransactionManager;
+import kasanari.repository.jdbc.BackendFactoryLoader;
 import kasanari.repository.jdbc.JdbcTransactionManager;
 import kasanari.repository.jdbc.KasanariDataSource;
 import org.apache.iceberg.CatalogProperties;
@@ -69,20 +66,18 @@ public class KasanariIcebergCatalog extends BaseMetastoreViewCatalog implements 
         }
 
         this.transactionManager = new JdbcTransactionManager(dataSource);
-        this.catalogRepository = new JdbcCatalogRepository(this.catalogName);
-        this.namespaceRepository = new JdbcNamespaceRepository(this.catalogName);
-        this.tableRepository = new JdbcTableRepository(this.catalogName);
-        this.viewRepository = new JdbcViewRepository(this.catalogName);
+        var bundle = BackendFactoryLoader.load(
+                IcebergRepositoryBundleFactory.class,
+                dataSource.repositoryBackend()
+        ).create(this.catalogName, dataSource);
+        this.catalogRepository = bundle.catalogRepository();
+        this.namespaceRepository = bundle.namespaceRepository();
+        this.tableRepository = bundle.tableRepository();
+        this.viewRepository = bundle.viewRepository();
 
-        initializeCatalog();
-        initializeFileIO(properties);
-    }
-
-    private void initializeCatalog() {
-        var initializer = new JdbcTableInitializer(dataSource);
-        initializer.initialize();
-
+        bundle.schemaInitializer().run();
         transactionManager.inTransaction(tx -> catalogRepository.register(tx));
+        initializeFileIO(properties);
     }
 
     private void initializeFileIO(Map<String, String> properties) {

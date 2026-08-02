@@ -18,6 +18,7 @@ jakarta-ws-rs-api = "4.0.0"
 jakarta-inject-api = "2.0.1"
 jakarta-annotations-api = "3.0.0"
 jdbc-postgresql = "42.7.5"
+jdbc-yugabytedb = "42.7.3-yb-4"
 smallrye = "2.9.4"
 # test dependencies
 junit = "6.1.2"
@@ -74,6 +75,7 @@ casbin-jcasbin = { group = "org.casbin", name = "jcasbin", version.ref = "jcasbi
 
 slf4j = { group = "org.slf4j", name = "slf4j-api", version.ref = "slfj4" }
 jdbc-postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "jdbc-postgresql" }
+jdbc-yugabytedb = { group = "com.yugabyte", name = "jdbc-yugabytedb", version.ref = "jdbc-yugabytedb" }
 
 smallrye-mutiny = { group = "io.smallrye.reactive", name = "mutiny", version.ref = "smallrye" }
 

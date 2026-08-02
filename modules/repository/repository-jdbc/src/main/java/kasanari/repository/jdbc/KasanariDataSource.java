@@ -17,8 +17,10 @@ import java.util.function.Function;
 public class KasanariDataSource implements AutoCloseable {
     private final DataSource pool;
     private final Jdbi jdbi;
+    private final RepositoryBackend repositoryBackend;
 
     public KasanariDataSource(Map<String, String> properties) {
+        this.repositoryBackend = RepositoryBackend.from(properties);
         var dataSourceProperties = new DataSourceProperties(properties);
         var agroalConnectionFactoryConfiguration = new AgroalConnectionFactoryConfigurationSupplier();
 
@@ -40,6 +42,10 @@ public class KasanariDataSource implements AutoCloseable {
 
         this.pool = new DataSource(agroalConfiguration.get());
         this.jdbi = Jdbi.create(pool);
+    }
+
+    public RepositoryBackend repositoryBackend() {
+        return repositoryBackend;
     }
 
     private record DataSourceProperties(Map<String, String> properties) {

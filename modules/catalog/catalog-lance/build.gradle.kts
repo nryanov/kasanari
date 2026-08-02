@@ -12,6 +12,7 @@ dependencies {
 
     implementation(project(":modules:repository:repository-jdbc"))
     implementation(project(":modules:repository:repository-lance:repository-lance-postgres"))
+    implementation(project(":modules:repository:repository-lance:repository-lance-yugabyte"))
 
     // test
     testImplementation(testFixtures(project(":modules:fixtures:fixtures-common")))

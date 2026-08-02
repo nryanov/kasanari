@@ -1,15 +1,15 @@
 package kasanari.management.catalog;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import kasanari.core.model.CatalogType;
 import kasanari.repository.core.TransactionManager;
+import kasanari.repository.jdbc.BackendFactoryLoader;
 import kasanari.repository.jdbc.JdbcTransactionManager;
 import kasanari.repository.jdbc.KasanariDataSource;
 import kasanari.repository.management.catalog.CatalogMetadataRepository;
+import kasanari.repository.management.catalog.ManagementCatalogRepositoryFactory;
 import kasanari.repository.management.catalog.model.CatalogMetadata;
 import kasanari.repository.management.catalog.model.CatalogSpec;
-import kasanari.repository.management.catalog.postgres.JdbcCatalogMetadataRepository;
-import kasanari.repository.management.catalog.postgres.JdbcManagementCatalogQueries;
-import kasanari.core.model.CatalogType;
 import org.jdbi.v3.core.Handle;
 
 import java.util.List;
@@ -21,12 +21,12 @@ public class ManagementCatalogService {
 
     public ManagementCatalogService(KasanariDataSource dataSource, ObjectMapper objectMapper) {
         this.txManager = new JdbcTransactionManager(dataSource);
-        this.catalogRepository = new JdbcCatalogMetadataRepository(objectMapper);
-        initSchema();
-    }
-
-    private void initSchema() {
-        txManager.inTransaction(tx -> tx.createUpdate(JdbcManagementCatalogQueries.CREATE_CATALOG_REGISTRY_DDL).execute());
+        var factory = BackendFactoryLoader.load(
+                ManagementCatalogRepositoryFactory.class,
+                dataSource.repositoryBackend()
+        );
+        this.catalogRepository = factory.createRepository(objectMapper);
+        factory.initSchema(txManager);
     }
 
     public boolean create(CatalogMetadata metadata) {

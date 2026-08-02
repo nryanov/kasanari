@@ -63,20 +63,26 @@ include(
     "modules:repository:repository-jdbc",
     "modules:repository:repository-iceberg",
     "modules:repository:repository-iceberg:repository-iceberg-postgres",
+    "modules:repository:repository-iceberg:repository-iceberg-yugabyte",
     "modules:repository:repository-paimon",
     "modules:repository:repository-paimon:repository-paimon-postgres",
+    "modules:repository:repository-paimon:repository-paimon-yugabyte",
     "modules:repository:repository-lance",
     "modules:repository:repository-lance:repository-lance-postgres",
+    "modules:repository:repository-lance:repository-lance-yugabyte",
     "modules:repository:repository-management:repository-management-catalog",
     "modules:repository:repository-management:repository-management-catalog:repository-management-catalog-postgres",
+    "modules:repository:repository-management:repository-management-catalog:repository-management-catalog-yugabyte",
     "modules:repository:repository-management:repository-management-security",
     "modules:repository:repository-management:repository-management-security:repository-management-security-postgres",
+    "modules:repository:repository-management:repository-management-security:repository-management-security-yugabyte",
     // fixtures
     "modules:fixtures",
     "modules:fixtures:fixtures-common",
     "modules:fixtures:fixtures-s3",
     "modules:fixtures:fixtures-nessie",
     "modules:fixtures:fixtures-postgres",
+    "modules:fixtures:fixtures-yugabyte",
     "modules:fixtures:fixtures-hive",
 )
 
@@ -91,6 +97,7 @@ findProject(":modules:fixtures:fixtures-common")?.name = "fixtures-common"
 findProject(":modules:fixtures:fixtures-s3")?.name = "fixtures-s3"
 findProject(":modules:fixtures:fixtures-nessie")?.name = "fixtures-nessie"
 findProject(":modules:fixtures:fixtures-postgres")?.name = "fixtures-postgres"
+findProject(":modules:fixtures:fixtures-yugabyte")?.name = "fixtures-yugabyte"
 findProject(":modules:fixtures:fixtures-hive")?.name = "fixtures-hive"
 
 findProject(":modules:server")?.name = "server"
@@ -113,14 +120,19 @@ findProject(":modules:repository:repository-core")?.name = "repository-core"
 findProject(":modules:repository:repository-jdbc")?.name = "repository-jdbc"
 findProject(":modules:repository:repository-iceberg")?.name = "repository-iceberg"
 findProject(":modules:repository:repository-iceberg:repository-iceberg-postgres")?.name = "repository-iceberg-postgres"
+findProject(":modules:repository:repository-iceberg:repository-iceberg-yugabyte")?.name = "repository-iceberg-yugabyte"
 findProject(":modules:repository:repository-paimon")?.name = "repository-paimon"
 findProject(":modules:repository:repository-paimon:repository-paimon-postgres")?.name = "repository-paimon-postgres"
+findProject(":modules:repository:repository-paimon:repository-paimon-yugabyte")?.name = "repository-paimon-yugabyte"
 findProject(":modules:repository:repository-lance")?.name = "repository-lance"
 findProject(":modules:repository:repository-lance:repository-lance-postgres")?.name = "repository-lance-postgres"
+findProject(":modules:repository:repository-lance:repository-lance-yugabyte")?.name = "repository-lance-yugabyte"
 findProject(":modules:repository:repository-management:repository-management-catalog")?.name = "repository-management-catalog"
 findProject(":modules:repository:repository-management:repository-management-catalog:repository-management-catalog-postgres")?.name = "repository-management-catalog-postgres"
+findProject(":modules:repository:repository-management:repository-management-catalog:repository-management-catalog-yugabyte")?.name = "repository-management-catalog-yugabyte"
 findProject(":modules:repository:repository-management:repository-management-security")?.name = "repository-management-security"
 findProject(":modules:repository:repository-management:repository-management-security:repository-management-security-postgres")?.name = "repository-management-security-postgres"
+findProject(":modules:repository:repository-management:repository-management-security:repository-management-security-yugabyte")?.name = "repository-management-security-yugabyte"
 
 findProject(":modules:management")?.name = "management"
 findProject(":modules:management:management-catalog")?.name = "management-catalog"

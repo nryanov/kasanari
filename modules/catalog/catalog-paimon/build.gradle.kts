@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":modules:platform:platform-jackson"))
     implementation(project(":modules:repository:repository-jdbc"))
     implementation(project(":modules:repository:repository-paimon:repository-paimon-postgres"))
+    implementation(project(":modules:repository:repository-paimon:repository-paimon-yugabyte"))
 
     // test
     testImplementation(testFixtures(project(":modules:fixtures:fixtures-common")))
