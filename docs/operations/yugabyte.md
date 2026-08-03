@@ -72,8 +72,3 @@ Cross-catalog distributed transactions are not used. Catalog operations always t
 
 Yugabyte modules use a unified `catalog_key` column for Iceberg, Paimon, and Lance.
 
-Postgres Lance historically had no tenant column (oversight from the first draft). The Yugabyte Lance schema includes `catalog_key`; Postgres Lance is unchanged.
-
-## No migration tooling
-
-This is a greenfield choice of backend. There is no automated Postgres ↔ Yugabyte data migration.
