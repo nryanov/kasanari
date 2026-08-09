@@ -51,7 +51,7 @@ kasanari.authorization.casbin.repository.backend=yugabyte
 
 ### INTERNAL catalogs
 
-Set the same properties inside each catalog’s `catalogProperties` when registering via the Management API. Iceberg and Paimon use the management `catalogId` from catalog registration. Lance INTERNAL also injects `kasanari.catalog.name=<management catalog id>` when unset, because the Lance REST surface has no catalog-name parameter.
+Set the same properties inside each catalog’s `catalogProperties` when registering via the Management API. For Lance INTERNAL, Kasanari also injects `kasanari.catalog.name=<management catalog id>` when unset.
 
 ## Database layout
 
@@ -70,5 +70,5 @@ Cross-catalog distributed transactions are not used. Catalog operations always t
 
 ## Naming: `catalog_name`
 
-INTERNAL JDBC repositories (Postgres and Yugabyte) use a unified `catalog_name` column for Iceberg, Paimon, and Lance. The value matches the management catalog id and AuthZ resource path segment (`{type}/{catalogName}/…`).
+INTERNAL JDBC repositories use a unified `catalog_name` column for Iceberg, Paimon, and Lance.
 

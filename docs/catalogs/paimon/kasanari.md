@@ -6,8 +6,6 @@
 
 ## INTERNAL catalog setup
 
-Metadata rows are isolated by the management `catalogId` (no extra catalog-name property).
-
 ### Minimal runnable config
 
 ```json

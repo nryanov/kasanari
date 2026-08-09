@@ -6,8 +6,6 @@
 
 ## INTERNAL catalog setup
 
-Metadata rows are isolated by the management `catalogId` passed into Iceberg `initialize(name)` (no extra catalog-name property).
-
 ### Minimal runnable config
 
 ```json

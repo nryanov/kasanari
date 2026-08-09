@@ -150,7 +150,6 @@ public class LanceCatalogRouter {
         return switch (catalog.catalogMode()) {
             case INTERNAL -> {
                 var internalProperties = new HashMap<>(properties);
-                // Thread management catalog id for INTERNAL row isolation.
                 internalProperties.putIfAbsent(KasanariLanceProperties.CATALOG_NAME, catalog.catalogName());
                 yield kasanariLanceCatalogFactory.create(implementation, fileIoConfig, internalProperties);
             }

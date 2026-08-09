@@ -1,11 +1,5 @@
 package kasanari.repository.lance.yugabyte;
 
-/**
- * Lance INTERNAL metadata on YugabyteDB.
- *
- * <p>Every row is scoped by {@code catalog_name} and hash-sharded on that column so all
- * entities for one catalog stay on a single tablet.
- */
 public final class JdbcQueries {
     private JdbcQueries() {
     }

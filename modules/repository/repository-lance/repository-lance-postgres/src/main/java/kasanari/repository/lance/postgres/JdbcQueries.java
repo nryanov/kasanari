@@ -1,11 +1,5 @@
 package kasanari.repository.lance.postgres;
 
-/**
- * Lance INTERNAL metadata on PostgreSQL.
- *
- * <p>Every row is scoped by {@code catalog_name} so multiple INTERNAL Lance
- * catalogs can share one database.
- */
 public final class JdbcQueries {
     private JdbcQueries() {
     }

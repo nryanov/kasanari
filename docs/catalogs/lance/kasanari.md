@@ -59,7 +59,7 @@
 
 Set `kasanari.repository.backend` to `postgres` (default) or `yugabyte`.
 
-INTERNAL rows are isolated by `catalog_name`. Because Lance REST has no catalog-name parameter, Kasanari injects `kasanari.catalog.name=<management catalogId>` when unset. On YugabyteDB the column is also the hash-shard key so one catalog stays on one tablet. See [YugabyteDB backend](../../operations/yugabyte.md).
+On YugabyteDB, Lance INTERNAL rows are hash-sharded on `catalog_name`. See [YugabyteDB backend](../../operations/yugabyte.md).
 
 ## PROXY catalog setup
 
