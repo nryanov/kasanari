@@ -14,6 +14,8 @@ JDBC settings are read from `kasanari.authorization.casbin.*`:
 kasanari.authorization.casbin.jdbc.uri=jdbc:postgresql://localhost:5432/kasanari
 kasanari.authorization.casbin.jdbc.user=kasanari
 kasanari.authorization.casbin.jdbc.password=secret
+# optional: postgres (default) or yugabyte
+kasanari.authorization.casbin.repository.backend=postgres
 ```
 
 Optional superusers (always allowed):

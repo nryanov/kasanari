@@ -4,10 +4,11 @@ import kasanari.authorization.spi.AuthorizationProvider;
 import kasanari.authorization.spi.AuthorizationProviderContext;
 import kasanari.authorization.spi.AuthorizationRequest;
 import kasanari.authorization.spi.RoleBindingAdministration;
+import kasanari.repository.jdbc.BackendFactoryLoader;
 import kasanari.repository.jdbc.JdbcTransactionManager;
 import kasanari.repository.jdbc.KasanariDataSource;
-import kasanari.repository.management.security.postgres.JdbcManagementSecurityQueries;
-import kasanari.repository.management.security.postgres.JdbcRoleBindingRepository;
+import kasanari.repository.jdbc.KasanariDataSourceConfiguration;
+import kasanari.repository.management.security.RoleBindingRepositoryFactory;
 import org.casbin.jcasbin.main.Enforcer;
 
 import java.time.Duration;
@@ -45,10 +46,15 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
             superuserSubjects.add("root");
         }
 
-        var dataSource = new KasanariDataSource(resolveJdbcProperties(context));
+        var jdbcProperties = resolveJdbcProperties(context);
+        var dataSource = new KasanariDataSource(jdbcProperties);
         var txManager = new JdbcTransactionManager(dataSource);
-        var roleBindingRepository = new JdbcRoleBindingRepository();
-        initSchema(txManager);
+        var repositoryFactory = BackendFactoryLoader.load(
+                RoleBindingRepositoryFactory.class,
+                dataSource.repositoryBackend()
+        );
+        var roleBindingRepository = repositoryFactory.createRepository();
+        repositoryFactory.initSchema(txManager);
 
         var policyBootstrap = new CasbinPolicyBootstrap();
         policyEngine = new CasbinPolicyEngine(txManager, roleBindingRepository, policyBootstrap);
@@ -111,14 +117,6 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
         dataSource.close();
     }
 
-    private void initSchema(kasanari.repository.core.TransactionManager<org.jdbi.v3.core.Handle> txManager) {
-        txManager.inTransaction(tx -> {
-            tx.createUpdate(JdbcManagementSecurityQueries.CREATE_ROLE_BINDINGS_DDL).execute();
-            tx.createUpdate(JdbcManagementSecurityQueries.CREATE_ROLE_BINDING_REVISION_DDL).execute();
-            tx.createUpdate(JdbcManagementSecurityQueries.INSERT_ROLE_BINDING_REVISION).execute();
-        });
-    }
-
     private Map<String, String> resolveJdbcProperties(AuthorizationProviderContext context) {
         var uri = context.getOptional("jdbc.uri");
         var user = context.getOptional("jdbc.user");
@@ -130,9 +128,13 @@ public final class CasbinAuthorizationProvider implements AuthorizationProvider 
         }
 
         var properties = new HashMap<String, String>();
-        properties.put("uri", uri.get());
-        properties.put("kasanari.jdbc.user", user.get());
-        properties.put("kasanari.jdbc.password", password.get());
+        properties.put(KasanariDataSourceConfiguration.URI, uri.get());
+        properties.put(KasanariDataSourceConfiguration.USER, user.get());
+        properties.put(KasanariDataSourceConfiguration.PASSWORD, password.get());
+        // Prefer kasanari.authorization.casbin.repository.backend; also accept nested jdbc.* form.
+        context.getOptional("repository.backend")
+                .or(() -> context.getOptional("jdbc.repository.backend"))
+                .ifPresent(backend -> properties.put(KasanariDataSourceConfiguration.REPOSITORY_BACKEND, backend));
 
         return properties;
     }

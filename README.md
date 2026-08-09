@@ -40,6 +40,7 @@ Proxy backends include JDBC, Hive, Hadoop, filesystem, and REST implementations 
 - **Pluggable authorization** — allow-all, Casbin RBAC, or custom SPI providers
 - **Instrumentation SPI** for audit and logging hooks on catalog requests
 - **Runnable examples** for Trino, StarRocks, Spark, auth, and observability setups
+- **Pluggable JDBC backends** — PostgreSQL or YugabyteDB (hash-sharded INTERNAL catalogs)
 
 ## Quick start
 
@@ -78,6 +79,7 @@ QUARKUS_JIB_PLATFORMS=linux/arm64/v8 ./scripts/build-container-images.sh
 | Management API        | [API reference](https://nryanov.github.io/kasanari/management/api/)                                                                                                                           |
 | Security              | [Authentication & authorization](https://nryanov.github.io/kasanari/security/)                                                                                                                |
 | Observability         | [Metrics & tracing](https://nryanov.github.io/kasanari/observability/)                                                                                                                        |
+| YugabyteDB backend    | [Operations](https://nryanov.github.io/kasanari/operations/yugabyte/)                                                                                                                         |
 | Examples              | [Runnable examples](https://nryanov.github.io/kasanari/examples/)                                                                                                                             |
 
 ## License

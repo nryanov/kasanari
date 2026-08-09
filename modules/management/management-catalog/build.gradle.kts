@@ -5,6 +5,8 @@ plugins {
 
 dependencies {
     implementation(project(":modules:repository:repository-jdbc"))
-    api(project(":modules:repository:repository-management:repository-management-catalog:repository-management-catalog-postgres"))
+    api(project(":modules:repository:repository-management:repository-management-catalog"))
+    implementation(project(":modules:repository:repository-management:repository-management-catalog:repository-management-catalog-postgres"))
+    implementation(project(":modules:repository:repository-management:repository-management-catalog:repository-management-catalog-yugabyte"))
     implementation(project(":modules:platform:platform-jackson"))
 }

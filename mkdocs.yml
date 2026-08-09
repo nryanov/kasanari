@@ -41,4 +41,6 @@ nav:
       - Overview: observability/index.md
       - Metrics: observability/metrics.md
       - Tracing: observability/tracing.md
+  - Operations:
+      - YugabyteDB backend: operations/yugabyte.md
   - Examples: examples/index.md

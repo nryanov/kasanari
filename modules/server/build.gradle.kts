@@ -47,6 +47,7 @@ dependencies {
     implementation(project(":modules:authorization:authorization-allow-all"))
     implementation(project(":modules:authorization:authorization-casbin"))
     implementation(libs.jdbc.postgresql)
+    implementation(libs.jdbc.yugabytedb)
 
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")

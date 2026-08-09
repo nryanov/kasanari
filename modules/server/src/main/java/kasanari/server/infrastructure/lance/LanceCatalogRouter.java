@@ -5,6 +5,7 @@ import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.NotFoundException;
 import kasanari.catalog.lance.KasanariLanceCatalogFactory;
+import kasanari.catalog.lance.KasanariLanceProperties;
 import kasanari.catalog.lance.LanceCatalogAdapter;
 import kasanari.catalog.lance.ProxyLanceCatalogFactory;
 import kasanari.management.catalog.ManagementCatalogService;
@@ -15,6 +16,7 @@ import org.jboss.logging.Logger;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -146,7 +148,12 @@ public class LanceCatalogRouter {
         }
 
         return switch (catalog.catalogMode()) {
-            case INTERNAL -> kasanariLanceCatalogFactory.create(implementation, fileIoConfig, properties);
+            case INTERNAL -> {
+                var internalProperties = new HashMap<>(properties);
+                // Thread management catalog id for Yugabyte row isolation / hash sharding.
+                internalProperties.putIfAbsent(KasanariLanceProperties.CATALOG_KEY, catalog.catalogName());
+                yield kasanariLanceCatalogFactory.create(implementation, fileIoConfig, internalProperties);
+            }
             case PROXY -> proxyLanceCatalogFactory.create(implementation, fileIoConfig, properties);
         };
     }

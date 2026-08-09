@@ -1,0 +1,33 @@
+# Local YugabyteDB + MinIO stack for Kasanari INTERNAL catalogs.
+# Create the colocated app DB after YSQL is up:
+#   docker compose exec yb-tserver bin/ysqlsh -h yb-tserver -c "CREATE DATABASE kasanari WITH COLOCATION = true;"
+#
+# Point Kasanari JDBC URIs at:
+#   jdbc:yugabytedb://localhost:5433/kasanari?load-balance=true
+# and set kasanari.repository.backend=yugabyte (see docs/operations/yugabyte.md).
+
+services:
+  yb-master:
+    image: yugabytedb/yugabyte:2025.1.4.0-b103
+    command: ["bin/yb-master", "--fs_data_dirs=/mnt/disk0", "--master_addresses=yb-master:7100", "--rpc_bind_addresses=yb-master:7100", "--replication_factor=1"]
+    ports:
+      - "7000:7000"
+
+  yb-tserver:
+    image: yugabytedb/yugabyte:2025.1.4.0-b103
+    command: ["bin/yb-tserver", "--fs_data_dirs=/mnt/disk0", "--tserver_master_addrs=yb-master:7100", "--rpc_bind_addresses=yb-tserver:9100", "--ysql_enable_auth=false"]
+    depends_on:
+      - yb-master
+    ports:
+      - "5433:5433"
+      - "9000:9000"
+
+  minio:
+    image: minio/minio:RELEASE.2025-02-28T09-55-16Z
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    ports:
+      - "9001:9001"
+      - "9002:9000"
+    command: ["server", "/data", "--console-address", ":9001"]
