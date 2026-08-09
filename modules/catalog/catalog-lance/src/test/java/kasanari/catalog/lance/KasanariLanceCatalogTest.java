@@ -32,6 +32,7 @@ public class KasanariLanceCatalogTest extends LanceCatalogAdapterTest {
         properties.put(KasanariDataSourceConfiguration.URI, postgres.jdbcUrl());
         properties.put(KasanariDataSourceConfiguration.USER, postgres.username());
         properties.put(KasanariDataSourceConfiguration.PASSWORD, postgres.password());
+        properties.put(KasanariLanceProperties.CATALOG_NAME, "kasanari-test");
         properties.put(KasanariLanceProperties.LOCATION, "s3://warehouse");
         properties.put(KasanariLanceProperties.STORAGE_PROPERTIES_PREFIX + "aws_region", "us-east-1");
         properties.put(KasanariLanceProperties.STORAGE_PROPERTIES_PREFIX + "aws_access_key_id", s3Container.username());
