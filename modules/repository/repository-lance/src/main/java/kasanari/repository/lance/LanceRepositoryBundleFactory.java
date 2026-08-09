@@ -6,7 +6,7 @@ import org.jdbi.v3.core.Handle;
 
 public interface LanceRepositoryBundleFactory extends BackendAwareFactory {
     /**
-     * @param catalogKey management catalog id; required for Yugabyte, ignored by Postgres impl
+     * @param catalogName management catalog id used to isolate INTERNAL rows
      */
-    LanceRepositoryBundle create(String catalogKey, TransactionManager<Handle> transactionManager);
+    LanceRepositoryBundle create(String catalogName, TransactionManager<Handle> transactionManager);
 }

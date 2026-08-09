@@ -9,16 +9,16 @@ import java.util.List;
 import java.util.Optional;
 
 public class JdbcBranchRepository implements BranchRepository<Handle> {
-    private final String catalogKey;
+    private final String catalogName;
 
-    public JdbcBranchRepository(String catalogKey) {
-        this.catalogKey = catalogKey;
+    public JdbcBranchRepository(String catalogName) {
+        this.catalogName = catalogName;
     }
 
     @Override
     public void create(Handle tx, BranchRecord record) {
         var query = tx.createUpdate(JdbcQueries.INSERT_BRANCH);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, record.database());
         query.bind(2, record.table());
         query.bind(3, record.branchName());
@@ -29,7 +29,7 @@ public class JdbcBranchRepository implements BranchRepository<Handle> {
     @Override
     public boolean delete(Handle tx, Identifier identifier, String branch) {
         var query = tx.createUpdate(JdbcQueries.DELETE_BRANCH);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, identifier.getDatabaseName());
         query.bind(2, identifier.getTableName());
         query.bind(3, branch);
@@ -40,7 +40,7 @@ public class JdbcBranchRepository implements BranchRepository<Handle> {
     public boolean rename(Handle tx, Identifier identifier, String fromBranch, String toBranch) {
         var query = tx.createUpdate(JdbcQueries.RENAME_BRANCH);
         query.bind(0, toBranch);
-        query.bind(1, catalogKey);
+        query.bind(1, catalogName);
         query.bind(2, identifier.getDatabaseName());
         query.bind(3, identifier.getTableName());
         query.bind(4, fromBranch);
@@ -50,7 +50,7 @@ public class JdbcBranchRepository implements BranchRepository<Handle> {
     @Override
     public boolean fastForward(Handle tx, Identifier identifier, String branch) {
         var query = tx.createUpdate(JdbcQueries.FAST_FORWARD_BRANCH);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, identifier.getDatabaseName());
         query.bind(2, identifier.getTableName());
         query.bind(3, branch);
@@ -60,7 +60,7 @@ public class JdbcBranchRepository implements BranchRepository<Handle> {
     @Override
     public List<BranchRecord> findAll(Handle tx, Identifier identifier) {
         var query = tx.createQuery(JdbcQueries.LIST_BRANCHES);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, identifier.getDatabaseName());
         query.bind(2, identifier.getTableName());
         return query

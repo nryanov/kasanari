@@ -69,6 +69,7 @@ Not applicable for this implementation. Use one of the `PROXY` pages:
 | `uri`                                               | none                                     | JDBC URL for Kasanari metadata repositories. Required.                      |
 | `kasanari.jdbc.user`                                | none                                     | JDBC username for metadata DB. Required.                                    |
 | `kasanari.jdbc.password`                            | none                                     | JDBC password for metadata DB. Required.                                    |
+| `kasanari.catalog.name`                             | management `catalogId`                   | Isolates INTERNAL metadata rows. Injected automatically when unset.         |
 | `kasanari.jdbc.connection-pool.initial-size`        | `2`                                      | Initial JDBC pool size.                                                     |
 | `kasanari.jdbc.connection-pool.min-size`            | `1`                                      | Minimum JDBC pool size.                                                     |
 | `kasanari.jdbc.connection-pool.max-size`            | `5`                                      | Maximum JDBC pool size.                                                     |

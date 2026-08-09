@@ -15,6 +15,7 @@ import org.jboss.logging.Logger;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -134,10 +135,14 @@ public class PaimonCatalogRouter {
 
     private PaimonCatalogAdapter createAdapter(CatalogMetadata catalog) {
         return switch (catalog.catalogMode()) {
-            case INTERNAL -> kasanariPaimonCatalogFactory.create(
-                    catalog.spec().fileIoProperties(),
-                    catalog.spec().catalogProperties()
-            );
+            case INTERNAL -> {
+                var internalProperties = new HashMap<>(catalog.spec().catalogProperties());
+                internalProperties.putIfAbsent(KasanariPaimonCatalogFactory.CATALOG_NAME, catalog.catalogName());
+                yield kasanariPaimonCatalogFactory.create(
+                        catalog.spec().fileIoProperties(),
+                        internalProperties
+                );
+            }
             case PROXY -> proxyPaimonCatalogFactory.create(
                     catalog.spec().fileIoProperties(),
                     catalog.spec().catalogProperties()

@@ -4,5 +4,5 @@ import kasanari.repository.jdbc.BackendAwareFactory;
 import kasanari.repository.jdbc.KasanariDataSource;
 
 public interface IcebergRepositoryBundleFactory extends BackendAwareFactory {
-    IcebergRepositoryBundle create(String catalogKey, KasanariDataSource dataSource);
+    IcebergRepositoryBundle create(String catalogName, KasanariDataSource dataSource);
 }

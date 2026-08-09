@@ -13,14 +13,14 @@ public final class YugabyteLanceRepositoryBundleFactory implements LanceReposito
     }
 
     @Override
-    public LanceRepositoryBundle create(String catalogKey, TransactionManager<Handle> transactionManager) {
-        if (catalogKey == null || catalogKey.isBlank()) {
-            throw new IllegalArgumentException("catalogKey is required for the Yugabyte Lance repository backend");
+    public LanceRepositoryBundle create(String catalogName, TransactionManager<Handle> transactionManager) {
+        if (catalogName == null || catalogName.isBlank()) {
+            throw new IllegalArgumentException("catalogName is required for the Yugabyte Lance repository backend");
         }
         var initializer = new JdbcTableInitializer(transactionManager);
         return new LanceRepositoryBundle(
-                new JdbcNamespaceRepository(catalogKey),
-                new JdbcTableRepository(catalogKey),
+                new JdbcNamespaceRepository(catalogName),
+                new JdbcTableRepository(catalogName),
                 initializer::initialize
         );
     }

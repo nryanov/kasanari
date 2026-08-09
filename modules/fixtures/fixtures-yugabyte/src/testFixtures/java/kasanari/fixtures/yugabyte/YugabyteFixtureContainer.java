@@ -14,7 +14,7 @@ import java.util.Map;
  *
  * <p>Colocation is required for management/security tables that use
  * {@code WITH (colocation = true)}. INTERNAL catalog tables opt out via
- * {@code WITH (colocation = false)} and hash-shard on {@code catalog_key}.
+ * {@code WITH (colocation = false)} and hash-shard on {@code catalog_name}.
  */
 public class YugabyteFixtureContainer {
     public static final String IMAGE = "yugabytedb/yugabyte:2025.1.4.0-b103";

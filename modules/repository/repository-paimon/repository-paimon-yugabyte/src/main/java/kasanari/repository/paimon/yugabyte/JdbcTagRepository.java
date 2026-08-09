@@ -9,16 +9,16 @@ import java.util.List;
 import java.util.Optional;
 
 public class JdbcTagRepository implements TagRepository<Handle> {
-    private final String catalogKey;
+    private final String catalogName;
 
-    public JdbcTagRepository(String catalogKey) {
-        this.catalogKey = catalogKey;
+    public JdbcTagRepository(String catalogName) {
+        this.catalogName = catalogName;
     }
 
     @Override
     public void create(Handle tx, TagRecord record, boolean ignoreIfExists) {
         var query = tx.createUpdate(ignoreIfExists ? JdbcQueries.INSERT_TAG_IGNORE_IF_EXISTS : JdbcQueries.INSERT_TAG);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, record.database());
         query.bind(2, record.table());
         query.bind(3, record.tagName());
@@ -31,7 +31,7 @@ public class JdbcTagRepository implements TagRepository<Handle> {
     @Override
     public boolean delete(Handle tx, Identifier identifier, String tagName) {
         var query = tx.createUpdate(JdbcQueries.DELETE_TAG);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, identifier.getDatabaseName());
         query.bind(2, identifier.getTableName());
         query.bind(3, tagName);
@@ -41,7 +41,7 @@ public class JdbcTagRepository implements TagRepository<Handle> {
     @Override
     public Optional<TagRecord> find(Handle tx, Identifier identifier, String tagName) {
         var query = tx.createQuery(JdbcQueries.SELECT_TAG);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, identifier.getDatabaseName());
         query.bind(2, identifier.getTableName());
         query.bind(3, tagName);
@@ -61,7 +61,7 @@ public class JdbcTagRepository implements TagRepository<Handle> {
     @Override
     public boolean exists(Handle tx, Identifier identifier, String tagName) {
         var query = tx.createQuery(JdbcQueries.CHECK_TAG_EXISTS);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, identifier.getDatabaseName());
         query.bind(2, identifier.getTableName());
         query.bind(3, tagName);
@@ -71,7 +71,7 @@ public class JdbcTagRepository implements TagRepository<Handle> {
     @Override
     public List<String> findAll(Handle tx, Identifier identifier, Optional<String> tagNamePrefix) {
         var query = tx.createQuery(tagNamePrefix.isPresent() ? JdbcQueries.LIST_TAGS_WITH_PREFIX : JdbcQueries.LIST_TAGS);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, identifier.getDatabaseName());
         query.bind(2, identifier.getTableName());
         tagNamePrefix.ifPresent(prefix -> query.bind(3, prefix + "%"));
@@ -86,7 +86,7 @@ public class JdbcTagRepository implements TagRepository<Handle> {
             long idAfter,
             int pageSize) {
         var query = tx.createQuery(JdbcQueries.LIST_TAGS_PAGE);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, identifier.getDatabaseName());
         query.bind(2, identifier.getTableName());
         query.bind(3, idAfter);

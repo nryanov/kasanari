@@ -51,7 +51,7 @@ kasanari.authorization.casbin.repository.backend=yugabyte
 
 ### INTERNAL catalogs
 
-Set the same properties inside each catalog’s `catalogProperties` when registering via the Management API. For Lance INTERNAL, Kasanari also injects `kasanari.catalog.key=<management catalog id>` so rows are isolated per catalog.
+Set the same properties inside each catalog’s `catalogProperties` when registering via the Management API. For INTERNAL catalogs, Kasanari also injects `kasanari.catalog.name=<management catalog id>` when unset so rows are isolated per catalog.
 
 ## Database layout
 
@@ -64,11 +64,11 @@ CREATE DATABASE kasanari WITH COLOCATION = true;
 | Plane | Distribution |
 |-------|----------------|
 | `kasanari_catalogs`, Casbin bindings | Colocated (`WITH (colocation = true)`) — list/refresh across catalogs |
-| Iceberg / Paimon / Lance INTERNAL | Hash-sharded on `catalog_key`, `WITH (colocation = false)` — all rows for one catalog share a tablet |
+| Iceberg / Paimon / Lance INTERNAL | Hash-sharded on `catalog_name`, `WITH (colocation = false)` — all rows for one catalog share a tablet |
 
-Cross-catalog distributed transactions are not used. Catalog operations always target a single `catalog_key`. The only cross-catalog read is Casbin listing bindings for a role (colocated tables).
+Cross-catalog distributed transactions are not used. Catalog operations always target a single `catalog_name`. The only cross-catalog read is Casbin listing bindings for a role (colocated tables).
 
-## Naming: `catalog_key`
+## Naming: `catalog_name`
 
-Yugabyte modules use a unified `catalog_key` column for Iceberg, Paimon, and Lance.
+INTERNAL JDBC repositories (Postgres and Yugabyte) use a unified `catalog_name` column for Iceberg, Paimon, and Lance. The value matches the management catalog id and AuthZ resource path segment (`{type}/{catalogName}/…`).
 

@@ -123,7 +123,7 @@ curl -sS -X POST "http://localhost:9090/management/v1/catalogs" \
             "uri": "jdbc:postgresql://catalog-storage:5432/postgres",
             "kasanari.jdbc.user": "postgres",
             "kasanari.jdbc.password": "postgres",
-            "kasanari.catalog.key": catalog_id,
+            "kasanari.catalog.name": catalog_id,
             "s3.access-key": "admin",
             "s3.secret-key": "password",
             "s3.path.style.access": "true",

@@ -10,12 +10,16 @@ import java.util.Map;
 import java.util.Optional;
 
 public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
-    public JdbcNamespaceRepository() {
+    private final String catalogName;
+
+    public JdbcNamespaceRepository(String catalogName) {
+        this.catalogName = catalogName;
     }
 
     @Override
     public void upsert(Handle tx, String namespacePath, Map<String, String> properties) {
         tx.createUpdate(JdbcQueries.UPSERT_NAMESPACE)
+                .bind("catalog_name", catalogName)
                 .bind("namespace_path", namespacePath)
                 .bind("properties", JsonSerde.encodeMap(properties))
                 .execute();
@@ -24,6 +28,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
     @Override
     public boolean exists(Handle tx, String namespacePath) {
         return tx.createQuery(JdbcQueries.NAMESPACE_EXISTS)
+                .bind("catalog_name", catalogName)
                 .bind("namespace_path", namespacePath)
                 .mapTo(Integer.class)
                 .findOne()
@@ -33,6 +38,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
     @Override
     public Optional<Map<String, String>> properties(Handle tx, String namespacePath) {
         return tx.createQuery(JdbcQueries.NAMESPACE_PROPERTIES)
+                .bind("catalog_name", catalogName)
                 .bind("namespace_path", namespacePath)
                 .mapTo(String.class)
                 .findOne()
@@ -43,6 +49,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
     public List<String> list(Handle tx, String parentPath) {
         var prefix = (parentPath == null || parentPath.isBlank()) ? "" : parentPath + ".";
         var rows = tx.createQuery(JdbcQueries.LIST_NAMESPACES)
+                .bind("catalog_name", catalogName)
                 .mapTo(String.class)
                 .list();
 
@@ -68,6 +75,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
     @Override
     public List<PagedValue<String>> listPage(Handle tx, String parentPath, long cursorId, int limit) {
         return tx.createQuery(JdbcQueries.LIST_NAMESPACES_PAGE)
+                .bind("catalog_name", catalogName)
                 .bind("cursor_id", cursorId)
                 .bind("limit", limit)
                 .map((rs, ctx) -> new PagedValue<>(
@@ -80,6 +88,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
     @Override
     public void delete(Handle tx, String namespacePath) {
         tx.createUpdate(JdbcQueries.DELETE_NAMESPACE)
+                .bind("catalog_name", catalogName)
                 .bind("namespace_path", namespacePath)
                 .execute();
     }

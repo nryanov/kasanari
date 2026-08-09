@@ -6,6 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.NotFoundException;
 import kasanari.catalog.iceberg.IcebergCatalogAdapter;
 import kasanari.catalog.iceberg.KasanariIcebergCatalogFactory;
+import kasanari.catalog.iceberg.KasanariIcebergProperties;
 import kasanari.catalog.iceberg.ProxyIcebergCatalogFactory;
 import kasanari.management.catalog.ManagementCatalogService;
 import kasanari.repository.management.catalog.model.CatalogMetadata;
@@ -15,6 +16,7 @@ import org.jboss.logging.Logger;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -134,11 +136,15 @@ public class IcebergCatalogRouter {
 
     private IcebergCatalogAdapter createAdapter(CatalogMetadata catalog) {
         return switch (catalog.catalogMode()) {
-            case INTERNAL -> kasanariIcebergCatalogFactory.create(
-                    catalog.catalogName(),
-                    catalog.spec().fileIoProperties(),
-                    catalog.spec().catalogProperties()
-            );
+            case INTERNAL -> {
+                var internalProperties = new HashMap<>(catalog.spec().catalogProperties());
+                internalProperties.putIfAbsent(KasanariIcebergProperties.CATALOG_NAME, catalog.catalogName());
+                yield kasanariIcebergCatalogFactory.create(
+                        catalog.catalogName(),
+                        catalog.spec().fileIoProperties(),
+                        internalProperties
+                );
+            }
             case PROXY -> proxyIcebergCatalogFactory.create(
                     catalog.catalogName(),
                     catalog.spec().fileIoProperties(),

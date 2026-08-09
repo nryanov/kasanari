@@ -15,10 +15,10 @@ import java.util.stream.Collectors;
 public class JdbcPartitionStateRepository implements PartitionStateRepository<Handle> {
     private static final String EMPTY_JSON = "{}";
 
-    private final String catalogKey;
+    private final String catalogName;
 
-    public JdbcPartitionStateRepository(String catalogKey) {
-        this.catalogKey = catalogKey;
+    public JdbcPartitionStateRepository(String catalogName) {
+        this.catalogName = catalogName;
     }
 
     @Override
@@ -38,7 +38,7 @@ public class JdbcPartitionStateRepository implements PartitionStateRepository<Ha
             var specHash = JsonSerde.hashSpec(spec);
 
             var insertDelta = tx.createUpdate(JdbcQueries.INSERT_PARTITION_STATS_DELTA);
-            insertDelta.bind(0, catalogKey);
+            insertDelta.bind(0, catalogName);
             insertDelta.bind(1, identifier.getDatabaseName());
             insertDelta.bind(2, identifier.getTableName());
             insertDelta.bind(3, branch);
@@ -53,7 +53,7 @@ public class JdbcPartitionStateRepository implements PartitionStateRepository<Ha
             insertDelta.execute();
 
             var upsertState = tx.createUpdate(JdbcQueries.UPSERT_PARTITION_STATE);
-            upsertState.bind(0, catalogKey);
+            upsertState.bind(0, catalogName);
             upsertState.bind(1, identifier.getDatabaseName());
             upsertState.bind(2, identifier.getTableName());
             upsertState.bind(3, branch);
@@ -69,7 +69,7 @@ public class JdbcPartitionStateRepository implements PartitionStateRepository<Ha
         }
 
         var cleanup = tx.createUpdate(JdbcQueries.DELETE_EMPTY_PARTITION_STATES);
-        cleanup.bind(0, catalogKey);
+        cleanup.bind(0, catalogName);
         cleanup.bind(1, identifier.getDatabaseName());
         cleanup.bind(2, identifier.getTableName());
         cleanup.bind(3, branch);
@@ -79,7 +79,7 @@ public class JdbcPartitionStateRepository implements PartitionStateRepository<Ha
     @Override
     public List<PartitionStateRecord> findAll(Handle tx, Identifier identifier, String branch) {
         var query = tx.createQuery(JdbcQueries.LIST_PARTITION_STATES);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, identifier.getDatabaseName());
         query.bind(2, identifier.getTableName());
         query.bind(3, branch);
@@ -104,7 +104,7 @@ public class JdbcPartitionStateRepository implements PartitionStateRepository<Ha
             long idAfter,
             int pageSize) {
         var query = tx.createQuery(JdbcQueries.LIST_PARTITION_STATES_PAGE);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, identifier.getDatabaseName());
         query.bind(2, identifier.getTableName());
         query.bind(3, branch);
@@ -163,7 +163,7 @@ public class JdbcPartitionStateRepository implements PartitionStateRepository<Ha
                 .collect(Collectors.toSet());
         for (var specHash : uniqueHashes) {
             var query = tx.createUpdate(JdbcQueries.MARK_DONE_PARTITION_STATE);
-            query.bind(0, catalogKey);
+            query.bind(0, catalogName);
             query.bind(1, identifier.getDatabaseName());
             query.bind(2, identifier.getTableName());
             query.bind(3, branch);
@@ -183,7 +183,7 @@ public class JdbcPartitionStateRepository implements PartitionStateRepository<Ha
             var specHash = JsonSerde.hashSpec(normalizedSpec);
 
             var query = tx.createUpdate(JdbcQueries.INSERT_PARTITION_STATE_IF_ABSENT);
-            query.bind(0, catalogKey);
+            query.bind(0, catalogName);
             query.bind(1, identifier.getDatabaseName());
             query.bind(2, identifier.getTableName());
             query.bind(3, branch);
@@ -202,7 +202,7 @@ public class JdbcPartitionStateRepository implements PartitionStateRepository<Ha
         for (var spec : specs) {
             var specHash = JsonSerde.hashSpec(normalizeSpec(spec));
             var query = tx.createUpdate(JdbcQueries.DELETE_PARTITION_STATE_BY_HASH);
-            query.bind(0, catalogKey);
+            query.bind(0, catalogName);
             query.bind(1, identifier.getDatabaseName());
             query.bind(2, identifier.getTableName());
             query.bind(3, branch);
@@ -226,7 +226,7 @@ public class JdbcPartitionStateRepository implements PartitionStateRepository<Ha
             var normalizedSpec = normalizeSpec(partition.spec());
             var specHash = JsonSerde.hashSpec(normalizedSpec);
             var query = tx.createUpdate(JdbcQueries.UPSERT_PARTITION_STATE_ABSOLUTE);
-            query.bind(0, catalogKey);
+            query.bind(0, catalogName);
             query.bind(1, identifier.getDatabaseName());
             query.bind(2, identifier.getTableName());
             query.bind(3, branch);

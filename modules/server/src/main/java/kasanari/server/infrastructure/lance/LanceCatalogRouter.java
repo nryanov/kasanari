@@ -150,8 +150,8 @@ public class LanceCatalogRouter {
         return switch (catalog.catalogMode()) {
             case INTERNAL -> {
                 var internalProperties = new HashMap<>(properties);
-                // Thread management catalog id for Yugabyte row isolation / hash sharding.
-                internalProperties.putIfAbsent(KasanariLanceProperties.CATALOG_KEY, catalog.catalogName());
+                // Thread management catalog id for INTERNAL row isolation.
+                internalProperties.putIfAbsent(KasanariLanceProperties.CATALOG_NAME, catalog.catalogName());
                 yield kasanariLanceCatalogFactory.create(implementation, fileIoConfig, internalProperties);
             }
             case PROXY -> proxyLanceCatalogFactory.create(implementation, fileIoConfig, properties);

@@ -3,6 +3,6 @@ package kasanari.catalog.lance;
 public abstract class KasanariLanceProperties {
     public static final String LOCATION = "lance.warehouse.location";
     public static final String STORAGE_PROPERTIES_PREFIX = "lance.storage.";
-    /** Management catalog id used for Yugabyte row isolation / hash sharding. */
-    public static final String CATALOG_KEY = "kasanari.catalog.key";
+    /** Management catalog id used for INTERNAL row isolation. */
+    public static final String CATALOG_NAME = "kasanari.catalog.name";
 }

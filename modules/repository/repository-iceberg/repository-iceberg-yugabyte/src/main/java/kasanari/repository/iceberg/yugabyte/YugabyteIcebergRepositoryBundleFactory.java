@@ -12,13 +12,13 @@ public final class YugabyteIcebergRepositoryBundleFactory implements IcebergRepo
     }
 
     @Override
-    public IcebergRepositoryBundle create(String catalogKey, KasanariDataSource dataSource) {
+    public IcebergRepositoryBundle create(String catalogName, KasanariDataSource dataSource) {
         var initializer = new JdbcTableInitializer(dataSource);
         return new IcebergRepositoryBundle(
-                new JdbcCatalogRepository(catalogKey),
-                new JdbcNamespaceRepository(catalogKey),
-                new JdbcTableRepository(catalogKey),
-                new JdbcViewRepository(catalogKey),
+                new JdbcCatalogRepository(catalogName),
+                new JdbcNamespaceRepository(catalogName),
+                new JdbcTableRepository(catalogName),
+                new JdbcViewRepository(catalogName),
                 initializer::initialize
         );
     }

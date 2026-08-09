@@ -46,17 +46,17 @@ public final class JdbcIcebergYugabyteTestHelper {
         yugabyteHelper.truncateTable("kasanari_iceberg_catalog");
     }
 
-    public static void registerCatalog(TransactionManager<Handle> txManager, String catalogKey) {
-        var repository = new JdbcCatalogRepository(catalogKey);
+    public static void registerCatalog(TransactionManager<Handle> txManager, String catalogName) {
+        var repository = new JdbcCatalogRepository(catalogName);
         txManager.inTransaction(repository::register);
     }
 
     public static void createNamespace(
             TransactionManager<Handle> txManager,
-            String catalogKey,
+            String catalogName,
             Namespace namespace,
             Map<String, String> metadata) {
-        var repository = new JdbcNamespaceRepository(catalogKey);
+        var repository = new JdbcNamespaceRepository(catalogName);
         txManager.inTransaction(tx -> repository.create(tx, namespace, metadata));
     }
 

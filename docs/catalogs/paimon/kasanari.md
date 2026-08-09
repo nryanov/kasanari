@@ -49,7 +49,7 @@
       "kasanari.jdbc.connection-pool.min-size": "1",
       "kasanari.jdbc.connection-pool.max-size": "5",
       "kasanari.jdbc.connection-pool.max-lifetime.millis": "0",
-      "kasanari.catalog.key": "paimon_internal"
+      "kasanari.catalog.name": "paimon_internal"
     }
   }
 }
@@ -72,7 +72,7 @@ Not applicable for this implementation. Use one of the `PROXY` pages:
 | `uri`                                               | none          | JDBC URL for Kasanari metadata repositories. Required.                      |
 | `kasanari.jdbc.user`                                | none          | JDBC username for metadata DB. Required.                                    |
 | `kasanari.jdbc.password`                            | none          | JDBC password for metadata DB. Required.                                    |
-| `kasanari.catalog.key`                              | `default`     | Logical key used to isolate metadata records in JDBC repositories.          |
+| `kasanari.catalog.name`                             | `default`     | Management catalog id used to isolate metadata records in JDBC repositories. Injected automatically when unset. |
 | `kasanari.jdbc.connection-pool.initial-size`        | `2`           | Initial JDBC pool size.                                                     |
 | `kasanari.jdbc.connection-pool.min-size`            | `1`           | Minimum JDBC pool size.                                                     |
 | `kasanari.jdbc.connection-pool.max-size`            | `5`           | Maximum JDBC pool size.                                                     |

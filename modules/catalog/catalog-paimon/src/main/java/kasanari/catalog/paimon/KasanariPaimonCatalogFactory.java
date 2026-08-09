@@ -12,8 +12,8 @@ import java.io.UncheckedIOException;
 import java.util.Map;
 
 public class KasanariPaimonCatalogFactory implements PaimonCatalogFactory {
-    private static final String CATALOG_KEY = "kasanari.catalog.key";
-    private static final String DEFAULT_CATALOG_KEY = "default";
+    public static final String CATALOG_NAME = "kasanari.catalog.name";
+    private static final String DEFAULT_CATALOG_NAME = "default";
 
     @Override
     public PaimonCatalogAdapter create(Map<String, String> fileIoProperties, Map<String, String> properties) {
@@ -30,12 +30,12 @@ public class KasanariPaimonCatalogFactory implements PaimonCatalogFactory {
         }
 
         var warehousePath = new Path(warehouse);
-        var catalogKey = properties.getOrDefault(CATALOG_KEY, DEFAULT_CATALOG_KEY);
+        var catalogName = properties.getOrDefault(CATALOG_NAME, DEFAULT_CATALOG_NAME);
 
         try {
             FileIO fileIO = FileIO.get(warehousePath, catalogContext);
             fileIO.checkOrMkdirs(warehousePath);
-            var catalog = new KasanariPaimonCatalog(fileIO, catalogKey, catalogContext, warehouse);
+            var catalog = new KasanariPaimonCatalog(fileIO, catalogName, catalogContext, warehouse);
             return new DefaultPaimonCatalogAdapter(catalog);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

@@ -56,8 +56,9 @@ public class KasanariIcebergCatalog extends BaseMetastoreViewCatalog implements 
     private Object hadoopConfig;
 
     @Override
-    public void initialize(String catalogName, Map<String, String> properties) {
-        this.catalogName = catalogName;
+    public void initialize(String name, Map<String, String> properties) {
+        super.initialize(name, properties);
+        this.catalogName = properties.getOrDefault(KasanariIcebergProperties.CATALOG_NAME, name);
         this.dataSource = new KasanariDataSource(properties);
 
         this.warehouse = properties.get("warehouse");
