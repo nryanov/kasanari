@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class ProxyPaimonCatalogFactory implements PaimonCatalogFactory {
     @Override
-    public PaimonCatalogAdapter create(Map<String, String> fileIoProperties, Map<String, String> properties) {
+    public PaimonCatalogAdapter create(String name, Map<String, String> fileIoProperties, Map<String, String> properties) {
         var config = new Configuration();
         fileIoProperties.forEach(config::set);
 

@@ -51,7 +51,7 @@ kasanari.authorization.casbin.repository.backend=yugabyte
 
 ### INTERNAL catalogs
 
-Set the same properties inside each catalog’s `catalogProperties` when registering via the Management API. For INTERNAL catalogs, Kasanari also injects `kasanari.catalog.name=<management catalog id>` when unset so rows are isolated per catalog.
+Set the same properties inside each catalog’s `catalogProperties` when registering via the Management API. Iceberg and Paimon use the management `catalogId` from catalog registration. Lance INTERNAL also injects `kasanari.catalog.name=<management catalog id>` when unset, because the Lance REST surface has no catalog-name parameter.
 
 ## Database layout
 

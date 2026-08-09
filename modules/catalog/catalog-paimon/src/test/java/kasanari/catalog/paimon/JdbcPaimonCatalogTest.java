@@ -43,7 +43,7 @@ public class JdbcPaimonCatalogTest extends PaimonCatalogAdapterTest {
         options.put("jdbc-table-prefix", "paimon_");
 
         var factory = new ProxyPaimonCatalogFactory();
-        return factory.create(config, options);
+        return factory.create("test-catalog", config, options);
     }
 
     @Override

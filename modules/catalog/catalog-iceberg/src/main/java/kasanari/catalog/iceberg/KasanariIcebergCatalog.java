@@ -58,7 +58,7 @@ public class KasanariIcebergCatalog extends BaseMetastoreViewCatalog implements 
     @Override
     public void initialize(String name, Map<String, String> properties) {
         super.initialize(name, properties);
-        this.catalogName = properties.getOrDefault(KasanariIcebergProperties.CATALOG_NAME, name);
+        this.catalogName = name;
         this.dataSource = new KasanariDataSource(properties);
 
         this.warehouse = properties.get("warehouse");

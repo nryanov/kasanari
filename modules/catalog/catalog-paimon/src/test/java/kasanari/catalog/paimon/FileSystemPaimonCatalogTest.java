@@ -31,7 +31,7 @@ public class FileSystemPaimonCatalogTest extends PaimonCatalogAdapterTest {
         options.put("warehouse", "s3a://warehouse");
 
         var factory = new ProxyPaimonCatalogFactory();
-        return factory.create(config, options);
+        return factory.create("test-catalog", config, options);
     }
 
     @Override

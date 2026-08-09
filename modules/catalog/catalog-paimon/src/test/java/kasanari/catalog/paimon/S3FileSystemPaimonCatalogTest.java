@@ -31,7 +31,7 @@ public class S3FileSystemPaimonCatalogTest extends PaimonCatalogAdapterTest {
         options.put("s3.path.style.access", "true");
 
         var factory = new ProxyPaimonCatalogFactory();
-        return factory.create(config, options);
+        return factory.create("test-catalog", config, options);
     }
 
     @Override
