@@ -91,7 +91,10 @@ public class KasanariLanceCatalog implements LanceNamespace, AutoCloseable {
         this.allocator = allocator;
         this.dataSource = new KasanariDataSource(properties);
         this.transactionManager = new JdbcTransactionManager(dataSource);
-        var catalogName = properties.getOrDefault(KasanariLanceProperties.CATALOG_NAME, "");
+        var catalogName = properties.get(KasanariLanceProperties.CATALOG_NAME);
+        if (catalogName == null || catalogName.isBlank()) {
+            throw new IllegalArgumentException("Required key `" + KasanariLanceProperties.CATALOG_NAME + "` is not set");
+        }
         var bundle = BackendFactoryLoader.load(
                 LanceRepositoryBundleFactory.class,
                 dataSource.repositoryBackend()
