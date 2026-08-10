@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_CATALOG_KEY;
+import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_CATALOG_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JdbcDatabaseRepositoryTest {
@@ -51,7 +51,7 @@ public class JdbcDatabaseRepositoryTest {
     @Test
     void createThenFindByNameReturnsRecord() {
         var record = new DatabaseRecord("my_db", Map.of("k", "v"), Optional.of("comment"));
-        var repository = new JdbcDatabaseRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcDatabaseRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var result = txManager.inTransactionR(tx -> repository.findByName(tx, "my_db"));
@@ -62,7 +62,7 @@ public class JdbcDatabaseRepositoryTest {
 
     @Test
     void findByNameMissingReturnsEmpty() {
-        var repository = new JdbcDatabaseRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcDatabaseRepository(DEFAULT_CATALOG_NAME);
 
         var result = txManager.inTransactionR(tx -> repository.findByName(tx, "missing"));
 
@@ -73,7 +73,7 @@ public class JdbcDatabaseRepositoryTest {
     @Test
     void deleteExistingReturnsTrue() {
         var record = JdbcPaimonPostgresTestHelper.databaseRecord("delete_me");
-        var repository = new JdbcDatabaseRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcDatabaseRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var result = txManager.inTransactionR(tx -> repository.delete(tx, "delete_me"));
@@ -84,7 +84,7 @@ public class JdbcDatabaseRepositoryTest {
 
     @Test
     void deleteMissingReturnsFalse() {
-        var repository = new JdbcDatabaseRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcDatabaseRepository(DEFAULT_CATALOG_NAME);
 
         var result = txManager.inTransactionR(tx -> repository.delete(tx, "missing"));
 
@@ -95,7 +95,7 @@ public class JdbcDatabaseRepositoryTest {
     @Test
     void alterMergesOptions() {
         var record = new DatabaseRecord("alter_db", Map.of("keep", "yes", "remove", "no"), Optional.empty());
-        var repository = new JdbcDatabaseRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcDatabaseRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
         txManager.inTransaction(tx -> repository.alter(tx, "alter_db", Map.of("keep", "updated", "new", "value"), Set.of("remove")));
 
@@ -109,7 +109,7 @@ public class JdbcDatabaseRepositoryTest {
     void findAllReturnsCreatedDatabases() {
         var recordA = JdbcPaimonPostgresTestHelper.databaseRecord("a");
         var recordB = JdbcPaimonPostgresTestHelper.databaseRecord("b");
-        var repository = new JdbcDatabaseRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcDatabaseRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> {
             repository.create(tx, recordA);
             repository.create(tx, recordB);

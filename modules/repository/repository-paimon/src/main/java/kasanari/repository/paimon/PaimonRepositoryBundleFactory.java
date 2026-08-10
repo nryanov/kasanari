@@ -4,5 +4,5 @@ import kasanari.repository.jdbc.BackendAwareFactory;
 import kasanari.repository.jdbc.KasanariDataSource;
 
 public interface PaimonRepositoryBundleFactory extends BackendAwareFactory {
-    PaimonRepositoryBundle create(String catalogKey, KasanariDataSource dataSource);
+    PaimonRepositoryBundle create(String catalogName, KasanariDataSource dataSource);
 }

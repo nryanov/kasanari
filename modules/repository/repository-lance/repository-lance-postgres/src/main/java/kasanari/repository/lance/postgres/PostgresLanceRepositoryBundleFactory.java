@@ -13,11 +13,14 @@ public final class PostgresLanceRepositoryBundleFactory implements LanceReposito
     }
 
     @Override
-    public LanceRepositoryBundle create(String catalogKey, TransactionManager<Handle> transactionManager) {
+    public LanceRepositoryBundle create(String catalogName, TransactionManager<Handle> transactionManager) {
+        if (catalogName == null || catalogName.isBlank()) {
+            throw new IllegalArgumentException("catalogName is required for the Postgres Lance repository backend");
+        }
         var initializer = new JdbcTableInitializer(transactionManager);
         return new LanceRepositoryBundle(
-                new JdbcNamespaceRepository(),
-                new JdbcTableRepository(),
+                new JdbcNamespaceRepository(catalogName),
+                new JdbcTableRepository(catalogName),
                 initializer::initialize
         );
     }

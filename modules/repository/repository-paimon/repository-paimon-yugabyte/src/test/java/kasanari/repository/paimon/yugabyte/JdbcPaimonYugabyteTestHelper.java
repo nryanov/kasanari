@@ -20,7 +20,7 @@ import java.util.Optional;
 
 public final class JdbcPaimonYugabyteTestHelper {
 
-    public static final String DEFAULT_CATALOG_KEY = "test-catalog";
+    public static final String DEFAULT_CATALOG_NAME = "test-catalog";
     public static final String DEFAULT_DATABASE = "test_db";
     public static final String DEFAULT_TABLE = "test_table";
     public static final String DEFAULT_BRANCH = "main";
@@ -65,35 +65,35 @@ public final class JdbcPaimonYugabyteTestHelper {
 
     public static void createDatabase(
             TransactionManager<Handle> txManager,
-            String catalogKey,
+            String catalogName,
             DatabaseRecord record) {
-        var repository = new JdbcDatabaseRepository(catalogKey);
+        var repository = new JdbcDatabaseRepository(catalogName);
         txManager.inTransaction(tx -> repository.create(tx, record));
     }
 
-    public static void createDatabase(TransactionManager<Handle> txManager, String catalogKey) {
-        createDatabase(txManager, catalogKey, databaseRecord(DEFAULT_DATABASE));
+    public static void createDatabase(TransactionManager<Handle> txManager, String catalogName) {
+        createDatabase(txManager, catalogName, databaseRecord(DEFAULT_DATABASE));
     }
 
     public static void createTable(
             TransactionManager<Handle> txManager,
-            String catalogKey,
+            String catalogName,
             TableRecord record) {
-        var repository = new JdbcTableRepository(catalogKey);
+        var repository = new JdbcTableRepository(catalogName);
         txManager.inTransaction(tx -> repository.create(tx, record));
     }
 
     public static void createDatabaseAndTable(
             TransactionManager<Handle> txManager,
-            String catalogKey,
+            String catalogName,
             String database,
             String table) {
-        createDatabase(txManager, catalogKey, databaseRecord(database));
-        createTable(txManager, catalogKey, tableRecord(database, table));
+        createDatabase(txManager, catalogName, databaseRecord(database));
+        createTable(txManager, catalogName, tableRecord(database, table));
     }
 
-    public static void createDatabaseAndTable(TransactionManager<Handle> txManager, String catalogKey) {
-        createDatabaseAndTable(txManager, catalogKey, DEFAULT_DATABASE, DEFAULT_TABLE);
+    public static void createDatabaseAndTable(TransactionManager<Handle> txManager, String catalogName) {
+        createDatabaseAndTable(txManager, catalogName, DEFAULT_DATABASE, DEFAULT_TABLE);
     }
 
     public static DatabaseRecord databaseRecord(String name) {

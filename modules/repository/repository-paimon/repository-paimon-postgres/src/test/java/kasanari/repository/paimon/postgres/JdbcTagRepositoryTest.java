@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_CATALOG_KEY;
+import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_CATALOG_NAME;
 import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_DATABASE;
 import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_TABLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,7 +44,7 @@ public class JdbcTagRepositoryTest {
     void beforeEach() {
         txManager = JdbcPaimonPostgresTestHelper.transactionManager(POSTGRES);
         JdbcPaimonPostgresTestHelper.initializeSchema(txManager);
-        JdbcPaimonPostgresTestHelper.createDatabaseAndTable(txManager, DEFAULT_CATALOG_KEY);
+        JdbcPaimonPostgresTestHelper.createDatabaseAndTable(txManager, DEFAULT_CATALOG_NAME);
     }
 
     @AfterEach
@@ -55,7 +55,7 @@ public class JdbcTagRepositoryTest {
     @Test
     void createThenFindReturnsRecord() {
         var record = JdbcPaimonPostgresTestHelper.tagRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "v1");
-        var repository = new JdbcTagRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTagRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record, false));
 
         var result = txManager.inTransactionR(tx -> repository.find(tx, TABLE, "v1"));
@@ -67,7 +67,7 @@ public class JdbcTagRepositoryTest {
     @Test
     void createIgnoreIfExistsDoesNotFail() {
         var record = JdbcPaimonPostgresTestHelper.tagRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "v1");
-        var repository = new JdbcTagRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTagRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record, false));
         txManager.inTransaction(tx -> repository.create(tx, record, true));
 
@@ -80,7 +80,7 @@ public class JdbcTagRepositoryTest {
     @Test
     void existsReturnsTrueAfterCreate() {
         var record = JdbcPaimonPostgresTestHelper.tagRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "v1");
-        var repository = new JdbcTagRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTagRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record, false));
 
         var result = txManager.inTransactionR(tx -> repository.exists(tx, TABLE, "v1"));
@@ -92,7 +92,7 @@ public class JdbcTagRepositoryTest {
     @Test
     void deleteExistingReturnsTrue() {
         var record = JdbcPaimonPostgresTestHelper.tagRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "v1");
-        var repository = new JdbcTagRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTagRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record, false));
 
         var deleteResult = txManager.inTransactionR(tx -> repository.delete(tx, TABLE, "v1"));
@@ -106,7 +106,7 @@ public class JdbcTagRepositoryTest {
 
     @Test
     void deleteMissingReturnsFalse() {
-        var repository = new JdbcTagRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTagRepository(DEFAULT_CATALOG_NAME);
 
         var result = txManager.inTransactionR(tx -> repository.delete(tx, TABLE, "missing"));
 
@@ -118,7 +118,7 @@ public class JdbcTagRepositoryTest {
     void findAllReturnsTagNames() {
         var recordA = JdbcPaimonPostgresTestHelper.tagRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "a");
         var recordB = JdbcPaimonPostgresTestHelper.tagRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "b");
-        var repository = new JdbcTagRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTagRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> {
             repository.create(tx, recordA, false);
             repository.create(tx, recordB, false);
@@ -135,7 +135,7 @@ public class JdbcTagRepositoryTest {
         var recordA = JdbcPaimonPostgresTestHelper.tagRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "release-1");
         var recordB = JdbcPaimonPostgresTestHelper.tagRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "release-2");
         var recordC = JdbcPaimonPostgresTestHelper.tagRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "snapshot-1");
-        var repository = new JdbcTagRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTagRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> {
             repository.create(tx, recordA, false);
             repository.create(tx, recordB, false);

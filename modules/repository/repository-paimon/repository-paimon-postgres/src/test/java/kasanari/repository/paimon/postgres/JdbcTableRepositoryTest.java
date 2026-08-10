@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_CATALOG_KEY;
+import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_CATALOG_NAME;
 import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_DATABASE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -42,7 +42,7 @@ public class JdbcTableRepositoryTest {
     void beforeEach() {
         txManager = JdbcPaimonPostgresTestHelper.transactionManager(POSTGRES);
         JdbcPaimonPostgresTestHelper.initializeSchema(txManager);
-        JdbcPaimonPostgresTestHelper.createDatabase(txManager, DEFAULT_CATALOG_KEY);
+        JdbcPaimonPostgresTestHelper.createDatabase(txManager, DEFAULT_CATALOG_NAME);
     }
 
     @AfterEach
@@ -54,7 +54,7 @@ public class JdbcTableRepositoryTest {
     void createThenExistsReturnsTrue() {
         var table = Identifier.create(DEFAULT_DATABASE, "table");
         var record = JdbcPaimonPostgresTestHelper.tableRecord(DEFAULT_DATABASE, "table");
-        var repository = new JdbcTableRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTableRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var result = txManager.inTransactionR(tx -> repository.exists(tx, table));
@@ -67,7 +67,7 @@ public class JdbcTableRepositoryTest {
     void createThenFindReturnsRecord() {
         var table = Identifier.create(DEFAULT_DATABASE, "table");
         var record = JdbcPaimonPostgresTestHelper.tableRecord(DEFAULT_DATABASE, "table");
-        var repository = new JdbcTableRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTableRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var result = txManager.inTransactionR(tx -> repository.find(tx, table));
@@ -79,7 +79,7 @@ public class JdbcTableRepositoryTest {
     @Test
     void findMissingReturnsEmpty() {
         var table = Identifier.create(DEFAULT_DATABASE, "missing");
-        var repository = new JdbcTableRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTableRepository(DEFAULT_CATALOG_NAME);
 
         var result = txManager.inTransactionR(tx -> repository.find(tx, table));
 
@@ -92,7 +92,7 @@ public class JdbcTableRepositoryTest {
         var table = Identifier.create(DEFAULT_DATABASE, "table");
         var record = JdbcPaimonPostgresTestHelper.tableRecord(DEFAULT_DATABASE, "table");
         var updated = new TableRecord(DEFAULT_DATABASE, "table", Map.of("format", "orc"), record.tableUuid());
-        var repository = new JdbcTableRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTableRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
         txManager.inTransaction(tx -> repository.alter(tx, updated));
 
@@ -106,7 +106,7 @@ public class JdbcTableRepositoryTest {
     void findAllReturnsCreatedTables() {
         var recordA = JdbcPaimonPostgresTestHelper.tableRecord(DEFAULT_DATABASE, "a");
         var recordB = JdbcPaimonPostgresTestHelper.tableRecord(DEFAULT_DATABASE, "b");
-        var repository = new JdbcTableRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTableRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> {
             repository.create(tx, recordA);
             repository.create(tx, recordB);
@@ -122,7 +122,7 @@ public class JdbcTableRepositoryTest {
     void deleteExistingReturnsTrue() {
         var table = Identifier.create(DEFAULT_DATABASE, "table");
         var record = JdbcPaimonPostgresTestHelper.tableRecord(DEFAULT_DATABASE, "table");
-        var repository = new JdbcTableRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTableRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var deleteResult = txManager.inTransactionR(tx -> repository.delete(tx, table));
@@ -137,7 +137,7 @@ public class JdbcTableRepositoryTest {
     @Test
     void deleteMissingReturnsFalse() {
         var table = Identifier.create(DEFAULT_DATABASE, "missing");
-        var repository = new JdbcTableRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTableRepository(DEFAULT_CATALOG_NAME);
 
         var result = txManager.inTransactionR(tx -> repository.delete(tx, table));
 
@@ -150,7 +150,7 @@ public class JdbcTableRepositoryTest {
         var from = Identifier.create(DEFAULT_DATABASE, "from");
         var to = Identifier.create(DEFAULT_DATABASE, "to");
         var record = JdbcPaimonPostgresTestHelper.tableRecord(DEFAULT_DATABASE, "from");
-        var repository = new JdbcTableRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTableRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
         txManager.inTransaction(tx -> repository.rename(tx, from, to));
 
@@ -169,7 +169,7 @@ public class JdbcTableRepositoryTest {
     @Test
     void findByUuidReturnsRecord() {
         var record = JdbcPaimonPostgresTestHelper.tableRecord(DEFAULT_DATABASE, "table");
-        var repository = new JdbcTableRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcTableRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var result = txManager.inTransactionR(tx -> repository.findByUuid(tx, record.tableUuid().orElseThrow()));

@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static kasanari.repository.paimon.yugabyte.JdbcPaimonYugabyteTestHelper.DEFAULT_CATALOG_KEY;
+import static kasanari.repository.paimon.yugabyte.JdbcPaimonYugabyteTestHelper.DEFAULT_CATALOG_NAME;
 import static kasanari.repository.paimon.yugabyte.JdbcPaimonYugabyteTestHelper.DEFAULT_DATABASE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -42,7 +42,7 @@ public class JdbcViewRepositoryTest {
     void beforeEach() {
         txManager = JdbcPaimonYugabyteTestHelper.transactionManager(YUGABYTE);
         JdbcPaimonYugabyteTestHelper.initializeSchema(txManager);
-        JdbcPaimonYugabyteTestHelper.createDatabase(txManager, DEFAULT_CATALOG_KEY);
+        JdbcPaimonYugabyteTestHelper.createDatabase(txManager, DEFAULT_CATALOG_NAME);
     }
 
     @AfterEach
@@ -54,7 +54,7 @@ public class JdbcViewRepositoryTest {
     void createThenFindReturnsRecord() {
         var view = Identifier.create(DEFAULT_DATABASE, "view");
         var record = JdbcPaimonYugabyteTestHelper.viewRecord(DEFAULT_DATABASE, "view");
-        var repository = new JdbcViewRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcViewRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var result = txManager.inTransactionR(tx -> repository.find(tx, view));
@@ -66,7 +66,7 @@ public class JdbcViewRepositoryTest {
     @Test
     void findMissingReturnsEmpty() {
         var view = Identifier.create(DEFAULT_DATABASE, "missing");
-        var repository = new JdbcViewRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcViewRepository(DEFAULT_CATALOG_NAME);
 
         var result = txManager.inTransactionR(tx -> repository.find(tx, view));
 
@@ -85,7 +85,7 @@ public class JdbcViewRepositoryTest {
                 record.dialects(),
                 record.options(),
                 record.comment());
-        var repository = new JdbcViewRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcViewRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
         txManager.inTransaction(tx -> repository.alter(tx, updated));
 
@@ -99,7 +99,7 @@ public class JdbcViewRepositoryTest {
     void findAllReturnsCreatedViews() {
         var recordA = JdbcPaimonYugabyteTestHelper.viewRecord(DEFAULT_DATABASE, "a");
         var recordB = JdbcPaimonYugabyteTestHelper.viewRecord(DEFAULT_DATABASE, "b");
-        var repository = new JdbcViewRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcViewRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> {
             repository.create(tx, recordA);
             repository.create(tx, recordB);
@@ -115,7 +115,7 @@ public class JdbcViewRepositoryTest {
     void deleteExistingReturnsTrue() {
         var view = Identifier.create(DEFAULT_DATABASE, "view");
         var record = JdbcPaimonYugabyteTestHelper.viewRecord(DEFAULT_DATABASE, "view");
-        var repository = new JdbcViewRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcViewRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var deleteResult = txManager.inTransactionR(tx -> repository.delete(tx, view));
@@ -133,7 +133,7 @@ public class JdbcViewRepositoryTest {
         var to = Identifier.create(DEFAULT_DATABASE, "to");
         var record = JdbcPaimonYugabyteTestHelper.viewRecord(DEFAULT_DATABASE, "from");
         var expectedRecord = JdbcPaimonYugabyteTestHelper.viewRecord(DEFAULT_DATABASE, "to");
-        var repository = new JdbcViewRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcViewRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var renameResult = txManager.inTransactionR(tx -> repository.rename(tx, from, to));

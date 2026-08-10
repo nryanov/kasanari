@@ -12,16 +12,16 @@ public final class YugabytePaimonRepositoryBundleFactory implements PaimonReposi
     }
 
     @Override
-    public PaimonRepositoryBundle create(String catalogKey, KasanariDataSource dataSource) {
+    public PaimonRepositoryBundle create(String catalogName, KasanariDataSource dataSource) {
         var initializer = new JdbcTableInitializer(dataSource);
         return new PaimonRepositoryBundle(
-                new JdbcDatabaseRepository(catalogKey),
-                new JdbcTableRepository(catalogKey),
-                new JdbcViewRepository(catalogKey),
-                new JdbcFunctionRepository(catalogKey),
-                new JdbcBranchRepository(catalogKey),
-                new JdbcTagRepository(catalogKey),
-                new JdbcPartitionStateRepository(catalogKey),
+                new JdbcDatabaseRepository(catalogName),
+                new JdbcTableRepository(catalogName),
+                new JdbcViewRepository(catalogName),
+                new JdbcFunctionRepository(catalogName),
+                new JdbcBranchRepository(catalogName),
+                new JdbcTagRepository(catalogName),
+                new JdbcPartitionStateRepository(catalogName),
                 KasanariCatalogLock::new,
                 initializer::initialize
         );

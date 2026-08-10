@@ -10,12 +10,16 @@ import java.util.Map;
 import java.util.Optional;
 
 public class JdbcTableRepository implements TableRepository<Handle> {
-    public JdbcTableRepository() {
+    private final String catalogName;
+
+    public JdbcTableRepository(String catalogName) {
+        this.catalogName = catalogName;
     }
 
     @Override
     public void upsert(Handle tx, String tableId, String namespacePath, String tableName, String location, Map<String, String> properties) {
         tx.createUpdate(JdbcQueries.UPSERT_TABLE)
+                .bind("catalog_name", catalogName)
                 .bind("table_id", tableId)
                 .bind("namespace_path", namespacePath)
                 .bind("table_name", tableName)
@@ -27,6 +31,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
     @Override
     public boolean exists(Handle tx, String tableId) {
         return tx.createQuery(JdbcQueries.TABLE_EXISTS)
+                .bind("catalog_name", catalogName)
                 .bind("table_id", tableId)
                 .mapTo(Integer.class)
                 .findOne()
@@ -36,6 +41,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
     @Override
     public Optional<TableMetadata> get(Handle tx, String tableId) {
         return tx.createQuery(JdbcQueries.GET_TABLE)
+                .bind("catalog_name", catalogName)
                 .bind("table_id", tableId)
                 .map((rs, ctx) -> new TableMetadata(
                         rs.getString("table_id"),
@@ -50,6 +56,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
     @Override
     public List<String> listByNamespace(Handle tx, String namespacePath) {
         return tx.createQuery(JdbcQueries.LIST_TABLE_IDS_BY_NAMESPACE)
+                .bind("catalog_name", catalogName)
                 .bind("namespace_path", namespacePath)
                 .mapTo(String.class)
                 .list();
@@ -58,6 +65,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
     @Override
     public List<PagedValue<String>> listNamesByNamespacePage(Handle tx, String namespacePath, long cursorId, int limit) {
         return tx.createQuery(JdbcQueries.LIST_TABLE_NAMES_BY_NAMESPACE_PAGE)
+                .bind("catalog_name", catalogName)
                 .bind("namespace_path", namespacePath)
                 .bind("cursor_id", cursorId)
                 .bind("limit", limit)
@@ -71,6 +79,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
     @Override
     public boolean delete(Handle tx, String tableId) {
         return tx.createUpdate(JdbcQueries.DELETE_TABLE)
+                .bind("catalog_name", catalogName)
                 .bind("table_id", tableId)
                 .execute() == 1;
     }

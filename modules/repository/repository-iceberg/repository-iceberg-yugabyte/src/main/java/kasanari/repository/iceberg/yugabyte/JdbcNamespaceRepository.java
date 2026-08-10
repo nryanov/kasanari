@@ -13,10 +13,10 @@ import java.util.Map;
 import java.util.Set;
 
 public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
-    private final String catalogKey;
+    private final String catalogName;
 
-    public JdbcNamespaceRepository(String catalogKey) {
-        this.catalogKey = catalogKey;
+    public JdbcNamespaceRepository(String catalogName) {
+        this.catalogName = catalogName;
     }
 
     @Override
@@ -24,7 +24,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
         var createNamespaceQuery = tx.createUpdate(JdbcQueries.CREATE_NAMESPACE);
-        createNamespaceQuery.bind(0, catalogKey);
+        createNamespaceQuery.bind(0, catalogName);
         createNamespaceQuery.bind(1, namespaceName);
 
         createNamespaceQuery.execute();
@@ -32,7 +32,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
         var upsertNamespacePropertiesBatch = tx.prepareBatch(JdbcQueries.UPSERT_NAMESPACE_PROPERTIES);
         metadata.forEach((key, value) -> {
             upsertNamespacePropertiesBatch
-                    .bind(0, catalogKey)
+                    .bind(0, catalogName)
                     .bind(1, namespaceName)
                     .bind(2, key)
                     .bind(3, value)
@@ -49,10 +49,10 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
         Query query;
         if (namespace.isEmpty()) {
             query = tx.createQuery(JdbcQueries.SELECT_ROOT_NAMESPACES);
-            query.bind(0, catalogKey);
+            query.bind(0, catalogName);
         } else {
             query = tx.createQuery(JdbcQueries.SELECT_CHILD_NAMESPACES);
-            query.bind(0, catalogKey);
+            query.bind(0, catalogName);
             query.bind(1, String.format("^%s[.][^.]+$", String.join("[.]", namespace.levels())));
         }
 
@@ -68,7 +68,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
         var selectNamespacePropertiesQuery = tx.createQuery(JdbcQueries.SELECT_NAMESPACE_PROPERTIES);
-        selectNamespacePropertiesQuery.bind(0, catalogKey);
+        selectNamespacePropertiesQuery.bind(0, catalogName);
         selectNamespacePropertiesQuery.bind(1, namespaceName);
 
         var result = new HashMap<String, String>();
@@ -87,7 +87,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
         var dropNamespaceQuery = tx.createUpdate(JdbcQueries.DELETE_NAMESPACE);
-        dropNamespaceQuery.bind(0, catalogKey);
+        dropNamespaceQuery.bind(0, catalogName);
         dropNamespaceQuery.bind(1, namespaceName);
         var affectedRows = dropNamespaceQuery.execute();
 
@@ -101,7 +101,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
         var upsertNamespacePropertiesBatch = tx.prepareBatch(JdbcQueries.UPSERT_NAMESPACE_PROPERTIES);
         properties.forEach((key, value) -> {
             upsertNamespacePropertiesBatch
-                    .bind(0, catalogKey)
+                    .bind(0, catalogName)
                     .bind(1, namespaceName)
                     .bind(2, key)
                     .bind(3, value)
@@ -118,7 +118,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
         var removeNamespacePropertiesQuery = tx.createUpdate(JdbcQueries.REMOVE_NAMESPACE_PROPERTIES);
-        removeNamespacePropertiesQuery.bind(0, catalogKey);
+        removeNamespacePropertiesQuery.bind(0, catalogName);
         removeNamespacePropertiesQuery.bind(1, namespaceName);
         removeNamespacePropertiesQuery.bind(2, properties.toArray(new String[0]));
 
@@ -132,7 +132,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
         var checkIfNamespaceExistsQuery = tx.createQuery(JdbcQueries.CHECK_IF_NAMESPACE_EXISTS);
-        checkIfNamespaceExistsQuery.bind(0, catalogKey);
+        checkIfNamespaceExistsQuery.bind(0, catalogName);
         checkIfNamespaceExistsQuery.bind(1, namespaceName);
 
         return checkIfNamespaceExistsQuery.mapTo(Boolean.class).first();
@@ -143,7 +143,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
         var query = tx.createQuery(JdbcQueries.CHECK_NAMESPACE_TABLES_RELATIONSHIPS);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, namespaceName);
 
         return query.mapTo(Boolean.class).first();
@@ -154,7 +154,7 @@ public class JdbcNamespaceRepository implements NamespaceRepository<Handle> {
         var namespaceName = IcebergUtils.namespaceName(namespace);
 
         var query = tx.createQuery(JdbcQueries.CHECK_NAMESPACE_VIEWS_RELATIONSHIPS);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, namespaceName);
 
         return query.mapTo(Boolean.class).first();

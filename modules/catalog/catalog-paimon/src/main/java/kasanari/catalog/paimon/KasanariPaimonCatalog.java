@@ -98,10 +98,10 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
     private final java.util.function.Function<Handle, CatalogLock> catalogLockFactory;
 
     private final FileIO fileIO;
-    private final String catalogKey;
+    private final String catalogName;
     private final String warehouse;
 
-    public KasanariPaimonCatalog(FileIO fileIO, String catalogKey, CatalogContext context, String warehouse) {
+    public KasanariPaimonCatalog(FileIO fileIO, String catalogName, CatalogContext context, String warehouse) {
         super(fileIO, context);
 
         var options = context.options().toMap();
@@ -110,7 +110,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         var bundle = BackendFactoryLoader.load(
                 PaimonRepositoryBundleFactory.class,
                 dataSource.repositoryBackend()
-        ).create(catalogKey, dataSource);
+        ).create(catalogName, dataSource);
         this.databaseRepository = bundle.databaseRepository();
         this.tableRepository = bundle.tableRepository();
         this.viewRepository = bundle.viewRepository();
@@ -122,7 +122,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
         bundle.schemaInitializer().run();
 
         this.fileIO = fileIO;
-        this.catalogKey = catalogKey;
+        this.catalogName = catalogName;
         this.warehouse = warehouse;
     }
 
@@ -1287,7 +1287,7 @@ public class KasanariPaimonCatalog extends AbstractCatalog {
 
     @Override
     public CatalogLoader catalogLoader() {
-        return new KasanariCatalogLoader(fileIO, catalogKey, context, warehouse);
+        return new KasanariCatalogLoader(fileIO, catalogName, context, warehouse);
     }
 
     @Override

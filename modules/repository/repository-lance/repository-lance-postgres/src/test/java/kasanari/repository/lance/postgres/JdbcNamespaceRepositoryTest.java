@@ -1,7 +1,7 @@
-package kasanari.repository.lance.yugabyte;
+package kasanari.repository.lance.postgres;
 
-import kasanari.fixtures.yugabyte.YugabyteFixtureContainer;
-import kasanari.fixtures.yugabyte.YugabyteHelper;
+import kasanari.fixtures.postgres.PostgresFixtureContainer;
+import kasanari.fixtures.postgres.PostgresHelper;
 import kasanari.repository.core.TransactionManager;
 import org.jdbi.v3.core.Handle;
 import org.junit.jupiter.api.AfterAll;
@@ -13,38 +13,38 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static kasanari.repository.lance.yugabyte.JdbcLanceYugabyteTestHelper.DEFAULT_CATALOG_NAME;
-import static kasanari.repository.lance.yugabyte.JdbcLanceYugabyteTestHelper.OTHER_CATALOG_NAME;
+import static kasanari.repository.lance.postgres.JdbcLancePostgresTestHelper.DEFAULT_CATALOG_NAME;
+import static kasanari.repository.lance.postgres.JdbcLancePostgresTestHelper.OTHER_CATALOG_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JdbcNamespaceRepositoryTest {
-    private static final YugabyteFixtureContainer YUGABYTE = new YugabyteFixtureContainer();
-    private static YugabyteHelper helper;
+    private static final PostgresFixtureContainer POSTGRES = new PostgresFixtureContainer();
+    private static PostgresHelper helper;
     private static TransactionManager<Handle> txManager;
 
     @BeforeAll
     static void setup() {
-        YUGABYTE.start();
-        helper = new YugabyteHelper(YUGABYTE);
+        POSTGRES.start();
+        helper = new PostgresHelper(POSTGRES);
     }
 
     @AfterAll
     static void cleanup() {
-        JdbcLanceYugabyteTestHelper.close();
-        YUGABYTE.stop();
+        JdbcLancePostgresTestHelper.close();
+        POSTGRES.stop();
     }
 
     @BeforeEach
     void beforeEach() {
-        txManager = JdbcLanceYugabyteTestHelper.transactionManager(YUGABYTE);
-        JdbcLanceYugabyteTestHelper.initializeSchema(txManager);
+        txManager = JdbcLancePostgresTestHelper.transactionManager(POSTGRES);
+        JdbcLancePostgresTestHelper.initializeSchema(txManager);
     }
 
     @AfterEach
     void afterEach() {
-        JdbcLanceYugabyteTestHelper.truncateAll(helper);
+        JdbcLancePostgresTestHelper.truncateAll(helper);
     }
 
     @Test

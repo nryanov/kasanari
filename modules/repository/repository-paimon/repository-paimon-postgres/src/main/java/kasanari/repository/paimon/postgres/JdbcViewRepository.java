@@ -9,16 +9,16 @@ import java.util.List;
 import java.util.Optional;
 
 public class JdbcViewRepository implements ViewRepository<Handle> {
-    private final String catalogKey;
+    private final String catalogName;
 
-    public JdbcViewRepository(String catalogKey) {
-        this.catalogKey = catalogKey;
+    public JdbcViewRepository(String catalogName) {
+        this.catalogName = catalogName;
     }
 
     @Override
     public List<ViewRecord> findAll(Handle tx, String database) {
         var query = tx.createQuery(JdbcQueries.LIST_VIEWS);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, database);
 
         return query
@@ -36,7 +36,7 @@ public class JdbcViewRepository implements ViewRepository<Handle> {
     @Override
     public List<ViewRecord> findPage(Handle tx, String database, String viewNamePatternLike, long idAfter, int pageSize) {
         var query = tx.createQuery(JdbcQueries.LIST_VIEWS_PAGE);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, database);
         query.bind(2, idAfter);
         query.bind(3, viewNamePatternLike);
@@ -62,7 +62,7 @@ public class JdbcViewRepository implements ViewRepository<Handle> {
             long idAfter,
             int pageSize) {
         var query = tx.createQuery(JdbcQueries.LIST_VIEWS_PAGE_GLOBALLY);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, idAfter);
         query.bind(2, databaseNamePatternLike);
         query.bind(3, viewNamePatternLike);
@@ -83,7 +83,7 @@ public class JdbcViewRepository implements ViewRepository<Handle> {
     @Override
     public boolean delete(Handle tx, Identifier identifier) {
         var query = tx.createUpdate(JdbcQueries.DELETE_VIEW);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, identifier.getDatabaseName());
         query.bind(2, identifier.getTableName());
         return query.execute() == 1;
@@ -92,7 +92,7 @@ public class JdbcViewRepository implements ViewRepository<Handle> {
     @Override
     public void create(Handle tx, ViewRecord record) {
         var query = tx.createUpdate(JdbcQueries.INSERT_VIEW);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, record.database());
         query.bind(2, record.name());
         query.bind(3, record.query());
@@ -109,7 +109,7 @@ public class JdbcViewRepository implements ViewRepository<Handle> {
         query.bind(1, JsonSerde.encodeMap(record.dialects()));
         query.bind(2, JsonSerde.encodeMap(record.options()));
         query.bind(3, record.comment().orElse(null));
-        query.bind(4, catalogKey);
+        query.bind(4, catalogName);
         query.bind(5, record.database());
         query.bind(6, record.name());
         query.execute();
@@ -120,7 +120,7 @@ public class JdbcViewRepository implements ViewRepository<Handle> {
         var query = tx.createUpdate(JdbcQueries.RENAME_VIEW);
         query.bind(0, to.getDatabaseName());
         query.bind(1, to.getTableName());
-        query.bind(2, catalogKey);
+        query.bind(2, catalogName);
         query.bind(3, from.getDatabaseName());
         query.bind(4, from.getTableName());
         return query.execute() == 1;
@@ -129,7 +129,7 @@ public class JdbcViewRepository implements ViewRepository<Handle> {
     @Override
     public Optional<ViewRecord> find(Handle tx, Identifier view) {
         var query = tx.createQuery(JdbcQueries.SELECT_VIEW);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, view.getDatabaseName());
         query.bind(2, view.getTableName());
 

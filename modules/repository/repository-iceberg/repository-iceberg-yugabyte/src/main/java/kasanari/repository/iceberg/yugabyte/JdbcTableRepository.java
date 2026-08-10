@@ -13,10 +13,10 @@ import java.util.List;
 import java.util.Optional;
 
 public class JdbcTableRepository implements TableRepository<Handle> {
-    private final String catalogKey;
+    private final String catalogName;
 
-    public JdbcTableRepository(String catalogKey) {
-        this.catalogKey = catalogKey;
+    public JdbcTableRepository(String catalogName) {
+        this.catalogName = catalogName;
     }
 
     @Override
@@ -24,7 +24,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
         var namespaceName = IcebergUtils.namespaceName(tableIdentifier.namespace());
         return find(tx, tableIdentifier).orElseThrow(() -> new NoSuchTableException(
                 String.format("Table `%s` does not exist in namespace `%s` and catalog `%s`",
-                        tableIdentifier.name(), namespaceName, catalogKey)));
+                        tableIdentifier.name(), namespaceName, catalogName)));
     }
 
     @Override
@@ -32,12 +32,12 @@ public class JdbcTableRepository implements TableRepository<Handle> {
         var namespaceName = IcebergUtils.namespaceName(tableIdentifier.namespace());
 
         var query = tx.createQuery(JdbcQueries.SELECT_TABLE);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, namespaceName);
         query.bind(2, tableIdentifier.name());
 
         return query.map((rs, ctx) -> new IcebergTableRecord(
-                rs.getString("catalog_key"),
+                rs.getString("catalog_name"),
                 rs.getString("namespace_name"),
                 rs.getString("table_name"),
                 rs.getString("metadata_location"),
@@ -50,7 +50,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
         var namespaceName = IcebergUtils.namespaceName(tableIdentifier.namespace());
 
         var query = tx.createQuery(JdbcQueries.CHECK_IF_TABLE_EXISTS);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, namespaceName);
         query.bind(2, tableIdentifier.name());
 
@@ -62,7 +62,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
         var namespaceName = IcebergUtils.namespaceName(tableIdentifier.namespace());
 
         var query = tx.createUpdate(JdbcQueries.CREATE_TABLE);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, namespaceName);
         query.bind(2, tableIdentifier.name());
         query.bind(3, newMetadataLocation);
@@ -79,7 +79,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
         var query = tx.createUpdate(JdbcQueries.UPDATE_TABLE);
         query.bind(0, newMetadataLocation);
         query.bind(1, previousMetadataLocation);
-        query.bind(2, catalogKey);
+        query.bind(2, catalogName);
         query.bind(3, namespaceName);
         query.bind(4, tableIdentifier.name());
         query.bind(5, previousMetadataLocation);
@@ -96,7 +96,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
         var result = new ArrayList<TableIdentifier>();
 
         var query = tx.createQuery(JdbcQueries.LIST_TABLES);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, namespaceName);
 
         query.mapTo(String.class).forEach(it -> result.add(TableIdentifier.of(namespace, it)));
@@ -109,7 +109,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
         var namespaceName = IcebergUtils.namespaceName(tableIdentifier.namespace());
 
         var query = tx.createUpdate(JdbcQueries.DELETE_TABLE);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, namespaceName);
         query.bind(2, tableIdentifier.name());
 
@@ -126,7 +126,7 @@ public class JdbcTableRepository implements TableRepository<Handle> {
         var query = tx.createUpdate(JdbcQueries.RENAME_TABLE);
         query.bind(0, namespaceNameTo);
         query.bind(1, to.name());
-        query.bind(2, catalogKey);
+        query.bind(2, catalogName);
         query.bind(3, namespaceNameFrom);
         query.bind(4, from.name());
 

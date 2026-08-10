@@ -9,16 +9,16 @@ import java.util.List;
 import java.util.Optional;
 
 public class JdbcFunctionRepository implements FunctionRepository<Handle> {
-    private final String catalogKey;
+    private final String catalogName;
 
-    public JdbcFunctionRepository(String catalogKey) {
-        this.catalogKey = catalogKey;
+    public JdbcFunctionRepository(String catalogName) {
+        this.catalogName = catalogName;
     }
 
     @Override
     public List<FunctionRecord> findAll(Handle tx, String database) {
         var query = tx.createQuery(JdbcQueries.LIST_FUNCTIONS);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, database);
 
         return query
@@ -41,7 +41,7 @@ public class JdbcFunctionRepository implements FunctionRepository<Handle> {
             long idAfter,
             int pageSize) {
         var query = tx.createQuery(JdbcQueries.LIST_FUNCTIONS_PAGE);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, database);
         query.bind(2, idAfter);
         query.bind(3, functionNamePatternLike);
@@ -67,7 +67,7 @@ public class JdbcFunctionRepository implements FunctionRepository<Handle> {
             long idAfter,
             int pageSize) {
         var query = tx.createQuery(JdbcQueries.LIST_FUNCTIONS_PAGE_GLOBALLY);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, idAfter);
         query.bind(2, databaseNamePatternLike);
         query.bind(3, functionNamePatternLike);
@@ -88,7 +88,7 @@ public class JdbcFunctionRepository implements FunctionRepository<Handle> {
     @Override
     public Optional<FunctionRecord> find(Handle tx, Identifier function) {
         var query = tx.createQuery(JdbcQueries.SELECT_FUNCTION);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, function.getDatabaseName());
         query.bind(2, function.getTableName());
 
@@ -107,7 +107,7 @@ public class JdbcFunctionRepository implements FunctionRepository<Handle> {
     @Override
     public boolean delete(Handle tx, Identifier identifier) {
         var query = tx.createUpdate(JdbcQueries.DELETE_FUNCTION);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, identifier.getDatabaseName());
         query.bind(2, identifier.getTableName());
         return query.execute() == 1;
@@ -116,7 +116,7 @@ public class JdbcFunctionRepository implements FunctionRepository<Handle> {
     @Override
     public void create(Handle tx, FunctionRecord record) {
         var query = tx.createUpdate(JdbcQueries.INSERT_FUNCTION);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, record.database());
         query.bind(2, record.name());
         query.bind(3, record.deterministic());
@@ -133,7 +133,7 @@ public class JdbcFunctionRepository implements FunctionRepository<Handle> {
         query.bind(1, JsonSerde.encodeDefinitions(record.definitions()));
         query.bind(2, JsonSerde.encodeMap(record.options()));
         query.bind(3, record.comment().orElse(null));
-        query.bind(4, catalogKey);
+        query.bind(4, catalogName);
         query.bind(5, record.database());
         query.bind(6, record.name());
         query.execute();

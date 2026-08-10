@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static kasanari.repository.paimon.yugabyte.JdbcPaimonYugabyteTestHelper.DEFAULT_CATALOG_KEY;
+import static kasanari.repository.paimon.yugabyte.JdbcPaimonYugabyteTestHelper.DEFAULT_CATALOG_NAME;
 import static kasanari.repository.paimon.yugabyte.JdbcPaimonYugabyteTestHelper.DEFAULT_DATABASE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -42,7 +42,7 @@ public class JdbcFunctionRepositoryTest {
     void beforeEach() {
         txManager = JdbcPaimonYugabyteTestHelper.transactionManager(YUGABYTE);
         JdbcPaimonYugabyteTestHelper.initializeSchema(txManager);
-        JdbcPaimonYugabyteTestHelper.createDatabase(txManager, DEFAULT_CATALOG_KEY);
+        JdbcPaimonYugabyteTestHelper.createDatabase(txManager, DEFAULT_CATALOG_NAME);
     }
 
     @AfterEach
@@ -54,7 +54,7 @@ public class JdbcFunctionRepositoryTest {
     void createThenFindReturnsRecord() {
         var function = Identifier.create(DEFAULT_DATABASE, "fn");
         var record = JdbcPaimonYugabyteTestHelper.functionRecord(DEFAULT_DATABASE, "fn");
-        var repository = new JdbcFunctionRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcFunctionRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var result = txManager.inTransactionR(tx -> repository.find(tx, function));
@@ -66,7 +66,7 @@ public class JdbcFunctionRepositoryTest {
     @Test
     void findMissingReturnsEmpty() {
         var function = Identifier.create(DEFAULT_DATABASE, "missing");
-        var repository = new JdbcFunctionRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcFunctionRepository(DEFAULT_CATALOG_NAME);
 
         var result = txManager.inTransactionR(tx -> repository.find(tx, function));
 
@@ -85,7 +85,7 @@ public class JdbcFunctionRepositoryTest {
                 JdbcPaimonYugabyteTestHelper.sqlDefinition("SELECT 2"),
                 Optional.of("updated comment"),
                 Map.of("owner", "updated"));
-        var repository = new JdbcFunctionRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcFunctionRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
         txManager.inTransaction(tx -> repository.alter(tx, updated));
 
@@ -99,7 +99,7 @@ public class JdbcFunctionRepositoryTest {
     void findAllReturnsCreatedFunctions() {
         var recordA = JdbcPaimonYugabyteTestHelper.functionRecord(DEFAULT_DATABASE, "a");
         var recordB = JdbcPaimonYugabyteTestHelper.functionRecord(DEFAULT_DATABASE, "b");
-        var repository = new JdbcFunctionRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcFunctionRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> {
             repository.create(tx, recordA);
             repository.create(tx, recordB);
@@ -115,7 +115,7 @@ public class JdbcFunctionRepositoryTest {
     void deleteExistingReturnsTrue() {
         var function = Identifier.create(DEFAULT_DATABASE, "fn");
         var record = JdbcPaimonYugabyteTestHelper.functionRecord(DEFAULT_DATABASE, "fn");
-        var repository = new JdbcFunctionRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcFunctionRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var deleteResult = txManager.inTransactionR(tx -> repository.delete(tx, function));
@@ -130,7 +130,7 @@ public class JdbcFunctionRepositoryTest {
     @Test
     void deleteMissingReturnsFalse() {
         var function = Identifier.create(DEFAULT_DATABASE, "missing");
-        var repository = new JdbcFunctionRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcFunctionRepository(DEFAULT_CATALOG_NAME);
 
         var result = txManager.inTransactionR(tx -> repository.delete(tx, function));
 

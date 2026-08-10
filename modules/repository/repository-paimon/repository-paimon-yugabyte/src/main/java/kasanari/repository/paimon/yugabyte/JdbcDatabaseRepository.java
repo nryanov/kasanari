@@ -10,16 +10,16 @@ import java.util.Optional;
 import java.util.Set;
 
 public class JdbcDatabaseRepository implements DatabaseRepository<Handle> {
-    private final String catalogKey;
+    private final String catalogName;
 
-    public JdbcDatabaseRepository(String catalogKey) {
-        this.catalogKey = catalogKey;
+    public JdbcDatabaseRepository(String catalogName) {
+        this.catalogName = catalogName;
     }
 
     @Override
     public Optional<DatabaseRecord> findByName(Handle tx, String name) {
         var query = tx.createQuery(JdbcQueries.SELECT_DATABASE);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, name);
 
         return query
@@ -34,7 +34,7 @@ public class JdbcDatabaseRepository implements DatabaseRepository<Handle> {
     @Override
     public void create(Handle tx, DatabaseRecord record) {
         var query = tx.createUpdate(JdbcQueries.INSERT_DATABASE);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, record.name());
         query.bind(2, JsonSerde.encodeMap(record.options()));
         query.bind(3, record.comment().orElse(null));
@@ -44,7 +44,7 @@ public class JdbcDatabaseRepository implements DatabaseRepository<Handle> {
     @Override
     public boolean delete(Handle tx, String name) {
         var query = tx.createUpdate(JdbcQueries.DELETE_DATABASE);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         query.bind(1, name);
         return query.execute() == 1;
     }
@@ -63,7 +63,7 @@ public class JdbcDatabaseRepository implements DatabaseRepository<Handle> {
 
         var query = tx.createUpdate(JdbcQueries.UPDATE_DATABASE);
         query.bind(0, JsonSerde.encodeMap(merged));
-        query.bind(1, catalogKey);
+        query.bind(1, catalogName);
         query.bind(2, name);
         return query.execute() == 1;
     }
@@ -71,7 +71,7 @@ public class JdbcDatabaseRepository implements DatabaseRepository<Handle> {
     @Override
     public List<DatabaseRecord> findAll(Handle tx) {
         var query = tx.createQuery(JdbcQueries.LIST_DATABASES);
-        query.bind(0, catalogKey);
+        query.bind(0, catalogName);
         return query
                 .map((rs, ctx) -> new DatabaseRecord(
                         rs.getString("database_name"),

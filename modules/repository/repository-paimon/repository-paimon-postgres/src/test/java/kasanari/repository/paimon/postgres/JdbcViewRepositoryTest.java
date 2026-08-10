@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_CATALOG_KEY;
+import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_CATALOG_NAME;
 import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_DATABASE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -42,7 +42,7 @@ public class JdbcViewRepositoryTest {
     void beforeEach() {
         txManager = JdbcPaimonPostgresTestHelper.transactionManager(POSTGRES);
         JdbcPaimonPostgresTestHelper.initializeSchema(txManager);
-        JdbcPaimonPostgresTestHelper.createDatabase(txManager, DEFAULT_CATALOG_KEY);
+        JdbcPaimonPostgresTestHelper.createDatabase(txManager, DEFAULT_CATALOG_NAME);
     }
 
     @AfterEach
@@ -54,7 +54,7 @@ public class JdbcViewRepositoryTest {
     void createThenFindReturnsRecord() {
         var view = Identifier.create(DEFAULT_DATABASE, "view");
         var record = JdbcPaimonPostgresTestHelper.viewRecord(DEFAULT_DATABASE, "view");
-        var repository = new JdbcViewRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcViewRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var result = txManager.inTransactionR(tx -> repository.find(tx, view));
@@ -66,7 +66,7 @@ public class JdbcViewRepositoryTest {
     @Test
     void findMissingReturnsEmpty() {
         var view = Identifier.create(DEFAULT_DATABASE, "missing");
-        var repository = new JdbcViewRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcViewRepository(DEFAULT_CATALOG_NAME);
 
         var result = txManager.inTransactionR(tx -> repository.find(tx, view));
 
@@ -85,7 +85,7 @@ public class JdbcViewRepositoryTest {
                 record.dialects(),
                 record.options(),
                 record.comment());
-        var repository = new JdbcViewRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcViewRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
         txManager.inTransaction(tx -> repository.alter(tx, updated));
 
@@ -99,7 +99,7 @@ public class JdbcViewRepositoryTest {
     void findAllReturnsCreatedViews() {
         var recordA = JdbcPaimonPostgresTestHelper.viewRecord(DEFAULT_DATABASE, "a");
         var recordB = JdbcPaimonPostgresTestHelper.viewRecord(DEFAULT_DATABASE, "b");
-        var repository = new JdbcViewRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcViewRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> {
             repository.create(tx, recordA);
             repository.create(tx, recordB);
@@ -115,7 +115,7 @@ public class JdbcViewRepositoryTest {
     void deleteExistingReturnsTrue() {
         var view = Identifier.create(DEFAULT_DATABASE, "view");
         var record = JdbcPaimonPostgresTestHelper.viewRecord(DEFAULT_DATABASE, "view");
-        var repository = new JdbcViewRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcViewRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var deleteResult = txManager.inTransactionR(tx -> repository.delete(tx, view));
@@ -133,7 +133,7 @@ public class JdbcViewRepositoryTest {
         var to = Identifier.create(DEFAULT_DATABASE, "to");
         var record = JdbcPaimonPostgresTestHelper.viewRecord(DEFAULT_DATABASE, "from");
         var expectedRecord = JdbcPaimonPostgresTestHelper.viewRecord(DEFAULT_DATABASE, "to");
-        var repository = new JdbcViewRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcViewRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var renameResult = txManager.inTransactionR(tx -> repository.rename(tx, from, to));

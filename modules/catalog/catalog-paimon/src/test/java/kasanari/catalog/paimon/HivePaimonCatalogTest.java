@@ -40,7 +40,7 @@ public class HivePaimonCatalogTest extends PaimonCatalogAdapterTest {
         options.put("uri", hive.thriftUri());
 
         var factory = new ProxyPaimonCatalogFactory();
-        return factory.create(config, options);
+        return factory.create("test-catalog", config, options);
     }
 
     @Override

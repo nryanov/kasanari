@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_CATALOG_KEY;
+import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_CATALOG_NAME;
 import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_DATABASE;
 import static kasanari.repository.paimon.postgres.JdbcPaimonPostgresTestHelper.DEFAULT_TABLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,7 +44,7 @@ public class JdbcBranchRepositoryTest {
     void beforeEach() {
         txManager = JdbcPaimonPostgresTestHelper.transactionManager(POSTGRES);
         JdbcPaimonPostgresTestHelper.initializeSchema(txManager);
-        JdbcPaimonPostgresTestHelper.createDatabaseAndTable(txManager, DEFAULT_CATALOG_KEY);
+        JdbcPaimonPostgresTestHelper.createDatabaseAndTable(txManager, DEFAULT_CATALOG_NAME);
     }
 
     @AfterEach
@@ -55,7 +55,7 @@ public class JdbcBranchRepositoryTest {
     @Test
     void createThenFindAllReturnsBranch() {
         var record = JdbcPaimonPostgresTestHelper.branchRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "dev");
-        var repository = new JdbcBranchRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcBranchRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var result = txManager.inTransactionR(tx -> repository.findAll(tx, TABLE));
@@ -67,7 +67,7 @@ public class JdbcBranchRepositoryTest {
     @Test
     void deleteExistingReturnsTrue() {
         var record = JdbcPaimonPostgresTestHelper.branchRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "dev");
-        var repository = new JdbcBranchRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcBranchRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var deleteResult = txManager.inTransactionR(tx -> repository.delete(tx, TABLE, "dev"));
@@ -81,7 +81,7 @@ public class JdbcBranchRepositoryTest {
 
     @Test
     void deleteMissingReturnsFalse() {
-        var repository = new JdbcBranchRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcBranchRepository(DEFAULT_CATALOG_NAME);
 
         var result = txManager.inTransactionR(tx -> repository.delete(tx, TABLE, "missing"));
 
@@ -93,7 +93,7 @@ public class JdbcBranchRepositoryTest {
     void renameExistingReturnsTrue() {
         var record = JdbcPaimonPostgresTestHelper.branchRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "from");
         var expectedRecord = new BranchRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "to", record.tagName());
-        var repository = new JdbcBranchRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcBranchRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var renameResult = txManager.inTransactionR(tx -> repository.rename(tx, TABLE, "from", "to"));
@@ -109,7 +109,7 @@ public class JdbcBranchRepositoryTest {
     void fastForwardClearsTagName() {
         var record = JdbcPaimonPostgresTestHelper.branchRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "dev");
         var expectedRecord = new BranchRecord(DEFAULT_DATABASE, DEFAULT_TABLE, "dev", Optional.empty());
-        var repository = new JdbcBranchRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcBranchRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.create(tx, record));
 
         var fastForwardResult = txManager.inTransactionR(tx -> repository.fastForward(tx, TABLE, "dev"));

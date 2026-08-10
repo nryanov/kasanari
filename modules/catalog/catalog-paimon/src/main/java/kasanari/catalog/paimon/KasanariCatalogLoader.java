@@ -7,19 +7,19 @@ import org.apache.paimon.fs.FileIO;
 
 public class KasanariCatalogLoader implements CatalogLoader {
     private final FileIO fileIO;
-    private final String catalogKey;
+    private final String catalogName;
     private final CatalogContext context;
     private final String warehouse;
 
-    public KasanariCatalogLoader(FileIO fileIO, String catalogKey, CatalogContext context, String warehouse) {
+    public KasanariCatalogLoader(FileIO fileIO, String catalogName, CatalogContext context, String warehouse) {
         this.fileIO = fileIO;
-        this.catalogKey = catalogKey;
+        this.catalogName = catalogName;
         this.context = context;
         this.warehouse = warehouse;
     }
 
     @Override
     public Catalog load() {
-        return new KasanariPaimonCatalog(fileIO, catalogKey, context, warehouse);
+        return new KasanariPaimonCatalog(fileIO, catalogName, context, warehouse);
     }
 }

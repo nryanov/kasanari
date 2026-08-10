@@ -135,10 +135,12 @@ public class PaimonCatalogRouter {
     private PaimonCatalogAdapter createAdapter(CatalogMetadata catalog) {
         return switch (catalog.catalogMode()) {
             case INTERNAL -> kasanariPaimonCatalogFactory.create(
+                    catalog.catalogName(),
                     catalog.spec().fileIoProperties(),
                     catalog.spec().catalogProperties()
             );
             case PROXY -> proxyPaimonCatalogFactory.create(
+                    catalog.catalogName(),
                     catalog.spec().fileIoProperties(),
                     catalog.spec().catalogProperties()
             );

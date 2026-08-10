@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static kasanari.repository.paimon.yugabyte.JdbcPaimonYugabyteTestHelper.DEFAULT_BRANCH;
-import static kasanari.repository.paimon.yugabyte.JdbcPaimonYugabyteTestHelper.DEFAULT_CATALOG_KEY;
+import static kasanari.repository.paimon.yugabyte.JdbcPaimonYugabyteTestHelper.DEFAULT_CATALOG_NAME;
 import static kasanari.repository.paimon.yugabyte.JdbcPaimonYugabyteTestHelper.DEFAULT_DATABASE;
 import static kasanari.repository.paimon.yugabyte.JdbcPaimonYugabyteTestHelper.DEFAULT_TABLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,7 +46,7 @@ public class JdbcPartitionStateRepositoryTest {
     void beforeEach() {
         txManager = JdbcPaimonYugabyteTestHelper.transactionManager(YUGABYTE);
         JdbcPaimonYugabyteTestHelper.initializeSchema(txManager);
-        JdbcPaimonYugabyteTestHelper.createDatabaseAndTable(txManager, DEFAULT_CATALOG_KEY);
+        JdbcPaimonYugabyteTestHelper.createDatabaseAndTable(txManager, DEFAULT_CATALOG_NAME);
     }
 
     @AfterEach
@@ -57,7 +57,7 @@ public class JdbcPartitionStateRepositoryTest {
     @Test
     void persistCommitStatisticsThenFindAllReturnsPartition() {
         var statistics = List.of(JdbcPaimonYugabyteTestHelper.partitionStatistics(SPEC, 10L, 100L, 1L, 1000L, 4));
-        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.persistCommitStatistics(tx, TABLE, DEFAULT_BRANCH, 1L, statistics));
 
         var result = txManager.inTransactionR(tx -> repository.findAll(tx, TABLE, DEFAULT_BRANCH));
@@ -70,7 +70,7 @@ public class JdbcPartitionStateRepositoryTest {
     void persistCommitStatisticsAccumulatesCounts() {
         var firstCommit = List.of(JdbcPaimonYugabyteTestHelper.partitionStatistics(SPEC, 10L, 100L, 1L, 1000L, 4));
         var secondCommit = List.of(JdbcPaimonYugabyteTestHelper.partitionStatistics(SPEC, 5L, 50L, 1L, 2000L, 4));
-        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.persistCommitStatistics(tx, TABLE, DEFAULT_BRANCH, 1L, firstCommit));
         txManager.inTransaction(tx -> repository.persistCommitStatistics(tx, TABLE, DEFAULT_BRANCH, 2L, secondCommit));
 
@@ -84,7 +84,7 @@ public class JdbcPartitionStateRepositoryTest {
     void findBySpecsReturnsMatchingPartitions() {
         var specA = JdbcPaimonYugabyteTestHelper.partitionSpec("dt", "2024-01-01");
         var specB = JdbcPaimonYugabyteTestHelper.partitionSpec("dt", "2024-01-02");
-        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.persistCommitStatistics(
                 tx, TABLE, DEFAULT_BRANCH, 1L,
                 List.of(
@@ -102,7 +102,7 @@ public class JdbcPartitionStateRepositoryTest {
 
     @Test
     void findBySpecsEmptyListReturnsEmpty() {
-        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_NAME);
 
         var result = txManager.inTransactionR(tx -> repository.findBySpecs(tx, TABLE, DEFAULT_BRANCH, List.of()));
 
@@ -113,7 +113,7 @@ public class JdbcPartitionStateRepositoryTest {
     @Test
     void markDoneSetsDoneFlag() {
         var statistics = List.of(JdbcPaimonYugabyteTestHelper.partitionStatistics(SPEC, 10L, 100L, 1L, 1000L, 4));
-        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.persistCommitStatistics(tx, TABLE, DEFAULT_BRANCH, 1L, statistics));
         txManager.inTransaction(tx -> repository.markDone(tx, TABLE, DEFAULT_BRANCH, List.of(SPEC)));
 
@@ -125,7 +125,7 @@ public class JdbcPartitionStateRepositoryTest {
 
     @Test
     void createPartitionsInsertsEmptyPartition() {
-        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.createPartitions(tx, TABLE, DEFAULT_BRANCH, List.of(SPEC)));
 
         var result = txManager.inTransactionR(tx -> repository.findAll(tx, TABLE, DEFAULT_BRANCH));
@@ -137,7 +137,7 @@ public class JdbcPartitionStateRepositoryTest {
     @Test
     void dropPartitionsRemovesPartition() {
         var statistics = List.of(JdbcPaimonYugabyteTestHelper.partitionStatistics(SPEC, 10L, 100L, 1L, 1000L, 4));
-        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.persistCommitStatistics(tx, TABLE, DEFAULT_BRANCH, 1L, statistics));
         txManager.inTransaction(tx -> repository.dropPartitions(tx, TABLE, DEFAULT_BRANCH, List.of(SPEC)));
 
@@ -151,7 +151,7 @@ public class JdbcPartitionStateRepositoryTest {
     void alterPartitionsReplacesCounts() {
         var statistics = List.of(JdbcPaimonYugabyteTestHelper.partitionStatistics(SPEC, 10L, 100L, 1L, 1000L, 4));
         var replacement = List.of(JdbcPaimonYugabyteTestHelper.partitionStatistics(SPEC, 99L, 999L, 9L, 9000L, 8));
-        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_KEY);
+        var repository = new JdbcPartitionStateRepository(DEFAULT_CATALOG_NAME);
         txManager.inTransaction(tx -> repository.persistCommitStatistics(tx, TABLE, DEFAULT_BRANCH, 1L, statistics));
         txManager.inTransaction(tx -> repository.alterPartitions(tx, TABLE, DEFAULT_BRANCH, replacement));
 
