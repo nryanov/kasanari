@@ -24,11 +24,11 @@ jdbc:yugabytedb://yb-tserver:5433/kasanari?load-balance=true
 
 Credentials use the same keys as PostgreSQL:
 
-| Key | Purpose |
-|-----|---------|
-| `uri` | JDBC URL |
-| `kasanari.jdbc.user` | user |
-| `kasanari.jdbc.password` | password |
+| Key                           | Purpose    |
+|-------------------------------|------------|
+| `uri`                         | JDBC URL   |
+| `kasanari.jdbc.user`          | user       |
+| `kasanari.jdbc.password`      | password   |
 | `kasanari.repository.backend` | `yugabyte` |
 
 ### Management
@@ -61,12 +61,10 @@ Create the application database as **colocated** (small global tables):
 CREATE DATABASE kasanari WITH COLOCATION = true;
 ```
 
-| Plane | Distribution |
-|-------|----------------|
-| `kasanari_catalogs`, Casbin bindings | Colocated (`WITH (colocation = true)`) — list/refresh across catalogs |
-| Iceberg / Paimon / Lance INTERNAL | Hash-sharded on `catalog_name`, `WITH (colocation = false)` — all rows for one catalog share a tablet |
-
-Cross-catalog distributed transactions are not used. Catalog operations always target a single `catalog_name`. The only cross-catalog read is Casbin listing bindings for a role (colocated tables).
+| Plane                                | Distribution                                                                                          |
+|--------------------------------------|-------------------------------------------------------------------------------------------------------|
+| `kasanari_catalogs`, Casbin bindings | Colocated (`WITH (colocation = true)`) — list/refresh across catalogs                                 |
+| Iceberg / Paimon / Lance INTERNAL    | Hash-sharded on `catalog_name`, `WITH (colocation = false)` — all rows for one catalog share a tablet |
 
 ## Naming: `catalog_name`
 
