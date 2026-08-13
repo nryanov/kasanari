@@ -1,6 +1,6 @@
 [versions]
 openapi-generator = "7.14.0"
-quarkus = "3.37.1"
+quarkus = "3.38.1"
 jandex = "1.0.0"
 iceberg = "1.11.0"
 paimon = "1.4.2"
