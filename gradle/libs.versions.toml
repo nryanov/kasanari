@@ -1,7 +1,7 @@
 [versions]
 openapi-generator = "7.14.0"
 quarkus = "3.38.2"
-jandex = "1.0.0"
+jandex = "2.3.0"
 iceberg = "1.11.0"
 paimon = "1.4.2"
 lance = "6.0.0"
