@@ -23,7 +23,7 @@ smallrye = "2.9.4"
 # test dependencies
 junit = "6.1.2"
 testcontainers = "1.21.0"
-testcontainers-nessie = "0.104.1"
+testcontainers-nessie = "0.108.4"
 logback = "1.6.0"
 
 
