@@ -28,7 +28,7 @@ dependencies {
         exclude(group = "org.apache.opendal", module = "*")
         exclude(group = "org.junit.jupiter", module = "*")
     }
-    api("org.lance:lance-namespace-impls-core:0.3.0") {
+    api("org.lance:lance-namespace-impls-core:0.4.1") {
         exclude(group = "org.slf4j", module = "slf4j-api")
         exclude(group = "org.lance", module = "lance-core")
         exclude(group = "com.google.guava", module = "guava")
