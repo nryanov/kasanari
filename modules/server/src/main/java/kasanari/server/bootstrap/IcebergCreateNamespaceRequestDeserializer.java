@@ -9,6 +9,7 @@ import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
 import org.apache.iceberg.util.JsonUtil;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 /**
  * Iceberg {@code RESTSerializers} registers a {@link Namespace} deserializer but not one for
@@ -30,7 +31,7 @@ public final class IcebergCreateNamespaceRequestDeserializer extends JsonDeseria
             builder.withNamespace(Namespace.of(JsonUtil.getStringArray(namespaceNode)));
         }
         if (node.hasNonNull("properties")) {
-            builder.setProperties(JsonUtil.getStringMap("properties", node));
+            builder.setProperties(new HashMap<>(JsonUtil.getStringMap("properties", node)));
         }
         return builder.build();
     }
