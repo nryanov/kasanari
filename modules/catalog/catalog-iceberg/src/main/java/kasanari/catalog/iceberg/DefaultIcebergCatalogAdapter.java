@@ -14,6 +14,7 @@ import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.catalog.ViewCatalog;
 import org.apache.iceberg.exceptions.CommitFailedException;
+import org.apache.iceberg.rest.RESTUtil;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.rest.requests.CreateViewRequest;
 import org.apache.iceberg.rest.requests.ReportMetricsRequest;
@@ -101,7 +102,7 @@ public class DefaultIcebergCatalogAdapter implements IcebergCatalogAdapter {
         if (parent == null || parent.isEmpty()) {
             namespaces = namespaceCatalog.listNamespaces();
         } else {
-            namespaces = namespaceCatalog.listNamespaces(Namespace.of(parent.split("[.]")));
+            namespaces = namespaceCatalog.listNamespaces(RESTUtil.namespaceFromQueryParam(parent));
         }
 
         pageToken = pageToken == null ? "" : pageToken;

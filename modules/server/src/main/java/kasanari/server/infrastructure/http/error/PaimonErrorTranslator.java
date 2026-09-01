@@ -124,7 +124,7 @@ public final class PaimonErrorTranslator {
 
     private static MappedError mapped(
             Response.Status status, String message, String resourceType, String resourceName) {
-        var body = new ErrorResponse(message, resourceType, resourceName, status.getStatusCode());
+        var body = new ErrorResponse(resourceType, resourceName, message, status.getStatusCode());
         return new MappedError(status, body);
     }
 }
