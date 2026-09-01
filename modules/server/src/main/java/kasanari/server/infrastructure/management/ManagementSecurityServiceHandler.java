@@ -24,7 +24,7 @@ public class ManagementSecurityServiceHandler implements ManagementRestSecurityS
     }
 
     @Override
-    public Response getRoles(String subject, String resource, SecurityContext securityContext) {
+    public Response getRoles(String resource, String subject, SecurityContext securityContext) {
         if (resource == null || resource.isBlank()) {
             return ApiFallbacks.error(Response.Status.BAD_REQUEST, "Resource is required");
         }

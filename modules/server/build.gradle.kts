@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.Test
+import java.time.Duration
 
 plugins {
     alias(libs.plugins.quarkus)
@@ -50,10 +51,12 @@ dependencies {
     implementation(libs.jdbc.yugabytedb)
 
     testImplementation("io.quarkus:quarkus-junit5")
+    testImplementation("io.quarkus:quarkus-junit5-mockito")
     testImplementation("io.rest-assured:rest-assured")
 }
 
 tasks.named<Test>("test") {
     useJUnitPlatform()
     systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
+    timeout.set(Duration.ofMinutes(15))
 }
