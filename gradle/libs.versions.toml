@@ -6,7 +6,7 @@ iceberg = "1.11.0"
 paimon = "1.4.2"
 lance = "6.0.0"
 lance-namespace = "0.7.2"
-hadoop3 = "3.4.1"
+hadoop3 = "3.5.0"
 awssdk = "2.41.24"
 hive = { strictly = "2.3.9" }
 slfj4 = "2.0.17"
